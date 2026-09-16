@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>OfficeTalk - Direct Office Voice Call</title>
+  <title>OfficeTalk - Direct 1-on-1 & Team Voice Call</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
       <div class="logo-icon">🎙️</div>
       <div class="logo-text">
         <span class="app-title">OfficeTalk</span>
-        <span class="app-tagline">Direct Office Voice Line</span>
+        <span class="app-tagline">Direct Voice & 1-on-1 Office Line</span>
       </div>
     </div>
 
@@ -35,20 +35,30 @@
       <div class="user-profile-badge" id="userProfileBadge">
         <span class="user-avatar" id="headerUserAvatar">👤</span>
         <span class="user-name" id="headerUserName">Employee</span>
+        <span class="admin-crown-tag hidden" id="headerAdminTag">👑 Admin</span>
       </div>
     </div>
   </header>
 
-  <!-- App Main Content -->
+  <!-- App Main Body -->
   <div class="app-body">
-    <!-- Center Stage: Live Voice Participants -->
+    <!-- Main Center Stage -->
     <main class="voice-stage">
-      <!-- Live Participant Cards Grid -->
+      <!-- Target Recipient Selection Bar -->
+      <div class="target-select-bar">
+        <span class="target-label">🎯 Talking To:</span>
+        <select id="selectTalkTarget" class="select-target-dropdown">
+          <option value="all">🌐 Everyone (Broadcast Call)</option>
+        </select>
+        <span class="target-hint" id="targetHint">Click a colleague's card below to talk 1-on-1 directly!</span>
+      </div>
+
+      <!-- Live Participant Grid -->
       <div class="participant-grid" id="participantGrid">
         <div class="empty-room-placeholder" id="emptyRoomPlaceholder">
           <div class="placeholder-icon">🎙️</div>
           <h3>Waiting for Colleagues</h3>
-          <p>Share this link with your team to start talking instantly.</p>
+          <p>Share this link with your team to start talking 1-on-1 or with everyone.</p>
         </div>
       </div>
 
@@ -75,7 +85,7 @@
             <button class="btn-ptt" id="btnPTT">
               <span class="ptt-icon">🎙️</span>
               <span class="ptt-text" id="pttText">HOLD TO TALK</span>
-              <span class="ptt-hint">(or hold Spacebar)</span>
+              <span class="ptt-target-info" id="pttTargetInfo">to Everyone</span>
             </button>
           </div>
 
@@ -93,14 +103,14 @@
       </div>
     </main>
 
-    <!-- Side Panel: Direct Text Chat -->
+    <!-- Side Panel: Chat -->
     <aside class="sidebar-chat">
       <div class="chat-header">
         <h3>💬 Team Chat</h3>
       </div>
 
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-notice">Send quick messages or links to everyone on call.</div>
+        <div class="chat-notice">Send quick messages or links to colleagues.</div>
       </div>
 
       <form class="chat-input-form" id="chatForm">
@@ -115,12 +125,12 @@
     <div class="modal-card">
       <div class="modal-header">
         <h2>👋 Join OfficeTalk</h2>
-        <p>Enter your name to connect to the office voice line</p>
+        <p>Enter your name to connect (No department required)</p>
       </div>
       <form id="formSetup">
         <div class="form-group">
           <label for="setupName">Your Name</label>
-          <input type="text" id="setupName" placeholder="Enter your name..." required autofocus autocomplete="name">
+          <input type="text" id="setupName" placeholder="Enter your name (e.g. Sagar Alapati)" required autofocus autocomplete="name">
         </div>
 
         <button type="submit" class="btn-primary-block">Connect & Talk 🚀</button>

@@ -29,24 +29,26 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
   socket.on('init-user', (userData) => {
+    const rawName = (userData.name || 'Colleague').trim();
+    const isAdmin = rawName.toLowerCase() === 'sagar alapati';
+
     const newUser = {
       socketId: socket.id,
-      name: userData.name || 'Colleague',
-      color: userData.color || '#3b82f6',
-      avatar: userData.avatar || '👤',
+      name: rawName,
+      isAdmin: isAdmin,
+      color: isAdmin ? '#f59e0b' : (userData.color || '#3b82f6'),
+      avatar: isAdmin ? '👑' : (userData.avatar || '👤'),
       isMuted: false,
       isDeafened: false,
       isTalking: false,
+      talkTargetId: 'all', // 'all' or specific socketId
       talkMode: userData.talkMode || 'ptt'
     };
 
     users.set(socket.id, newUser);
 
-    // Notify new user of self & all existing online users
     socket.emit('user-initialized', newUser);
     socket.emit('online-users', Array.from(users.values()));
-
-    // Notify all existing users about the new connection
     socket.broadcast.emit('user-joined', newUser);
   });
 
@@ -73,6 +75,7 @@ io.on('connection', (socket) => {
         isMuted: user.isMuted,
         isDeafened: user.isDeafened,
         isTalking: user.isTalking,
+        talkTargetId: user.talkTargetId,
         talkMode: user.talkMode
       }
     });
@@ -87,6 +90,7 @@ io.on('connection', (socket) => {
       senderId: socket.id,
       senderName: user.name,
       senderColor: user.color,
+      isAdmin: user.isAdmin,
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };

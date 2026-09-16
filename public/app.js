@@ -1,4 +1,4 @@
-// Direct Office Voice Line - Instant Global Peer-to-Peer Calling
+// OfficeTalk Client Logic - 1-on-1 & Admin Crown Support
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -8,7 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const headerUserName = document.getElementById('headerUserName');
   const headerUserAvatar = document.getElementById('headerUserAvatar');
+  const headerAdminTag = document.getElementById('headerAdminTag');
   const onlineCountBadge = document.getElementById('onlineCountBadge');
+
+  const selectTalkTarget = document.getElementById('selectTalkTarget');
+  const pttTargetInfo = document.getElementById('pttTargetInfo');
+  const targetHint = document.getElementById('targetHint');
 
   const participantGrid = document.getElementById('participantGrid');
   const emptyRoomPlaceholder = document.getElementById('emptyRoomPlaceholder');
@@ -43,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Application State
   const socket = io();
   let currentUser = null;
+  let currentTargetId = 'all'; // 'all' or target socketId
 
   let localStream = null;
   let audioContext = null;
@@ -65,24 +71,30 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // -------------------------------------------------------------
-  // 1. Identity Setup (Name Only -> Instant Direct Join)
+  // 1. Setup Form (Name Only & Sagar Alapati Admin Check)
   // -------------------------------------------------------------
   formSetup.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = setupName.value.trim() || 'Colleague';
+    const rawName = (setupName.value || 'Colleague').trim();
+    const isAdmin = rawName.toLowerCase() === 'sagar alapati';
 
     const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
-    const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
+    const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
 
     currentUser = {
-      name,
-      avatar: randomAvatar,
-      color: getRandomColor(),
+      name: rawName,
+      isAdmin,
+      avatar,
+      color: isAdmin ? '#f59e0b' : getRandomColor(),
       talkMode
     };
 
-    headerUserName.textContent = name;
-    headerUserAvatar.textContent = randomAvatar;
+    headerUserName.textContent = rawName;
+    headerUserAvatar.textContent = avatar;
+
+    if (isAdmin) {
+      headerAdminTag.classList.remove('hidden');
+    }
 
     socket.emit('init-user', currentUser);
     modalSetup.classList.add('hidden');
@@ -164,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentlySpeaking !== isSpeakingState) {
         isSpeakingState = currentlySpeaking;
         updateUserCardTalking(socket.id, currentlySpeaking);
-        socket.emit('update-state', { isTalking: currentlySpeaking });
+        socket.emit('update-state', { isTalking: currentlySpeaking, talkTargetId: currentTargetId });
       }
 
       requestAnimationFrame(checkLevel);
@@ -195,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 3. Socket.io Events & Direct Global Connection
+  // 3. Socket.io Signaling & Online User Updates
   // -------------------------------------------------------------
   socket.on('user-initialized', (selfData) => {
     window.soundFX.playJoinChime();
@@ -205,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onlineUsersMap.set(socket.id, selfData);
     renderParticipantCard(socket.id, selfData);
+    rebuildTargetDropdown();
   });
 
   socket.on('online-users', (users) => {
@@ -216,17 +229,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     updateOnlineCount();
+    rebuildTargetDropdown();
   });
 
   socket.on('user-joined', (user) => {
     onlineUsersMap.set(user.socketId, user);
     renderParticipantCard(user.socketId, user);
     updateOnlineCount();
+    rebuildTargetDropdown();
 
     appendChatMessage({
       senderName: 'System',
       senderColor: '#3b82f6',
-      text: `${user.name} joined the line.`,
+      text: `${user.name} ${user.isAdmin ? '👑' : ''} connected.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
   });
@@ -242,10 +257,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    if (currentTargetId === socketId) {
+      setTalkTarget('all');
+    }
+
     closePeerConnection(socketId);
     onlineUsersMap.delete(socketId);
     removeParticipantCard(socketId);
     updateOnlineCount();
+    rebuildTargetDropdown();
   });
 
   socket.on('user-state-changed', ({ socketId, state }) => {
@@ -261,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 4. WebRTC Peer Connection
+  // 4. WebRTC Peer Connection & Selective 1-on-1 Audio Filtering
   // -------------------------------------------------------------
   function initiatePeerConnection(targetSocketId, isInitiator) {
     if (peerConnections.has(targetSocketId)) return;
@@ -347,7 +367,57 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 5. PTT & Open Call Controls
+  // 5. Targeted 1-on-1 Person Selector Logic
+  // -------------------------------------------------------------
+  function setTalkTarget(targetId) {
+    currentTargetId = targetId;
+    selectTalkTarget.value = targetId;
+
+    if (targetId === 'all') {
+      pttTargetInfo.textContent = 'to Everyone';
+      targetHint.textContent = 'Talking to EVERYONE on call';
+    } else {
+      const user = onlineUsersMap.get(targetId);
+      const targetName = user ? user.name : 'Selected Colleague';
+      pttTargetInfo.textContent = `to ${targetName} (1-on-1)`;
+      targetHint.textContent = `Talking ONLY with ${targetName}`;
+    }
+
+    // Highlight selected target card in grid
+    document.querySelectorAll('.participant-card').forEach(card => {
+      card.classList.remove('selected-target');
+    });
+
+    if (targetId !== 'all') {
+      const card = document.getElementById(`pcard-${targetId}`);
+      if (card) card.classList.add('selected-target');
+    }
+  }
+
+  selectTalkTarget.addEventListener('change', (e) => {
+    setTalkTarget(e.target.value);
+  });
+
+  function rebuildTargetDropdown() {
+    selectTalkTarget.innerHTML = '<option value="all">🌐 Everyone (Broadcast Call)</option>';
+    onlineUsersMap.forEach((user, sId) => {
+      if (sId !== socket.id) {
+        const opt = document.createElement('option');
+        opt.value = sId;
+        opt.textContent = `👤 ${user.name} ${user.isAdmin ? '👑' : ''} (1-on-1)`;
+        selectTalkTarget.appendChild(opt);
+      }
+    });
+
+    if (currentTargetId !== 'all' && !onlineUsersMap.has(currentTargetId)) {
+      setTalkTarget('all');
+    } else {
+      selectTalkTarget.value = currentTargetId;
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 6. PTT & Open Call Controls with Target Routing
   // -------------------------------------------------------------
   function startTransmitting() {
     if (isTransmitting || isMuted || isDeafened) return;
@@ -357,8 +427,16 @@ document.addEventListener('DOMContentLoaded', () => {
     pttText.textContent = 'TRANSMITTING...';
 
     window.soundFX.playPttStart();
-    setMicTrackEnabled(true);
-    socket.emit('update-state', { isTalking: true });
+
+    // Mute/unmute peer connections according to targeted recipient
+    peerConnections.forEach((conn, peerSocketId) => {
+      const sendTrack = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+      if (sendTrack) {
+        sendTrack.track.enabled = (currentTargetId === 'all' || currentTargetId === peerSocketId);
+      }
+    });
+
+    socket.emit('update-state', { isTalking: true, talkTargetId: currentTargetId });
     updateUserCardTalking(socket.id, true);
   }
 
@@ -370,10 +448,17 @@ document.addEventListener('DOMContentLoaded', () => {
     pttText.textContent = 'HOLD TO TALK';
 
     window.soundFX.playPttEnd();
+
     if (talkMode === 'ptt') {
-      setMicTrackEnabled(false);
+      peerConnections.forEach((conn) => {
+        const sendTrack = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+        if (sendTrack && sendTrack.track) {
+          sendTrack.track.enabled = false;
+        }
+      });
     }
-    socket.emit('update-state', { isTalking: false });
+
+    socket.emit('update-state', { isTalking: false, talkTargetId: currentTargetId });
     updateUserCardTalking(socket.id, false);
   }
 
@@ -471,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 6. UI Render Helpers
+  // 7. Participant Card UI & Direct 1-on-1 Selection
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
     if (document.getElementById('emptyRoomPlaceholder')) {
@@ -481,8 +566,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const existingCard = document.getElementById(`pcard-${socketId}`);
     if (existingCard) existingCard.remove();
 
+    const isSelf = socketId === socket.id;
+
     const card = document.createElement('div');
-    card.className = 'participant-card';
+    card.className = `participant-card ${currentTargetId === socketId ? 'selected-target' : ''}`;
     card.id = `pcard-${socketId}`;
 
     card.innerHTML = `
@@ -490,12 +577,24 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="participant-avatar" style="border-color: ${user.color || '#3b82f6'};">${user.avatar || '👤'}</div>
         <div class="talking-aura"></div>
       </div>
-      <span class="participant-name">${user.name} ${socketId === socket.id ? '(You)' : ''}</span>
+      <div class="participant-name-row">
+        <span class="participant-name">${user.name} ${isSelf ? '(You)' : ''}</span>
+        ${user.isAdmin ? '<span class="admin-crown-tag">👑 Admin</span>' : ''}
+      </div>
       <div class="status-badges">
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
         <span class="badge-tag muted ${user.isMuted ? '' : 'hidden'}">MUTED</span>
       </div>
+      ${!isSelf ? `<button class="btn-select-talk" data-id="${socketId}">🎯 Talk 1-on-1</button>` : ''}
     `;
+
+    if (!isSelf) {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-select-talk') || e.currentTarget) {
+          setTalkTarget(socketId);
+        }
+      });
+    }
 
     participantGrid.appendChild(card);
   }
@@ -543,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 7. Chat & Modals
+  // 8. Chat & Utilities
   // -------------------------------------------------------------
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -560,7 +659,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     bubble.innerHTML = `
       <div class="chat-sender-row">
-        <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">${msg.senderName}</span>
+        <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">
+          ${msg.senderName} ${msg.isAdmin ? '👑' : ''}
+        </span>
         <span class="chat-time">${msg.timestamp}</span>
       </div>
       <div class="chat-text">${escapeHTML(msg.text)}</div>

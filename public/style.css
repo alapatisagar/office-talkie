@@ -1,4 +1,4 @@
-/* OfficeTalk Simple Direct Voice Line Styling */
+/* OfficeTalk Styling - Direct 1-on-1 & Admin Crown */
 :root {
   --bg-dark: #0f172a;
   --bg-card: #1e293b;
@@ -7,6 +7,7 @@
   --accent-blue: #3b82f6;
   --accent-green: #22c55e;
   --accent-red: #ef4444;
+  --accent-gold: #f59e0b;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --border-color: rgba(255, 255, 255, 0.08);
@@ -125,7 +126,7 @@ body.dark-theme {
 .user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   padding: 6px 14px;
@@ -134,6 +135,18 @@ body.dark-theme {
 
 .user-avatar { font-size: 20px; }
 .user-name { font-size: 14px; font-weight: 700; }
+
+.admin-crown-tag {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.hidden { display: none !important; }
 
 /* App Body Layout */
 .app-body {
@@ -148,19 +161,56 @@ body.dark-theme {
   display: flex;
   flex-direction: column;
   background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 40%);
-  padding: 24px;
+  padding: 20px 24px;
   overflow: hidden;
+}
+
+/* Target Selection Bar */
+.target-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  padding: 12px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.target-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent-gold);
+}
+
+.select-target-dropdown {
+  background: var(--bg-dark);
+  border: 1px solid var(--accent-gold);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+.target-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
 }
 
 /* Participant Grid */
 .participant-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 20px;
   overflow-y: auto;
   align-content: start;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .empty-room-placeholder {
@@ -169,7 +219,7 @@ body.dark-theme {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 280px;
+  height: 260px;
   text-align: center;
   color: var(--text-muted);
 }
@@ -184,12 +234,24 @@ body.dark-theme {
   background: var(--bg-card);
   border: 2px solid var(--border-color);
   border-radius: 20px;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
+  cursor: pointer;
   transition: all 0.25s ease;
+}
+
+.participant-card:hover {
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+}
+
+.participant-card.selected-target {
+  border-color: var(--accent-gold);
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
 }
 
 .participant-card.talking {
@@ -206,18 +268,18 @@ body.dark-theme {
 
 .participant-avatar-wrapper {
   position: relative;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .participant-avatar {
-  width: 80px;
-  height: 80px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 38px;
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -242,10 +304,41 @@ body.dark-theme {
   to { transform: scale(1.12); }
 }
 
+.participant-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
 .participant-name {
   font-weight: 700;
-  font-size: 16px;
-  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.btn-select-talk {
+  margin-top: 10px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.participant-card.selected-target .btn-select-talk {
+  background: var(--accent-gold);
+  color: #000;
+  border-color: var(--accent-gold);
+}
+
+.btn-select-talk:hover {
+  background: var(--accent-blue);
+  color: #fff;
 }
 
 .status-badges {
@@ -270,10 +363,10 @@ body.dark-theme {
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
   border-radius: 20px;
-  padding: 20px 32px;
+  padding: 18px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .vu-meter-container {
@@ -373,14 +466,15 @@ body.dark-theme {
 }
 
 .ptt-text {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.5px;
 }
 
-.ptt-hint {
-  font-size: 10px;
-  opacity: 0.8;
+.ptt-target-info {
+  font-size: 11px;
+  color: var(--accent-gold);
+  font-weight: 700;
 }
 
 .action-buttons-group {
@@ -606,4 +700,5 @@ body.dark-theme {
 @media (max-width: 768px) {
   .app-body { flex-direction: column; }
   .sidebar-chat { display: none; }
+  .target-select-bar { flex-direction: column; align-items: stretch; }
 }
