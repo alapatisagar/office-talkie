@@ -715,25 +715,68 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   const TELUGU_MEME_STICKERS = [
-    { id: 'brahmi-adhyaksha', emoji: '👑', tag: 'Brahmanandam', dialogue: 'Adhyaksha!' },
-    { id: 'brahmi-enti-comedy', emoji: '😂', tag: 'Brahmanandam', dialogue: 'Enti Comedy-a?' },
-    { id: 'brahmi-mind-block', emoji: '🤯', tag: 'Brahmanandam', dialogue: 'Mind Blocked!' },
-    { id: 'brahmi-aaha', emoji: '😋', tag: 'Brahmanandam', dialogue: 'Aahaa.. Enna Combo Sir!' },
-    { id: 'brahmi-shocked', emoji: '😱', tag: 'Brahmanandam', dialogue: 'Abbo.. Ye Reethi Ga!' },
-    { id: 'tillu-atla-untadhi', emoji: '🕺', tag: 'DJ Tillu', dialogue: 'Atla Untadhi Manathoni!' },
-    { id: 'pushpa-thaggedhele', emoji: '🔥', tag: 'Pushpa', dialogue: 'Thaggedhe Le!' },
-    { id: 'venky-train', emoji: '😎', tag: 'Venky', dialogue: 'Train-lo Seet-lu Khali Ena?' },
-    { id: 'ali-jalsa', emoji: '🤣', tag: 'Ali', dialogue: 'Jalsa Time.. Full Chill!' },
-    { id: 'ms-full-bottle', emoji: '🍺', tag: 'MS Narayana', dialogue: 'Full Bottle Experience!' },
-    { id: 'sunil-rey-rey', emoji: '🍿', tag: 'Sunil', dialogue: 'Rey Rey Agandi Ra!' },
-    { id: 'relangi-manchivadu', emoji: '👏', tag: 'Relangi Mavayya', dialogue: 'Manishi Manchivadu!' },
-    { id: 'balayya-trouble', emoji: '💥', tag: 'Balayya', dialogue: "Don't Trouble The Trouble!" },
-    { id: 'rgv-logic', emoji: '🧐', tag: 'RGV', dialogue: 'Logic Undha Inthaki?' },
-    { id: 'brahmi-escape', emoji: '🤐', tag: 'Brahmanandam', dialogue: 'Silently Escaped..' },
-    { id: 'brahmi-karma', emoji: '🤦‍♂️', tag: 'Brahmanandam', dialogue: 'Karma Ra Babu!' },
-    { id: 'prabhas-chhatrapati', emoji: '💪', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!' },
-    { id: 'brahmi-sensational', emoji: '😉', tag: 'Brahmanandam', dialogue: 'Sensational Entry!' }
+    { id: 'brahmi-adhyaksha', tag: 'Brahmanandam', dialogue: 'Adhyaksha!' },
+    { id: 'brahmi-enti-comedy', tag: 'Brahmanandam', dialogue: 'Enti Comedy-a?' },
+    { id: 'brahmi-mind-block', tag: 'Brahmanandam', dialogue: 'Mind Blocked!' },
+    { id: 'brahmi-aaha', tag: 'Brahmanandam', dialogue: 'Aahaa.. Enna Combo Sir!' },
+    { id: 'brahmi-shocked', tag: 'Brahmanandam', dialogue: 'Abbo.. Ye Reethi Ga!' },
+    { id: 'tillu-atla-untadhi', tag: 'DJ Tillu', dialogue: 'Atla Untadhi Manathoni!' },
+    { id: 'pushpa-thaggedhele', tag: 'Pushpa Raj', dialogue: 'Thaggedhe Le!' },
+    { id: 'venky-train', tag: 'Venky', dialogue: 'Train-lo Seet-lu Khali Ena?' },
+    { id: 'ali-jalsa', tag: 'Ali', dialogue: 'Jalsa Time.. Full Chill!' },
+    { id: 'ms-full-bottle', tag: 'MS Narayana', dialogue: 'Full Bottle Experience!' },
+    { id: 'sunil-rey-rey', tag: 'Sunil', dialogue: 'Rey Rey Agandi Ra!' },
+    { id: 'relangi-manchivadu', tag: 'Relangi Mavayya', dialogue: 'Manishi Manchivadu!' },
+    { id: 'balayya-trouble', tag: 'Balayya', dialogue: "Don't Trouble The Trouble!" },
+    { id: 'rgv-logic', tag: 'RGV', dialogue: 'Logic Undha Inthaki?' },
+    { id: 'brahmi-escape', tag: 'Brahmanandam', dialogue: 'Silently Escaped..' },
+    { id: 'brahmi-karma', tag: 'Brahmanandam', dialogue: 'Karma Ra Babu!' },
+    { id: 'prabhas-chhatrapati', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!' },
+    { id: 'brahmi-sensational', tag: 'Brahmanandam', dialogue: 'Sensational Entry!' }
   ];
+
+  function getMemeStickerSvg(stickerId, tag, dialogue) {
+    const configs = {
+      'brahmi-adhyaksha': { c1: '#f59e0b', c2: '#b45309', icon: '👑', subtitle: 'BRAHMANANDAM' },
+      'brahmi-enti-comedy': { c1: '#ef4444', c2: '#991b1b', icon: '😂', subtitle: 'BRAHMANANDAM' },
+      'brahmi-mind-block': { c1: '#8b5cf6', c2: '#5b21b6', icon: '🤯', subtitle: 'BRAHMANANDAM' },
+      'brahmi-aaha': { c1: '#10b981', c2: '#047857', icon: '😋', subtitle: 'BRAHMANANDAM' },
+      'brahmi-shocked': { c1: '#ec4899', c2: '#be185d', icon: '😱', subtitle: 'BRAHMANANDAM' },
+      'tillu-atla-untadhi': { c1: '#06b6d4', c2: '#0e7490', icon: '🎧', subtitle: 'DJ TILLU' },
+      'pushpa-thaggedhele': { c1: '#f97316', c2: '#c2410c', icon: '🔥', subtitle: 'PUSHPA RAJ' },
+      'venky-train': { c1: '#3b82f6', c2: '#1d4ed8', icon: '🕶️', subtitle: 'VENKY' },
+      'ali-jalsa': { c1: '#a855f7', c2: '#7e22ce', icon: '🥳', subtitle: 'ALI' },
+      'ms-full-bottle': { c1: '#eab308', c2: '#a16207', icon: '🍺', subtitle: 'MS NARAYANA' },
+      'sunil-rey-rey': { c1: '#14b8a6', c2: '#0f766e', icon: '🍿', subtitle: 'SUNIL' },
+      'relangi-manchivadu': { c1: '#84cc16', c2: '#4d7c0f', icon: '👏', subtitle: 'RELANGI MAVAYYA' },
+      'balayya-trouble': { c1: '#dc2626', c2: '#7f1d1d', icon: '🦁', subtitle: 'BALAYYA' },
+      'rgv-logic': { c1: '#64748b', c2: '#334155', icon: '🧐', subtitle: 'RGV' },
+      'brahmi-escape': { c1: '#6366f1', c2: '#3730a3', icon: '🥷', subtitle: 'BRAHMANANDAM' },
+      'brahmi-karma': { c1: '#f43f5e', c2: '#9f1239', icon: '🤦‍♂️', subtitle: 'BRAHMANANDAM' },
+      'prabhas-chhatrapati': { c1: '#0284c7', c2: '#0369a1', icon: '⚔️', subtitle: 'PRABHAS' },
+      'brahmi-sensational': { c1: '#d97706', c2: '#78350f', icon: '⭐', subtitle: 'BRAHMANANDAM' }
+    };
+
+    const cfg = configs[stickerId] || { c1: '#f59e0b', c2: '#d97706', icon: '🎭', subtitle: tag };
+
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" style="border-radius:24px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));">
+        <defs>
+          <linearGradient id="bg-${stickerId}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${cfg.c1}" />
+            <stop offset="100%" stop-color="${cfg.c2}" />
+          </linearGradient>
+        </defs>
+        <rect x="8" y="8" width="184" height="184" rx="30" fill="url(#bg-${stickerId})" stroke="#ffffff" stroke-width="5" />
+        <rect x="16" y="16" width="168" height="168" rx="22" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-dasharray="8,5" />
+        <text x="100" y="86" font-size="56" text-anchor="middle" dominant-baseline="central" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.5))">${cfg.icon}</text>
+        <rect x="24" y="122" width="152" height="22" rx="11" fill="rgba(0,0,0,0.55)" />
+        <text x="100" y="137" font-size="11" font-weight="900" font-family="'Plus Jakarta Sans', system-ui, sans-serif" fill="#facc15" text-anchor="middle" letter-spacing="1.2">${cfg.subtitle}</text>
+        <rect x="18" y="149" width="164" height="30" rx="10" fill="#ffffff" />
+        <text x="100" y="169" font-size="12" font-weight="900" font-family="'Plus Jakarta Sans', system-ui, sans-serif" fill="#0f172a" text-anchor="middle">"${dialogue}"</text>
+      </svg>
+    `;
+  }
 
   function initEmojiAndStickerPicker() {
     if (!emojiGrid || !stickerGrid) return;
@@ -757,9 +800,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'sticker-card';
       card.innerHTML = `
-        <div class="sticker-emoji">${sticker.emoji}</div>
-        <div class="sticker-tag">${sticker.tag}</div>
-        <div class="sticker-dialogue">"${sticker.dialogue}"</div>
+        <div class="sticker-svg-wrapper">
+          ${getMemeStickerSvg(sticker.id, sticker.tag, sticker.dialogue)}
+        </div>
       `;
       card.addEventListener('click', () => {
         socket.emit('send-message', { text: '', sticker });
@@ -816,12 +859,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let contentHtml = '';
     if (msg.sticker) {
       contentHtml = `
-        <div class="chat-sticker-bubble">
-          <div class="chat-sticker-icon">${msg.sticker.emoji}</div>
-          <div class="chat-sticker-body">
-            <span class="chat-sticker-name">🎭 ${msg.sticker.tag}</span>
-            <span class="chat-sticker-dialogue">"${msg.sticker.dialogue}"</span>
-          </div>
+        <div class="chat-sticker-visual-wrapper">
+          ${getMemeStickerSvg(msg.sticker.id, msg.sticker.tag, msg.sticker.dialogue)}
         </div>
       `;
     } else {

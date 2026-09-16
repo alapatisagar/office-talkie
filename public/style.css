@@ -899,48 +899,27 @@ body.dark-theme {
 .sticker-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .sticker-card {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(59, 130, 246, 0.1));
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 12px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+  background: transparent;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .sticker-card:hover {
-  border-color: var(--accent-gold);
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(59, 130, 246, 0.2));
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  transform: scale(1.08) rotate(-2deg);
 }
 
-.sticker-emoji {
-  font-size: 28px;
-  margin-bottom: 4px;
-}
-
-.sticker-tag {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--accent-gold);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 2px;
-}
-
-.sticker-dialogue {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-main);
-  line-height: 1.2;
+.sticker-svg-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-emoji-toggle {
@@ -958,39 +937,15 @@ body.dark-theme {
   border-color: var(--accent-gold);
 }
 
-/* Chat Meme Sticker Card inside Chat Stream */
-.chat-sticker-bubble {
-  margin-top: 6px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(30, 41, 59, 0.9));
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 14px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+/* Chat Visual Sticker Graphic in Chat Timeline */
+.chat-sticker-visual-wrapper {
+  width: 160px;
+  height: 160px;
+  margin-top: 8px;
+  transition: transform 0.2s ease;
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.5));
 }
 
-.chat-sticker-icon {
-  font-size: 34px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-
-.chat-sticker-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-sticker-name {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--accent-gold);
-  text-transform: uppercase;
-}
-
-.chat-sticker-dialogue {
-  font-size: 13px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.2px;
+.chat-sticker-visual-wrapper:hover {
+  transform: scale(1.05);
 }
