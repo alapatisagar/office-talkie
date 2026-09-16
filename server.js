@@ -7,29 +7,24 @@ const os = require('os');
 const selfsigned = require('selfsigned');
 
 const app = express();
-
-// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Default preset channels
+// Simple preset voice rooms
 const defaultChannels = [
-  { id: 'general', name: 'General Hall', description: 'Main office lounge for quick updates', icon: '📢', isDefault: true },
-  { id: 'quick-sync', name: 'Quick Sync', description: 'Fast 2-minute standups & check-ins', icon: '⚡', isDefault: true },
-  { id: 'engineering', name: 'Engineering & IT', description: 'Tech team workspace & huddles', icon: '💻', isDefault: true },
-  { id: 'sales-lounge', name: 'Sales & Client Hub', description: 'Sales discussion & deal talk', icon: '💼', isDefault: true },
-  { id: 'watercooler', name: 'Watercooler Breakroom', description: 'Casual chat, coffee & lunch talk', icon: '☕', isDefault: true },
-  { id: 'announcements', name: 'Town Hall & Broadcast', description: 'Company-wide announcements', icon: '🎙️', isDefault: true }
+  { id: 'general', name: 'General Hall', description: 'Main lounge to talk with colleagues', icon: '📢' },
+  { id: 'quick-sync', name: 'Quick Sync', description: 'Fast 2-minute check-ins', icon: '⚡' },
+  { id: 'room-1', name: 'Room 1', description: 'Voice Room 1', icon: '💬' },
+  { id: 'room-2', name: 'Room 2', description: 'Voice Room 2', icon: '💬' },
+  { id: 'watercooler', name: 'Breakroom', description: 'Casual chat & coffee talk', icon: '☕' }
 ];
 
-const channels = new Map(defaultChannels.map(c => [c.id, { ...c, pin: null }]));
+const channels = new Map(defaultChannels.map(c => [c.id, { ...c }]));
 const users = new Map();
 
-// Check if HTTPS mode requested or create server
 const USE_HTTPS = process.env.USE_HTTPS === 'true' || process.env.HTTPS === 'true';
 let server;
 
 if (USE_HTTPS) {
-  // Generate self-signed SSL certificate automatically
   const attrs = [{ name: 'commonName', value: 'OfficeTalk Local' }];
   const pkey = selfsigned.generate(attrs, { days: 365 });
   server = https.createServer({ key: pkey.private, cert: pkey.cert }, app);
@@ -38,23 +33,16 @@ if (USE_HTTPS) {
 }
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
 io.on('connection', (socket) => {
-  console.log(`[Connect] Employee connected: ${socket.id}`);
-
   socket.emit('channels-list', Array.from(channels.values()));
 
   socket.on('init-user', (userData) => {
     users.set(socket.id, {
       socketId: socket.id,
-      name: userData.name || 'Anonymous Employee',
-      role: userData.role || 'Team Member',
-      department: userData.department || 'General',
+      name: userData.name || 'Colleague',
       color: userData.color || '#3b82f6',
       avatar: userData.avatar || '👤',
       currentRoom: null,
@@ -68,18 +56,12 @@ io.on('connection', (socket) => {
     broadcastChannelsUpdate();
   });
 
-  socket.on('join-room', ({ roomId, pin }) => {
+  socket.on('join-room', ({ roomId }) => {
     const user = users.get(socket.id);
     if (!user) return;
 
     const channel = channels.get(roomId);
-    if (!channel) {
-      return socket.emit('error-msg', 'Channel does not exist.');
-    }
-
-    if (channel.pin && channel.pin !== pin) {
-      return socket.emit('error-msg', 'Incorrect room PIN code.');
-    }
+    if (!channel) return;
 
     if (user.currentRoom) {
       leaveCurrentRoom(socket);
@@ -138,7 +120,6 @@ io.on('connection', (socket) => {
       senderId: socket.id,
       senderName: user.name,
       senderColor: user.color,
-      senderRole: user.role,
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -146,20 +127,18 @@ io.on('connection', (socket) => {
     io.to(user.currentRoom).emit('new-message', messageObj);
   });
 
-  socket.on('create-channel', ({ name, description, icon, pin }) => {
+  socket.on('create-channel', ({ name, description, icon }) => {
     const channelId = 'custom-' + Date.now().toString(36);
     const newChannel = {
       id: channelId,
       name: name.trim(),
-      description: description ? description.trim() : 'Custom Team Channel',
-      icon: icon || '💬',
-      pin: pin ? pin.trim() : null,
-      isDefault: false
+      description: description ? description.trim() : 'Voice Room',
+      icon: icon || '💬'
     };
 
     channels.set(channelId, newChannel);
     broadcastChannelsUpdate();
-    socket.emit('channel-created', { id: channelId, pin: newChannel.pin });
+    socket.emit('channel-created', { id: channelId });
   });
 
   socket.on('leave-room', () => {
@@ -194,15 +173,12 @@ function broadcastChannelsUpdate() {
       name: c.name,
       description: c.description,
       icon: c.icon,
-      isProtected: !!c.pin,
-      isDefault: c.isDefault,
       activeUserCount: activeCount
     };
   });
   io.emit('channels-list', channelList);
 }
 
-// Get local IPv4 addresses
 function getLocalIpAddresses() {
   const interfaces = os.networkInterfaces();
   const addresses = [];
