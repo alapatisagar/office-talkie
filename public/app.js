@@ -1,4 +1,4 @@
-// Simple OfficeTalk Client Logic - WebRTC Mesh & Push-To-Talk Engine
+// Direct Office Voice Line - Instant Global Peer-to-Peer Calling
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -8,16 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const headerUserName = document.getElementById('headerUserName');
   const headerUserAvatar = document.getElementById('headerUserAvatar');
-  const headerChannelBadge = document.getElementById('headerChannelBadge');
-  const headerChannelName = document.getElementById('headerChannelName');
+  const onlineCountBadge = document.getElementById('onlineCountBadge');
 
-  const channelsList = document.getElementById('channelsList');
   const participantGrid = document.getElementById('participantGrid');
   const emptyRoomPlaceholder = document.getElementById('emptyRoomPlaceholder');
-  const roomTitle = document.getElementById('roomTitle');
-  const roomDesc = document.getElementById('roomDesc');
-  const roomIcon = document.getElementById('roomIcon');
-  const roomMemberCount = document.getElementById('roomMemberCount');
 
   const controlDock = document.getElementById('controlDock');
   const btnPTT = document.getElementById('btnPTT');
@@ -33,18 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const deafenIcon = document.getElementById('deafenIcon');
   const deafenLabel = document.getElementById('deafenLabel');
 
-  const btnLeaveRoom = document.getElementById('btnLeaveRoom');
   const vuBarFill = document.getElementById('vuBarFill');
 
   const chatMessages = document.getElementById('chatMessages');
   const chatForm = document.getElementById('chatForm');
   const chatInput = document.getElementById('chatInput');
-  const chatChannelSubtitle = document.getElementById('chatChannelSubtitle');
-
-  const btnOpenCreateChannel = document.getElementById('btnOpenCreateChannel');
-  const modalCreateChannel = document.getElementById('modalCreateChannel');
-  const formCreateChannel = document.getElementById('formCreateChannel');
-  const btnCloseCreateChannel = document.getElementById('btnCloseCreateChannel');
 
   const btnAudioSettings = document.getElementById('btnAudioSettings');
   const modalAudioSettings = document.getElementById('modalAudioSettings');
@@ -56,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Application State
   const socket = io();
   let currentUser = null;
-  let currentChannel = null;
 
   let localStream = null;
   let audioContext = null;
@@ -69,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let pttKeyPressed = false;
 
   const peerConnections = new Map(); // targetSocketId -> { pc, remoteStream, audioElement }
-  const roomMembersMap = new Map(); // socketId -> userData
+  const onlineUsersMap = new Map(); // socketId -> userData
 
   const rtcConfig = {
     iceServers: [
@@ -79,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // -------------------------------------------------------------
-  // 1. Identity & Setup Modal (Name Only)
+  // 1. Identity Setup (Name Only -> Instant Direct Join)
   // -------------------------------------------------------------
   formSetup.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -105,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 2. Microphone & Audio Analysis
+  // 2. Microphone Capture & Audio Analysis
   // -------------------------------------------------------------
   async function initLocalMicrophone(deviceId = null) {
     try {
@@ -198,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectMicInput.appendChild(opt);
       });
     } catch (e) {
-      console.error('Error populating devices', e);
+      console.error('Error populating audio devices', e);
     }
   }
 
@@ -209,72 +195,61 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 3. Socket.io Signaling & Room Events
+  // 3. Socket.io Events & Direct Global Connection
   // -------------------------------------------------------------
-  socket.on('channels-list', (channels) => {
-    renderChannelsList(channels);
-  });
-
-  socket.on('room-joined', ({ channel, members }) => {
-    currentChannel = channel;
+  socket.on('user-initialized', (selfData) => {
     window.soundFX.playJoinChime();
 
-    headerChannelBadge.querySelector('.status-dot').className = 'status-dot connected';
-    headerChannelName.textContent = channel.name;
-    roomTitle.textContent = channel.name;
-    roomDesc.textContent = channel.description;
-    roomIcon.textContent = channel.icon;
-    chatChannelSubtitle.textContent = '#' + channel.id;
-
-    controlDock.classList.remove('disabled');
-
-    roomMembersMap.clear();
+    onlineUsersMap.clear();
     participantGrid.innerHTML = '';
 
-    roomMembersMap.set(socket.id, currentUser);
-    renderParticipantCard(socket.id, currentUser);
-
-    members.forEach(member => {
-      roomMembersMap.set(member.socketId, member);
-      renderParticipantCard(member.socketId, member);
-      initiatePeerConnection(member.socketId, true);
-    });
-
-    updateRoomMemberCount();
+    onlineUsersMap.set(socket.id, selfData);
+    renderParticipantCard(socket.id, selfData);
   });
 
-  socket.on('user-joined-room', (user) => {
-    roomMembersMap.set(user.socketId, user);
+  socket.on('online-users', (users) => {
+    users.forEach(user => {
+      if (user.socketId !== socket.id) {
+        onlineUsersMap.set(user.socketId, user);
+        renderParticipantCard(user.socketId, user);
+        initiatePeerConnection(user.socketId, true);
+      }
+    });
+    updateOnlineCount();
+  });
+
+  socket.on('user-joined', (user) => {
+    onlineUsersMap.set(user.socketId, user);
     renderParticipantCard(user.socketId, user);
-    updateRoomMemberCount();
+    updateOnlineCount();
 
     appendChatMessage({
       senderName: 'System',
       senderColor: '#3b82f6',
-      text: `${user.name} joined the room.`,
+      text: `${user.name} joined the line.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
   });
 
-  socket.on('user-left-room', ({ socketId }) => {
-    const user = roomMembersMap.get(socketId);
+  socket.on('user-left', ({ socketId }) => {
+    const user = onlineUsersMap.get(socketId);
     if (user) {
       appendChatMessage({
         senderName: 'System',
         senderColor: '#ef4444',
-        text: `${user.name} left the room.`,
+        text: `${user.name} disconnected.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     }
 
     closePeerConnection(socketId);
-    roomMembersMap.delete(socketId);
+    onlineUsersMap.delete(socketId);
     removeParticipantCard(socketId);
-    updateRoomMemberCount();
+    updateOnlineCount();
   });
 
   socket.on('user-state-changed', ({ socketId, state }) => {
-    const user = roomMembersMap.get(socketId);
+    const user = onlineUsersMap.get(socketId);
     if (user) {
       Object.assign(user, state);
       updateUserCardState(socketId, state);
@@ -283,11 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.on('new-message', (msg) => {
     appendChatMessage(msg);
-  });
-
-  socket.on('channel-created', ({ id }) => {
-    modalCreateChannel.classList.add('hidden');
-    socket.emit('join-room', { roomId: id });
   });
 
   // -------------------------------------------------------------
@@ -359,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
       }
     } catch (err) {
-      console.error('Signal handling error:', err);
+      console.error('Signal error:', err);
     }
   });
 
@@ -500,59 +470,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUserCardState(socket.id, { isDeafened });
   }
 
-  btnLeaveRoom.addEventListener('click', leaveCurrentChannel);
-
-  function leaveCurrentChannel() {
-    if (!currentChannel) return;
-
-    socket.emit('leave-room');
-    peerConnections.forEach((conn, targetId) => closePeerConnection(targetId));
-    roomMembersMap.clear();
-
-    currentChannel = null;
-    headerChannelBadge.querySelector('.status-dot').className = 'status-dot disconnected';
-    headerChannelName.textContent = 'Not Connected';
-    roomTitle.textContent = 'Select a Room';
-    roomDesc.textContent = 'Pick a room on the left to start talking with colleagues.';
-    roomIcon.textContent = '📢';
-    roomMemberCount.textContent = '0 People';
-
-    participantGrid.innerHTML = '';
-    participantGrid.appendChild(emptyRoomPlaceholder);
-    controlDock.classList.add('disabled');
-
-    document.querySelectorAll('.channel-card').forEach(card => card.classList.remove('active'));
-  }
-
   // -------------------------------------------------------------
-  // 6. Simplified Participant Card Rendering (Name Only)
+  // 6. UI Render Helpers
   // -------------------------------------------------------------
-  function renderChannelsList(channels) {
-    channelsList.innerHTML = '';
-    channels.forEach(ch => {
-      const card = document.createElement('div');
-      card.className = `channel-card ${currentChannel && currentChannel.id === ch.id ? 'active' : ''}`;
-      card.dataset.id = ch.id;
-
-      card.innerHTML = `
-        <div class="channel-left">
-          <span class="channel-icon">${ch.icon}</span>
-          <div class="channel-info">
-            <h4>${ch.name}</h4>
-          </div>
-        </div>
-        <span class="channel-badge">${ch.activeUserCount}</span>
-      `;
-
-      card.addEventListener('click', () => {
-        if (currentChannel && currentChannel.id === ch.id) return;
-        socket.emit('join-room', { roomId: ch.id });
-      });
-
-      channelsList.appendChild(card);
-    });
-  }
-
   function renderParticipantCard(socketId, user) {
     if (document.getElementById('emptyRoomPlaceholder')) {
       participantGrid.innerHTML = '';
@@ -617,9 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function updateRoomMemberCount() {
-    const count = roomMembersMap.size;
-    roomMemberCount.textContent = `${count} ${count === 1 ? 'Person' : 'People'}`;
+  function updateOnlineCount() {
+    const count = onlineUsersMap.size;
+    onlineCountBadge.textContent = `${count} ${count === 1 ? 'Colleague' : 'Colleagues'} Online`;
   }
 
   // -------------------------------------------------------------
@@ -628,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
-    if (!text || !currentChannel) return;
+    if (!text) return;
 
     socket.emit('send-message', { text });
     chatInput.value = '';
@@ -655,16 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
-
-  btnOpenCreateChannel.addEventListener('click', () => modalCreateChannel.classList.remove('hidden'));
-  btnCloseCreateChannel.addEventListener('click', () => modalCreateChannel.classList.add('hidden'));
-
-  formCreateChannel.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('newChannelName').value.trim();
-    if (!name) return;
-    socket.emit('create-channel', { name, description: 'Voice Room', icon: '💬' });
-  });
 
   btnAudioSettings.addEventListener('click', () => modalAudioSettings.classList.remove('hidden'));
   btnCloseAudioSettings.addEventListener('click', () => modalAudioSettings.classList.add('hidden'));

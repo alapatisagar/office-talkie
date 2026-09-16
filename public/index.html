@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>OfficeTalk - Simple Voice & Walkie-Talkie</title>
+  <title>OfficeTalk - Direct Office Voice Call</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,14 +18,14 @@
       <div class="logo-icon">🎙️</div>
       <div class="logo-text">
         <span class="app-title">OfficeTalk</span>
-        <span class="app-tagline">Instant Office Voice Rooms</span>
+        <span class="app-tagline">Direct Office Voice Line</span>
       </div>
     </div>
 
     <div class="header-status">
       <div class="current-channel-pill" id="headerChannelBadge">
-        <span class="status-dot disconnected"></span>
-        <span id="headerChannelName">Not Connected</span>
+        <span class="status-dot connected"></span>
+        <span id="onlineCountBadge">0 Colleagues Online</span>
       </div>
     </div>
 
@@ -39,53 +39,21 @@
     </div>
   </header>
 
-  <!-- App Body -->
+  <!-- App Main Content -->
   <div class="app-body">
-    <!-- Left Sidebar: Channels -->
-    <aside class="sidebar-channels">
-      <div class="sidebar-header">
-        <h3>🏢 Voice Rooms</h3>
-        <button class="btn-small-add" id="btnOpenCreateChannel">+ Room</button>
-      </div>
-
-      <div class="channels-list" id="channelsList">
-        <!-- Rendered dynamically -->
-      </div>
-
-      <div class="hotkey-guide">
-        <div class="guide-title">⌨️ Hotkeys</div>
-        <div class="key-row"><kbd>Space</kbd> <span>Hold to Talk</span></div>
-        <div class="key-row"><kbd>M</kbd> <span>Mute</span></div>
-        <div class="key-row"><kbd>D</kbd> <span>Deafen</span></div>
-      </div>
-    </aside>
-
-    <!-- Center Stage: Voice Room -->
+    <!-- Center Stage: Live Voice Participants -->
     <main class="voice-stage">
-      <div class="room-banner" id="roomBanner">
-        <div class="room-info">
-          <span class="room-icon" id="roomIcon">📢</span>
-          <div>
-            <h2 id="roomTitle">Select a Room</h2>
-            <p id="roomDesc">Pick a room on the left to start talking with colleagues.</p>
-          </div>
-        </div>
-        <div class="room-meta">
-          <span class="member-count-badge" id="roomMemberCount">0 People</span>
-        </div>
-      </div>
-
       <!-- Live Participant Cards Grid -->
       <div class="participant-grid" id="participantGrid">
         <div class="empty-room-placeholder" id="emptyRoomPlaceholder">
           <div class="placeholder-icon">🎙️</div>
-          <h3>Join a Room to Talk</h3>
-          <p>Select any room from the list to connect immediately.</p>
+          <h3>Waiting for Colleagues</h3>
+          <p>Share this link with your team to start talking instantly.</p>
         </div>
       </div>
 
       <!-- Control Dock -->
-      <div class="control-dock disabled" id="controlDock">
+      <div class="control-dock" id="controlDock">
         <div class="vu-meter-container">
           <span class="vu-label">Mic Volume</span>
           <div class="vu-bar-wrapper">
@@ -120,24 +88,19 @@
               <span class="btn-icon" id="deafenIcon">🎧</span>
               <span class="btn-label" id="deafenLabel">Deafen</span>
             </button>
-            <button class="btn-action btn-leave" id="btnLeaveRoom">
-              <span class="btn-icon">🚪</span>
-              <span class="btn-label">Leave</span>
-            </button>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- Right Sidebar: Room Chat -->
+    <!-- Side Panel: Direct Text Chat -->
     <aside class="sidebar-chat">
       <div class="chat-header">
-        <h3>💬 Room Chat</h3>
-        <span class="chat-subtitle" id="chatChannelSubtitle">#general</span>
+        <h3>💬 Team Chat</h3>
       </div>
 
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-notice">Send quick messages or links to everyone in this room.</div>
+        <div class="chat-notice">Send quick messages or links to everyone on call.</div>
       </div>
 
       <form class="chat-input-form" id="chatForm">
@@ -147,39 +110,20 @@
     </aside>
   </div>
 
-  <!-- Ultra-Simple Setup Modal: Enter Name Only -->
+  <!-- Setup Modal: Enter Name Only -->
   <div class="modal-backdrop" id="modalSetup">
     <div class="modal-card">
       <div class="modal-header">
         <h2>👋 Join OfficeTalk</h2>
-        <p>Enter your name to start talking with colleagues</p>
+        <p>Enter your name to connect to the office voice line</p>
       </div>
       <form id="formSetup">
         <div class="form-group">
           <label for="setupName">Your Name</label>
-          <input type="text" id="setupName" placeholder="Enter your name (e.g. John)" required autofocus autocomplete="name">
+          <input type="text" id="setupName" placeholder="Enter your name..." required autofocus autocomplete="name">
         </div>
 
-        <button type="submit" class="btn-primary-block">Start Talking 🚀</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Create Room Modal -->
-  <div class="modal-backdrop hidden" id="modalCreateChannel">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>➕ Create Voice Room</h2>
-      </div>
-      <form id="formCreateChannel">
-        <div class="form-group">
-          <label for="newChannelName">Room Name</label>
-          <input type="text" id="newChannelName" placeholder="e.g. Lunch Room, Quick Sync" required>
-        </div>
-        <div class="modal-buttons">
-          <button type="button" class="btn-secondary" id="btnCloseCreateChannel">Cancel</button>
-          <button type="submit" class="btn-primary">Create</button>
-        </div>
+        <button type="submit" class="btn-primary-block">Connect & Talk 🚀</button>
       </form>
     </div>
   </div>
