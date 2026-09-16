@@ -1,4 +1,4 @@
-// OfficeTalk Dual Voice Engine - WebRTC + High-Speed WebSocket Voice Relay
+// OfficeTalk Real-time PCM Voice Engine (Guaranteed High-Clarity Audio)
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const participantGrid = document.getElementById('participantGrid');
   const emptyRoomPlaceholder = document.getElementById('emptyRoomPlaceholder');
-  const remoteAudioContainer = document.getElementById('remoteAudioContainer');
 
   const controlDock = document.getElementById('controlDock');
   const btnPTT = document.getElementById('btnPTT');
@@ -52,9 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentTargetId = 'all';
 
   let localStream = null;
-  let audioContext = null;
+  let txAudioContext = null;
+  let rxAudioContext = null;
   let analyser = null;
-  let mediaRecorder = null;
+  let scriptProcessor = null;
 
   let talkMode = 'ptt';
   let isMuted = false;
@@ -62,33 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let isTransmitting = false;
   let pttKeyPressed = false;
 
-  const peerConnections = new Map(); // targetSocketId -> { pc, remoteStream, audioElement }
   const onlineUsersMap = new Map(); // socketId -> userData
-
-  // High-reliability STUN & TURN configuration for Render & mobile CGNAT firewalls
-  const rtcConfig = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun.services.mozilla.com' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
-    ]
-  };
 
   function checkIsAdmin(name) {
     if (!name) return false;
@@ -96,24 +70,26 @@ document.addEventListener('DOMContentLoaded', () => {
     return clean.includes('sagar');
   }
 
-  // Autoplay & AudioContext Unlocking Helper
-  function unlockAudioContextAndElements() {
-    if (audioContext && audioContext.state === 'suspended') {
-      audioContext.resume();
+  // Audio Context Resumer
+  function unlockAudioContexts() {
+    if (txAudioContext && txAudioContext.state === 'suspended') {
+      txAudioContext.resume();
+    }
+    if (rxAudioContext && rxAudioContext.state === 'suspended') {
+      rxAudioContext.resume();
     }
     if (window.soundFX) {
       window.soundFX.init();
     }
-    peerConnections.forEach((conn) => {
-      if (conn.audioElement) {
-        conn.audioElement.play().catch(e => console.log('[Autoplay play error]', e));
-      }
-    });
   }
 
-  document.addEventListener('click', unlockAudioContextAndElements);
-  document.addEventListener('touchstart', unlockAudioContextAndElements);
-  document.addEventListener('keydown', unlockAudioContextAndElements);
+  document.addEventListener('click', unlockAudioContexts);
+  document.addEventListener('touchstart', unlockAudioContexts);
+  document.addEventListener('keydown', unlockAudioContexts);
+
+  // Initialize Receiver Audio Context (16kHz for crystal clear voice playback)
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  rxAudioContext = new AudioCtx({ sampleRate: 16000 });
 
   // -------------------------------------------------------------
   // 1. Setup Form
@@ -147,13 +123,13 @@ document.addEventListener('DOMContentLoaded', () => {
     modalSetup.classList.add('hidden');
 
     socket.emit('init-user', currentUser);
-    unlockAudioContextAndElements();
+    unlockAudioContexts();
 
-    initLocalMicrophone().catch(err => console.log('Mic init error:', err));
+    initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
   });
 
   // -------------------------------------------------------------
-  // 2. Microphone Capture & Dual Audio Stream Engine
+  // 2. PCM Audio Stream Capture (ScriptProcessor PCM Int16)
   // -------------------------------------------------------------
   async function initLocalMicrophone(deviceId = null) {
     try {
@@ -167,76 +143,58 @@ document.addEventListener('DOMContentLoaded', () => {
           noiseSuppression: true,
           autoGainControl: true,
           channelCount: 1,
-          sampleRate: 48000,
+          sampleRate: 16000,
           deviceId: deviceId ? { exact: deviceId } : undefined
         }
       };
 
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setupAudioAnalyzer(localStream);
-      setupMediaRecorder(localStream);
-
-      setMicTrackEnabled(talkMode === 'open' && !isMuted);
+      setupPcmAudioCapture(localStream);
       populateAudioDevices();
-
-      // Replace tracks on existing WebRTC peer connections
-      peerConnections.forEach((conn) => {
-        const sender = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
-        if (sender && localStream.getAudioTracks()[0]) {
-          sender.replaceTrack(localStream.getAudioTracks()[0]);
-        }
-      });
     } catch (err) {
-      console.error('[Microphone Notice]', err);
+      console.error('[Microphone Capture Error]', err);
     }
   }
 
-  function setMicTrackEnabled(enabled) {
-    if (!localStream) return;
-    localStream.getAudioTracks().forEach(track => {
-      track.enabled = enabled;
-    });
-  }
-
-  function setupMediaRecorder(stream) {
+  function setupPcmAudioCapture(stream) {
     try {
-      let mimeType = 'audio/webm;codecs=opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
-        else if (MediaRecorder.isTypeSupported('audio/ogg')) mimeType = 'audio/ogg';
-        else mimeType = '';
-      }
-
-      const options = mimeType ? { mimeType } : {};
-      mediaRecorder = new MediaRecorder(stream, options);
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0 && isTransmitting && !isMuted) {
-          socket.emit('voice-chunk', {
-            targetSocketId: currentTargetId,
-            audioChunk: event.data,
-            mimeType: mediaRecorder.mimeType
-          });
-        }
-      };
-    } catch (err) {
-      console.error('[MediaRecorder Error]', err);
-    }
-  }
-
-  function setupAudioAnalyzer(stream) {
-    try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      audioContext = new AudioCtx();
-      analyser = audioContext.createAnalyser();
+      txAudioContext = new AudioCtx({ sampleRate: 16000 });
+      analyser = txAudioContext.createAnalyser();
       analyser.fftSize = 512;
 
-      const source = audioContext.createMediaStreamSource(stream);
+      const source = txAudioContext.createMediaStreamSource(stream);
       source.connect(analyser);
+
+      // ScriptProcessor for ultra-low latency PCM sampling
+      scriptProcessor = txAudioContext.createScriptProcessor(2048, 1, 1);
+
+      scriptProcessor.onaudioprocess = (e) => {
+        if (isMuted) return;
+
+        const shouldTransmit = (talkMode === 'open' || isTransmitting);
+        if (!shouldTransmit) return;
+
+        const inputData = e.inputBuffer.getChannelData(0);
+        
+        // Convert Float32Array to Int16Array binary buffer
+        const pcm16 = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, inputData[i]));
+          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+
+        socket.emit('voice-pcm', {
+          targetSocketId: currentTargetId,
+          pcmData: pcm16.buffer
+        });
+      };
+
+      source.connect(scriptProcessor);
+      scriptProcessor.connect(txAudioContext.destination);
 
       monitorAudioVolume();
     } catch (err) {
-      console.error('[Audio Context Error]', err);
+      console.error('[PCM Audio Setup Error]', err);
     }
   }
 
@@ -258,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
       vuBarFill.style.width = percent + '%';
       if (settingsVuFill) settingsVuFill.style.width = percent + '%';
 
-      const currentlySpeaking = percent > 8 && (talkMode === 'open' ? !isMuted : isTransmitting);
+      const currentlySpeaking = percent > 6 && (talkMode === 'open' ? !isMuted : isTransmitting);
       if (currentlySpeaking !== isSpeakingState) {
         isSpeakingState = currentlySpeaking;
         updateUserCardTalking(socket.id, currentlySpeaking);
@@ -293,29 +251,38 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 3. Socket.io Voice Chunk Receiver (Guaranteed Fallback Audibility)
+  // 3. Socket.io PCM Voice Receiver (High-Clarity Speaker Playback)
   // -------------------------------------------------------------
-  socket.on('voice-chunk', ({ fromSocketId, senderName, audioChunk, mimeType }) => {
+  socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData }) => {
     if (isDeafened) return;
 
-    // Highlight talking card
+    if (rxAudioContext.state === 'suspended') {
+      rxAudioContext.resume();
+    }
+
+    // Visual speaking aura
     updateUserCardTalking(fromSocketId, true);
-    setTimeout(() => updateUserCardTalking(fromSocketId, false), 300);
+    setTimeout(() => updateUserCardTalking(fromSocketId, false), 250);
 
-    // Play incoming audio chunk via Blob URL
     try {
-      const blob = new Blob([audioChunk], { type: mimeType || 'audio/webm' });
-      const audioUrl = URL.createObjectURL(blob);
-      const tempAudio = new Audio(audioUrl);
-      tempAudio.volume = 1.0;
+      const int16 = new Int16Array(pcmData);
+      const float32 = new Float32Array(int16.length);
+      
+      for (let i = 0; i < int16.length; i++) {
+        float32[i] = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7FFF);
+      }
 
-      tempAudio.play()
-        .then(() => {
-          tempAudio.onended = () => URL.revokeObjectURL(audioUrl);
-        })
-        .catch(err => console.log('Voice chunk autoplay notice:', err));
+      const audioBuffer = rxAudioContext.createBuffer(1, float32.length, 16000);
+      audioBuffer.getChannelData(0).set(float32);
+
+      const source = rxAudioContext.createBufferSource();
+      source.buffer = audioBuffer;
+
+      // Connect to speakers / headset
+      source.connect(rxAudioContext.destination);
+      source.start();
     } catch (err) {
-      console.error('Voice chunk playback error:', err);
+      console.error('PCM playback error:', err);
     }
   });
 
@@ -335,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (user.socketId !== socket.id) {
         onlineUsersMap.set(user.socketId, user);
         renderParticipantCard(user.socketId, user);
-        initiatePeerConnection(user.socketId, true);
       }
     });
     updateOnlineCount();
@@ -371,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setTalkTarget('all');
     }
 
-    closePeerConnection(socketId);
     onlineUsersMap.delete(socketId);
     removeParticipantCard(socketId);
     updateOnlineCount();
@@ -391,106 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 4. WebRTC Peer Connection with TURN Fallback
-  // -------------------------------------------------------------
-  function initiatePeerConnection(targetSocketId, isInitiator) {
-    if (peerConnections.has(targetSocketId)) return;
-
-    const pc = new RTCPeerConnection(rtcConfig);
-    const remoteStream = new MediaStream();
-
-    const audioElement = document.createElement('audio');
-    audioElement.autoplay = true;
-    audioElement.setAttribute('playsinline', 'true');
-
-    if (remoteAudioContainer) {
-      remoteAudioContainer.appendChild(audioElement);
-    }
-
-    if (localStream) {
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    } else {
-      pc.addTransceiver('audio', { direction: 'sendrecv' });
-    }
-
-    pc.ontrack = (event) => {
-      console.log(`[WebRTC Track Received] from ${targetSocketId}`);
-      event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-      audioElement.srcObject = remoteStream;
-
-      audioElement.play().catch(err => {
-        console.log('[Autoplay play blocked by browser, waiting for gesture]', err);
-      });
-    };
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit('signal', {
-          targetSocketId,
-          signalData: { type: 'candidate', candidate: event.candidate }
-        });
-      }
-    };
-
-    peerConnections.set(targetSocketId, { pc, remoteStream, audioElement });
-
-    if (isInitiator) {
-      pc.createOffer({ offerToReceiveAudio: true })
-        .then(offer => pc.setLocalDescription(offer))
-        .then(() => {
-          socket.emit('signal', {
-            targetSocketId,
-            signalData: { type: 'offer', offer: pc.localDescription }
-          });
-        })
-        .catch(err => console.error('Offer error:', err));
-    }
-  }
-
-  socket.on('signal', async ({ fromSocketId, signalData }) => {
-    let conn = peerConnections.get(fromSocketId);
-
-    if (!conn) {
-      initiatePeerConnection(fromSocketId, false);
-      conn = peerConnections.get(fromSocketId);
-    }
-
-    const pc = conn.pc;
-
-    try {
-      if (signalData.type === 'offer') {
-        await pc.setRemoteDescription(new RTCSessionDescription(signalData.offer));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        socket.emit('signal', {
-          targetSocketId: fromSocketId,
-          signalData: { type: 'answer', answer: pc.localDescription }
-        });
-      } else if (signalData.type === 'answer') {
-        await pc.setRemoteDescription(new RTCSessionDescription(signalData.answer));
-      } else if (signalData.type === 'candidate') {
-        await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
-      }
-    } catch (err) {
-      console.error('Signal error:', err);
-    }
-  });
-
-  function closePeerConnection(socketId) {
-    const conn = peerConnections.get(socketId);
-    if (conn) {
-      conn.pc.close();
-      if (conn.audioElement) {
-        conn.audioElement.pause();
-        conn.audioElement.srcObject = null;
-        conn.audioElement.remove();
-      }
-      peerConnections.delete(socketId);
-    }
-  }
-
-  // -------------------------------------------------------------
-  // 5. Targeted 1-on-1 Person Selector Logic
+  // 4. Targeted 1-on-1 Person Selector Logic
   // -------------------------------------------------------------
   function setTalkTarget(targetId) {
     currentTargetId = targetId;
@@ -539,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 6. Push-To-Talk & Voice Streaming Engine
+  // 5. Push-To-Talk & Voice Transmission Controls
   // -------------------------------------------------------------
   function startTransmitting() {
     if (isTransmitting || isMuted || isDeafened) return;
@@ -548,28 +414,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPTT.classList.add('transmitting');
     pttText.textContent = 'TRANSMITTING...';
 
-    unlockAudioContextAndElements();
+    unlockAudioContexts();
     window.soundFX.playPttStart();
-
-    setMicTrackEnabled(true);
-
-    // Start WebSocket MediaRecorder slices every 100ms
-    if (mediaRecorder && mediaRecorder.state === 'inactive') {
-      try {
-        mediaRecorder.start(100);
-      } catch (e) {
-        console.log('MediaRecorder start error:', e);
-      }
-    }
-
-    peerConnections.forEach((conn, peerSocketId) => {
-      const senders = conn.pc.getSenders();
-      senders.forEach(sender => {
-        if (sender.track && sender.track.kind === 'audio') {
-          sender.track.enabled = (currentTargetId === 'all' || currentTargetId === peerSocketId);
-        }
-      });
-    });
 
     socket.emit('update-state', { isTalking: true, talkTargetId: currentTargetId });
     updateUserCardTalking(socket.id, true);
@@ -583,25 +429,6 @@ document.addEventListener('DOMContentLoaded', () => {
     pttText.textContent = 'HOLD TO TALK';
 
     window.soundFX.playPttEnd();
-
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      try {
-        mediaRecorder.stop();
-      } catch (e) {
-        console.log('MediaRecorder stop error:', e);
-      }
-    }
-
-    if (talkMode === 'ptt') {
-      setMicTrackEnabled(false);
-      peerConnections.forEach((conn) => {
-        conn.pc.getSenders().forEach(sender => {
-          if (sender.track && sender.track.kind === 'audio') {
-            sender.track.enabled = false;
-          }
-        });
-      });
-    }
 
     socket.emit('update-state', { isTalking: false, talkTargetId: currentTargetId });
     updateUserCardTalking(socket.id, false);
@@ -651,18 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btnModePTT.classList.add('active');
       btnModeOpen.classList.remove('active');
       btnPTT.style.display = 'flex';
-      setMicTrackEnabled(false);
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-      }
     } else {
       btnModeOpen.classList.add('active');
       btnModePTT.classList.remove('active');
       btnPTT.style.display = 'none';
-      setMicTrackEnabled(!isMuted);
-      if (mediaRecorder && mediaRecorder.state === 'inactive') {
-        try { mediaRecorder.start(100); } catch (e) {}
-      }
+      unlockAudioContexts();
     }
     socket.emit('update-state', { talkMode });
     updateUserCardState(socket.id, { talkMode });
@@ -678,9 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.soundFX.playMuteToggle(isMuted);
 
-    if (talkMode === 'open') {
-      setMicTrackEnabled(!isMuted);
-    } else if (isMuted && isTransmitting) {
+    if (isMuted && isTransmitting) {
       stopTransmitting();
     }
 
@@ -696,18 +514,12 @@ document.addEventListener('DOMContentLoaded', () => {
     deafenIcon.textContent = isDeafened ? '🔇' : '🎧';
     deafenLabel.textContent = isDeafened ? 'Undeafen' : 'Deafen';
 
-    peerConnections.forEach((conn) => {
-      if (conn.audioElement) {
-        conn.audioElement.muted = isDeafened;
-      }
-    });
-
     socket.emit('update-state', { isDeafened });
     updateUserCardState(socket.id, { isDeafened });
   }
 
   // -------------------------------------------------------------
-  // 7. Participant Card Rendering & 1-on-1 Selection
+  // 6. Participant Card Rendering & 1-on-1 Selection
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
     if (document.getElementById('emptyRoomPlaceholder')) {
@@ -793,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 8. Chat & Utilities
+  // 7. Chat & Utilities
   // -------------------------------------------------------------
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();

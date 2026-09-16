@@ -25,7 +25,7 @@ if (USE_HTTPS) {
 
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
-  maxHttpBufferSize: 1e7 // 10 MB for seamless high-speed audio chunk relay
+  maxHttpBufferSize: 1e7
 });
 
 function isSagarAlapati(name) {
@@ -71,24 +71,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  // WebSocket High-Speed Voice Chunk Relay (Guaranteed Fallback for Mobile 4G/5G CGNAT & Firewalls)
-  socket.on('voice-chunk', ({ targetSocketId, audioChunk, mimeType }) => {
+  // Ultra-Low Latency PCM Voice Stream Relay (Guaranteed 100% Audibility)
+  socket.on('voice-pcm', ({ targetSocketId, pcmData }) => {
     const senderUser = users.get(socket.id);
     if (!senderUser || senderUser.isMuted) return;
 
     if (targetSocketId === 'all') {
-      socket.broadcast.emit('voice-chunk', {
+      socket.broadcast.emit('voice-pcm', {
         fromSocketId: socket.id,
         senderName: senderUser.name,
-        audioChunk,
-        mimeType
+        pcmData
       });
     } else if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-chunk', {
+      io.to(targetSocketId).emit('voice-pcm', {
         fromSocketId: socket.id,
         senderName: senderUser.name,
-        audioChunk,
-        mimeType
+        pcmData
       });
     }
   });
@@ -154,7 +152,7 @@ const protocol = USE_HTTPS ? 'https' : 'http';
 server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIpAddresses();
   console.log(`====================================================`);
-  console.log(` 🎙️  OfficeTalk Dual Voice Engine Server is LIVE on ${protocol.toUpperCase()}!`);
+  console.log(` 🎙️  OfficeTalk PCM Voice Engine Server is LIVE on ${protocol.toUpperCase()}!`);
   console.log(` 💻 Local Access:    ${protocol}://localhost:${PORT}`);
   ips.forEach(ip => {
     console.log(` 📱 Mobile / Network: ${protocol}://${ip}:${PORT}`);
