@@ -70,19 +70,20 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
-  function isSagarAlapati(name) {
+  // Case-insensitive Admin check for Sagar Alapati
+  function checkIsAdmin(name) {
     if (!name) return false;
-    const clean = name.trim().toLowerCase().replace(/\s+/g, ' ');
-    return clean === 'sagar alapati' || (clean.includes('sagar') && clean.includes('alapati'));
+    const clean = name.trim().toLowerCase();
+    return clean.includes('sagar');
   }
 
   // -------------------------------------------------------------
-  // 1. Setup Form (Case-Insensitive Admin Check)
+  // 1. Setup Form (Name Only & Case-Insensitive Admin Check)
   // -------------------------------------------------------------
   formSetup.addEventListener('submit', async (e) => {
     e.preventDefault();
     const rawName = (setupName.value || 'Colleague').trim();
-    const isAdmin = isSagarAlapati(rawName);
+    const isAdmin = checkIsAdmin(rawName);
 
     const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
     const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
@@ -100,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isAdmin) {
       headerAdminTag.classList.remove('hidden');
+    } else {
+      headerAdminTag.classList.add('hidden');
     }
 
     socket.emit('init-user', currentUser);
@@ -247,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appendChatMessage({
       senderName: 'System',
       senderColor: '#3b82f6',
-      text: `${user.name} ${user.isAdmin ? '👑' : ''} connected.`,
+      text: `${user.name} ${user.isAdmin ? '👑 (Admin)' : ''} connected.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
   });
@@ -409,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sId !== socket.id) {
         const opt = document.createElement('option');
         opt.value = sId;
-        opt.textContent = `👤 ${user.name} ${user.isAdmin ? '👑' : ''} (1-on-1)`;
+        opt.textContent = `👤 ${user.name} ${user.isAdmin ? '👑 (Admin)' : ''} (1-on-1)`;
         selectTalkTarget.appendChild(opt);
       }
     });
@@ -664,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bubble.innerHTML = `
       <div class="chat-sender-row">
         <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">
-          ${msg.senderName} ${msg.isAdmin ? '👑' : ''}
+          ${msg.senderName} ${msg.isAdmin ? '👑 (Admin)' : ''}
         </span>
         <span class="chat-time">${msg.timestamp}</span>
       </div>
@@ -677,7 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, 
-      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      tag => ({ '&': '&amp;', '<': '&lt;'>: '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
 
