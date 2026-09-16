@@ -1,4 +1,4 @@
-// OfficeTalk Client Logic - Case-Insensitive Admin & 1-on-1 Person Calling
+// OfficeTalk Client Logic - Instant Entry & Non-blocking Mic Setup
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
-  // Case-insensitive Admin check for Sagar Alapati
   function checkIsAdmin(name) {
     if (!name) return false;
     const clean = name.trim().toLowerCase();
@@ -78,9 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 1. Setup Form (Name Only & Case-Insensitive Admin Check)
+  // 1. Setup Form (Instant Hide & Non-Blocking Entry)
   // -------------------------------------------------------------
-  formSetup.addEventListener('submit', async (e) => {
+  formSetup.addEventListener('submit', (e) => {
     e.preventDefault();
     const rawName = (setupName.value || 'Colleague').trim();
     const isAdmin = checkIsAdmin(rawName);
@@ -105,10 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
       headerAdminTag.classList.add('hidden');
     }
 
-    socket.emit('init-user', currentUser);
+    // 1. Instantly hide modal synchronously so user enters site IMMEDIATELY!
+    modalSetup.style.display = 'none';
     modalSetup.classList.add('hidden');
 
-    await initLocalMicrophone();
+    // 2. Emit user init to socket
+    socket.emit('init-user', currentUser);
+
+    // 3. Request mic in background (non-blocking)
+    initLocalMicrophone().catch(err => console.log('Mic init error:', err));
   });
 
   // -------------------------------------------------------------
@@ -135,8 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setMicTrackEnabled(talkMode === 'open' && !isMuted);
       populateAudioDevices();
     } catch (err) {
-      console.error('[Microphone Error]', err);
-      alert('Microphone permission is required for voice calls.');
+      console.error('[Microphone Notice]', err);
     }
   }
 
@@ -680,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, 
-      tag => ({ '&': '&amp;', '<': '&lt;'>: '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
 
