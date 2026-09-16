@@ -27,10 +27,16 @@ const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
+function isSagarAlapati(name) {
+  if (!name) return false;
+  const clean = name.trim().toLowerCase().replace(/\s+/g, ' ');
+  return clean === 'sagar alapati' || (clean.includes('sagar') && clean.includes('alapati'));
+}
+
 io.on('connection', (socket) => {
   socket.on('init-user', (userData) => {
     const rawName = (userData.name || 'Colleague').trim();
-    const isAdmin = rawName.toLowerCase() === 'sagar alapati';
+    const isAdmin = isSagarAlapati(rawName);
 
     const newUser = {
       socketId: socket.id,

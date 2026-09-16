@@ -1,4 +1,4 @@
-// OfficeTalk Client Logic - 1-on-1 & Admin Crown Support
+// OfficeTalk Client Logic - Case-Insensitive Admin & 1-on-1 Person Calling
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -48,20 +48,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Application State
   const socket = io();
   let currentUser = null;
-  let currentTargetId = 'all'; // 'all' or target socketId
+  let currentTargetId = 'all';
 
   let localStream = null;
   let audioContext = null;
   let analyser = null;
 
-  let talkMode = 'ptt'; // 'ptt' or 'open'
+  let talkMode = 'ptt';
   let isMuted = false;
   let isDeafened = false;
   let isTransmitting = false;
   let pttKeyPressed = false;
 
-  const peerConnections = new Map(); // targetSocketId -> { pc, remoteStream, audioElement }
-  const onlineUsersMap = new Map(); // socketId -> userData
+  const peerConnections = new Map();
+  const onlineUsersMap = new Map();
 
   const rtcConfig = {
     iceServers: [
@@ -70,13 +70,19 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
+  function isSagarAlapati(name) {
+    if (!name) return false;
+    const clean = name.trim().toLowerCase().replace(/\s+/g, ' ');
+    return clean === 'sagar alapati' || (clean.includes('sagar') && clean.includes('alapati'));
+  }
+
   // -------------------------------------------------------------
-  // 1. Setup Form (Name Only & Sagar Alapati Admin Check)
+  // 1. Setup Form (Case-Insensitive Admin Check)
   // -------------------------------------------------------------
   formSetup.addEventListener('submit', async (e) => {
     e.preventDefault();
     const rawName = (setupName.value || 'Colleague').trim();
-    const isAdmin = rawName.toLowerCase() === 'sagar alapati';
+    const isAdmin = isSagarAlapati(rawName);
 
     const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
     const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
@@ -207,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 3. Socket.io Signaling & Online User Updates
+  // 3. Socket.io Events & Online Users
   // -------------------------------------------------------------
   socket.on('user-initialized', (selfData) => {
     window.soundFX.playJoinChime();
@@ -383,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
       targetHint.textContent = `Talking ONLY with ${targetName}`;
     }
 
-    // Highlight selected target card in grid
     document.querySelectorAll('.participant-card').forEach(card => {
       card.classList.remove('selected-target');
     });
@@ -417,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 6. PTT & Open Call Controls with Target Routing
+  // 6. PTT & Open Call Controls
   // -------------------------------------------------------------
   function startTransmitting() {
     if (isTransmitting || isMuted || isDeafened) return;
@@ -428,7 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.soundFX.playPttStart();
 
-    // Mute/unmute peer connections according to targeted recipient
     peerConnections.forEach((conn, peerSocketId) => {
       const sendTrack = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
       if (sendTrack) {
@@ -556,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 7. Participant Card UI & Direct 1-on-1 Selection
+  // 7. Participant Card Rendering & 1-on-1 Selection
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
     if (document.getElementById('emptyRoomPlaceholder')) {
