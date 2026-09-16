@@ -109,6 +109,39 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Admin Remote Mute Individual User
+  socket.on('admin-mute-user', ({ targetSocketId, muteState }) => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    const targetUser = users.get(targetSocketId);
+    if (targetUser) {
+      targetUser.isMuted = muteState;
+      io.to(targetSocketId).emit('forced-mute-state', { isMuted: muteState });
+      io.emit('user-state-changed', {
+        socketId: targetSocketId,
+        state: { isMuted: muteState }
+      });
+    }
+  });
+
+  // Admin Remote Mute / Unmute All
+  socket.on('admin-mute-all', ({ muteState }) => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    users.forEach((u, sId) => {
+      if (sId !== socket.id) {
+        u.isMuted = muteState;
+        io.to(sId).emit('forced-mute-state', { isMuted: muteState });
+        io.emit('user-state-changed', {
+          socketId: sId,
+          state: { isMuted: muteState }
+        });
+      }
+    });
+  });
+
   socket.on('send-message', ({ text }) => {
     const user = users.get(socket.id);
     if (!user) return;

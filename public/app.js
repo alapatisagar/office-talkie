@@ -45,6 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsVuFill = document.getElementById('settingsVuFill');
   const btnToggleSoundFX = document.getElementById('btnToggleSoundFX');
 
+  // Admin Control Panel Elements
+  const adminControlPanel = document.getElementById('adminControlPanel');
+  const btnAdminBroadcast = document.getElementById('btnAdminBroadcast');
+  const btnAdminMuteAll = document.getElementById('btnAdminMuteAll');
+  const btnAdminUnmuteAll = document.getElementById('btnAdminUnmuteAll');
+
   // Application State
   const socket = io();
   let currentUser = null;
@@ -287,6 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.on('user-initialized', (selfData) => {
     window.soundFX.playJoinChime();
+    currentUser = selfData;
+
+    if (selfData.isAdmin) {
+      if (adminControlPanel) adminControlPanel.classList.remove('hidden');
+    }
 
     onlineUsersMap.clear();
     participantGrid.innerHTML = '';
@@ -294,6 +305,41 @@ document.addEventListener('DOMContentLoaded', () => {
     onlineUsersMap.set(socket.id, selfData);
     renderParticipantCard(socket.id, selfData);
   });
+
+  socket.on('forced-mute-state', ({ isMuted: newMuteState }) => {
+    isMuted = newMuteState;
+    btnToggleMute.classList.toggle('active-muted', isMuted);
+    muteIcon.textContent = isMuted ? '🔇' : '🎙️';
+    muteLabel.textContent = isMuted ? 'Unmute' : 'Mute';
+
+    if (isMuted && isTransmitting) {
+      stopTransmitting();
+    }
+
+    if (window.soundFX) {
+      window.soundFX.playMuteToggle(isMuted);
+    }
+  });
+
+  if (btnAdminBroadcast) {
+    btnAdminBroadcast.addEventListener('click', () => {
+      selectedTargetIds.clear();
+      selectedTargetIds.add('all');
+      updateTargetUI();
+    });
+  }
+
+  if (btnAdminMuteAll) {
+    btnAdminMuteAll.addEventListener('click', () => {
+      socket.emit('admin-mute-all', { muteState: true });
+    });
+  }
+
+  if (btnAdminUnmuteAll) {
+    btnAdminUnmuteAll.addEventListener('click', () => {
+      socket.emit('admin-mute-all', { muteState: false });
+    });
+  }
 
   socket.on('online-users', (users) => {
     users.forEach(user => {
@@ -542,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isSelf = socketId === socket.id;
     const isSelected = selectedTargetIds.has(socketId);
+    const amIAdmin = currentUser && currentUser.isAdmin;
 
     const card = document.createElement('div');
     card.className = `participant-card ${isSelected ? 'selected-target' : ''}`;
@@ -560,10 +607,37 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
         <span class="badge-tag muted ${user.isMuted ? '' : 'hidden'}">MUTED</span>
       </div>
-      ${!isSelf ? `<button class="btn-select-talk">${isSelected ? '✓ Selected' : '+ Select to Talk'}</button>` : ''}
+      ${!isSelf ? `
+        <div class="card-actions-wrapper">
+          <button class="btn-select-talk">${isSelected ? '✓ Selected' : '+ Select to Talk'}</button>
+          ${amIAdmin ? `
+            <button class="btn-admin-mute-user ${user.isMuted ? 'unmute' : ''}">
+              ${user.isMuted ? '🔊 Remote Unmute' : '🔇 Remote Mute'}
+            </button>
+          ` : ''}
+        </div>
+      ` : ''}
     `;
 
     if (!isSelf) {
+      const btnSelect = card.querySelector('.btn-select-talk');
+      if (btnSelect) {
+        btnSelect.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleTargetPerson(socketId);
+        });
+      }
+
+      const btnAdminMute = card.querySelector('.btn-admin-mute-user');
+      if (btnAdminMute) {
+        btnAdminMute.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetUser = onlineUsersMap.get(socketId);
+          const nextMute = targetUser ? !targetUser.isMuted : true;
+          socket.emit('admin-mute-user', { targetSocketId: socketId, muteState: nextMute });
+        });
+      }
+
       card.addEventListener('click', () => {
         toggleTargetPerson(socketId);
       });
@@ -597,6 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (mutedTag) {
         if (state.isMuted) mutedTag.classList.remove('hidden');
         else mutedTag.classList.add('hidden');
+      }
+
+      const adminMuteBtn = card.querySelector('.btn-admin-mute-user');
+      if (adminMuteBtn) {
+        adminMuteBtn.className = `btn-admin-mute-user ${state.isMuted ? 'unmute' : ''}`;
+        adminMuteBtn.textContent = state.isMuted ? '🔊 Remote Unmute' : '🔇 Remote Mute';
       }
     }
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>OfficeTalk - Multi-Target Voice Call</title>
+  <title>OfficeTalk - Admin Conference & Direct Voice Line</title>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -20,7 +20,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -31,7 +31,7 @@
       <div class="logo-icon">🎙️</div>
       <div class="logo-text">
         <span class="app-title">OfficeTalk</span>
-        <span class="app-tagline">Multi-User & Direct Voice Line</span>
+        <span class="app-tagline">Admin Conference & Direct Line</span>
       </div>
     </div>
 
@@ -57,6 +57,18 @@
   <div class="app-body">
     <!-- Main Center Stage -->
     <main class="voice-stage">
+      <!-- Admin Special Controls Bar (Visible to Sagar Alapati) -->
+      <div class="admin-control-panel hidden" id="adminControlPanel">
+        <div class="admin-panel-header">
+          <span class="admin-panel-title">👑 Admin Control Panel</span>
+        </div>
+        <div class="admin-panel-actions">
+          <button class="btn-admin-action" id="btnAdminBroadcast">📢 Conference Broadcast to All</button>
+          <button class="btn-admin-action btn-admin-danger" id="btnAdminMuteAll">🔇 Mute All Mics</button>
+          <button class="btn-admin-action" id="btnAdminUnmuteAll">🔊 Unmute All Mics</button>
+        </div>
+      </div>
+
       <!-- Multi-Target Recipient Selection Bar -->
       <div class="target-select-bar">
         <div class="target-left">
@@ -64,7 +76,7 @@
           <button class="btn-target-all active" id="btnTargetEveryone">🌐 Everyone (Broadcast)</button>
           <span class="target-summary-badge" id="targetSummaryBadge">All Online Colleagues</span>
         </div>
-        <span class="target-hint">Click cards below to multi-select colleagues to talk with!</span>
+        <span class="target-hint">Click cards below to select who you talk with!</span>
       </div>
 
       <!-- Live Participant Grid -->
@@ -177,7 +189,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="audio-fx.js?v=7"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
