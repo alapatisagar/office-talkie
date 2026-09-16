@@ -209,6 +209,20 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Auto-login notice:', e);
   }
 
+  // Socket Reconnection Handler
+  socket.on('connect', () => {
+    try {
+      const savedName = localStorage.getItem('officetalk_user_name');
+      if (currentUser) {
+        socket.emit('init-user', currentUser);
+      } else if (savedName && savedName.trim()) {
+        performUserConnect(savedName.trim());
+      }
+    } catch (e) {
+      console.warn('Socket connect sync notice:', e);
+    }
+  });
+
   // -------------------------------------------------------------
   // 2. PCM Audio Capture (ScriptProcessor PCM Int16)
   // -------------------------------------------------------------

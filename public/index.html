@@ -20,7 +20,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -162,6 +162,16 @@
   </div>
 
   <!-- Setup Modal: Name Only -->
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('officetalk_user_name');
+        if (saved && saved.trim()) {
+          document.write('<style>#modalSetup { display: none !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden !important; }</style>');
+        }
+      } catch(e) {}
+    })();
+  </script>
   <div class="modal-backdrop" id="modalSetup">
     <div class="modal-card">
       <div class="modal-header">
@@ -204,7 +214,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=14"></script>
-  <script src="app.js?v=14"></script>
+  <script src="audio-fx.js?v=15"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
