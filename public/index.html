@@ -6,8 +6,22 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>OfficeTalk - Direct Voice Line</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <script>
+    // Force unregister stale PWA service workers and clear browser cache
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) caches.delete(name);
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="style.css?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -120,7 +134,7 @@
     </aside>
   </div>
 
-  <!-- Clean Setup Modal: Enter Name Only -->
+  <!-- Setup Modal: Name Only -->
   <div class="modal-backdrop" id="modalSetup">
     <div class="modal-card">
       <div class="modal-header">
@@ -163,7 +177,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js"></script>
-  <script src="app.js"></script>
+  <script src="audio-fx.js?v=2"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
