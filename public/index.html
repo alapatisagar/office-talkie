@@ -20,7 +20,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -184,7 +184,7 @@
           <input type="text" id="setupName" placeholder="Enter your name (e.g. Sagar Alapati)" required autofocus autocomplete="name">
         </div>
 
-        <button type="submit" class="btn-primary-block" id="btnSubmitSetup">Connect & Talk 🚀</button>
+        <button type="submit" class="btn-primary-block" id="btnSubmitSetup" onclick="var m = document.getElementById('modalSetup'); if (m) { m.style.display='none'; m.remove(); }">Connect & Talk 🚀</button>
       </form>
     </div>
   </div>
@@ -214,7 +214,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="audio-fx.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

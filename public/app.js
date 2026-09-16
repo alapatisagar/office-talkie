@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modal) {
         modal.style.display = 'none';
         modal.classList.add('hidden');
+        try { modal.remove(); } catch(e) {}
       }
 
       socket.emit('init-user', currentUser);
@@ -176,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (modal) {
         modal.style.display = 'none';
         modal.classList.add('hidden');
+        try { modal.remove(); } catch(e) {}
       }
     }
   }
