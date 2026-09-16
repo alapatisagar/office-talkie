@@ -24,13 +24,14 @@ if (USE_HTTPS) {
 }
 
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  maxHttpBufferSize: 1e7 // 10 MB for seamless high-speed audio chunk relay
 });
 
 function isSagarAlapati(name) {
   if (!name) return false;
-  const clean = name.trim().toLowerCase().replace(/\s+/g, ' ');
-  return clean === 'sagar alapati' || (clean.includes('sagar') && clean.includes('alapati'));
+  const clean = name.trim().toLowerCase();
+  return clean.includes('sagar');
 }
 
 io.on('connection', (socket) => {
@@ -47,7 +48,7 @@ io.on('connection', (socket) => {
       isMuted: false,
       isDeafened: false,
       isTalking: false,
-      talkTargetId: 'all', // 'all' or specific socketId
+      talkTargetId: 'all',
       talkMode: userData.talkMode || 'ptt'
     };
 
@@ -58,6 +59,7 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('user-joined', newUser);
   });
 
+  // WebRTC Signaling Relay
   socket.on('signal', ({ targetSocketId, signalData }) => {
     const senderUser = users.get(socket.id);
     if (targetSocketId && senderUser) {
@@ -65,6 +67,28 @@ io.on('connection', (socket) => {
         fromSocketId: socket.id,
         senderUser,
         signalData
+      });
+    }
+  });
+
+  // WebSocket High-Speed Voice Chunk Relay (Guaranteed Fallback for Mobile 4G/5G CGNAT & Firewalls)
+  socket.on('voice-chunk', ({ targetSocketId, audioChunk, mimeType }) => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || senderUser.isMuted) return;
+
+    if (targetSocketId === 'all') {
+      socket.broadcast.emit('voice-chunk', {
+        fromSocketId: socket.id,
+        senderName: senderUser.name,
+        audioChunk,
+        mimeType
+      });
+    } else if (targetSocketId) {
+      io.to(targetSocketId).emit('voice-chunk', {
+        fromSocketId: socket.id,
+        senderName: senderUser.name,
+        audioChunk,
+        mimeType
       });
     }
   });
@@ -130,7 +154,7 @@ const protocol = USE_HTTPS ? 'https' : 'http';
 server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIpAddresses();
   console.log(`====================================================`);
-  console.log(` 🎙️  OfficeTalk Direct Line Server is LIVE on ${protocol.toUpperCase()}!`);
+  console.log(` 🎙️  OfficeTalk Dual Voice Engine Server is LIVE on ${protocol.toUpperCase()}!`);
   console.log(` 💻 Local Access:    ${protocol}://localhost:${PORT}`);
   ips.forEach(ip => {
     console.log(` 📱 Mobile / Network: ${protocol}://${ip}:${PORT}`);
