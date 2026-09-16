@@ -136,11 +136,26 @@
       </div>
 
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-notice">Send quick text messages or links to colleagues.</div>
+        <div class="chat-notice">Send quick text messages, emojis & Telugu meme stickers!</div>
+      </div>
+
+      <!-- Emoji & Telugu Meme Sticker Picker Popup -->
+      <div class="emoji-picker-panel hidden" id="emojiPickerPanel">
+        <div class="picker-tabs">
+          <button type="button" class="picker-tab active" id="tabEmojis">😃 Emojis</button>
+          <button type="button" class="picker-tab" id="tabStickers">🎭 Telugu Memes</button>
+        </div>
+        <div class="picker-content" id="pickerContentEmojis">
+          <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+        <div class="picker-content hidden" id="pickerContentStickers">
+          <div class="sticker-grid" id="stickerGrid"></div>
+        </div>
       </div>
 
       <form class="chat-input-form" id="chatForm">
-        <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+        <button type="button" class="btn-emoji-toggle" id="btnEmojiPicker" title="Emojis & Telugu Meme Stickers">😊</button>
+        <input type="text" id="chatInput" placeholder="Type a message or send stickers..." autocomplete="off">
         <button type="submit" id="btnSendChat">Send</button>
       </form>
     </aside>

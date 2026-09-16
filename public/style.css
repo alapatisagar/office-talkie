@@ -813,3 +813,184 @@ body.dark-theme {
   .admin-control-panel { flex-direction: column; gap: 10px; align-items: stretch; }
   .target-select-bar { flex-direction: column; align-items: stretch; gap: 8px; }
 }
+
+/* -------------------------------------------------------------
+   Emoji & Telugu Meme Sticker Picker Panel
+   ------------------------------------------------------------- */
+.sidebar-chat {
+  position: relative;
+}
+
+.emoji-picker-panel {
+  position: absolute;
+  bottom: 64px;
+  left: 12px;
+  right: 12px;
+  max-height: 320px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-gold);
+  border-radius: 16px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.picker-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.picker-tab {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.picker-tab.active {
+  color: var(--accent-gold);
+  border-bottom: 2px solid var(--accent-gold);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.picker-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.emoji-item {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  user-select: none;
+}
+
+.emoji-item:hover {
+  background: var(--bg-hover);
+  transform: scale(1.25);
+}
+
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.sticker-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sticker-card:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(59, 130, 246, 0.2));
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.sticker-emoji {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.sticker-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.sticker-dialogue {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.btn-emoji-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  font-size: 18px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-emoji-toggle:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-gold);
+}
+
+/* Chat Meme Sticker Card inside Chat Stream */
+.chat-sticker-bubble {
+  margin-top: 6px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(30, 41, 59, 0.9));
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.chat-sticker-icon {
+  font-size: 34px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.chat-sticker-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-sticker-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+}
+
+.chat-sticker-dialogue {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.2px;
+}

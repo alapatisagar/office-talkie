@@ -695,8 +695,111 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 7. Chat & Utilities
+  // 7. Chat & Emoji/Telugu Meme Stickers Engine
   // -------------------------------------------------------------
+  const btnEmojiPicker = document.getElementById('btnEmojiPicker');
+  const emojiPickerPanel = document.getElementById('emojiPickerPanel');
+  const tabEmojis = document.getElementById('tabEmojis');
+  const tabStickers = document.getElementById('tabStickers');
+  const pickerContentEmojis = document.getElementById('pickerContentEmojis');
+  const pickerContentStickers = document.getElementById('pickerContentStickers');
+  const emojiGrid = document.getElementById('emojiGrid');
+  const stickerGrid = document.getElementById('stickerGrid');
+
+  const EMOJI_LIST = [
+    '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','🤪',
+    '😜','🤑','😎','🤩','🥳','🤯','😱','🤬','🤡','👻','💩','🔥','⭐','✨','💥','🎉',
+    '🎊','💯','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','👍','👎','👏','🙌','🤝',
+    '👊','✊','🤞','✌️','🤟','🤘','👌','👈','👉','👆','👇','🖐️','🤙','💪','🙏','🎙️',
+    '🎧','🔊','📱','💻','☕','🍺','🍿'
+  ];
+
+  const TELUGU_MEME_STICKERS = [
+    { id: 'brahmi-adhyaksha', emoji: '👑', tag: 'Brahmanandam', dialogue: 'Adhyaksha!' },
+    { id: 'brahmi-enti-comedy', emoji: '😂', tag: 'Brahmanandam', dialogue: 'Enti Comedy-a?' },
+    { id: 'brahmi-mind-block', emoji: '🤯', tag: 'Brahmanandam', dialogue: 'Mind Blocked!' },
+    { id: 'brahmi-aaha', emoji: '😋', tag: 'Brahmanandam', dialogue: 'Aahaa.. Enna Combo Sir!' },
+    { id: 'brahmi-shocked', emoji: '😱', tag: 'Brahmanandam', dialogue: 'Abbo.. Ye Reethi Ga!' },
+    { id: 'tillu-atla-untadhi', emoji: '🕺', tag: 'DJ Tillu', dialogue: 'Atla Untadhi Manathoni!' },
+    { id: 'pushpa-thaggedhele', emoji: '🔥', tag: 'Pushpa', dialogue: 'Thaggedhe Le!' },
+    { id: 'venky-train', emoji: '😎', tag: 'Venky', dialogue: 'Train-lo Seet-lu Khali Ena?' },
+    { id: 'ali-jalsa', emoji: '🤣', tag: 'Ali', dialogue: 'Jalsa Time.. Full Chill!' },
+    { id: 'ms-full-bottle', emoji: '🍺', tag: 'MS Narayana', dialogue: 'Full Bottle Experience!' },
+    { id: 'sunil-rey-rey', emoji: '🍿', tag: 'Sunil', dialogue: 'Rey Rey Agandi Ra!' },
+    { id: 'relangi-manchivadu', emoji: '👏', tag: 'Relangi Mavayya', dialogue: 'Manishi Manchivadu!' },
+    { id: 'balayya-trouble', emoji: '💥', tag: 'Balayya', dialogue: "Don't Trouble The Trouble!" },
+    { id: 'rgv-logic', emoji: '🧐', tag: 'RGV', dialogue: 'Logic Undha Inthaki?' },
+    { id: 'brahmi-escape', emoji: '🤐', tag: 'Brahmanandam', dialogue: 'Silently Escaped..' },
+    { id: 'brahmi-karma', emoji: '🤦‍♂️', tag: 'Brahmanandam', dialogue: 'Karma Ra Babu!' },
+    { id: 'prabhas-chhatrapati', emoji: '💪', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!' },
+    { id: 'brahmi-sensational', emoji: '😉', tag: 'Brahmanandam', dialogue: 'Sensational Entry!' }
+  ];
+
+  function initEmojiAndStickerPicker() {
+    if (!emojiGrid || !stickerGrid) return;
+
+    // Populate Emojis
+    emojiGrid.innerHTML = '';
+    EMOJI_LIST.forEach(emoji => {
+      const item = document.createElement('div');
+      item.className = 'emoji-item';
+      item.textContent = emoji;
+      item.addEventListener('click', () => {
+        chatInput.value += emoji;
+        chatInput.focus();
+      });
+      emojiGrid.appendChild(item);
+    });
+
+    // Populate Stickers
+    stickerGrid.innerHTML = '';
+    TELUGU_MEME_STICKERS.forEach(sticker => {
+      const card = document.createElement('div');
+      card.className = 'sticker-card';
+      card.innerHTML = `
+        <div class="sticker-emoji">${sticker.emoji}</div>
+        <div class="sticker-tag">${sticker.tag}</div>
+        <div class="sticker-dialogue">"${sticker.dialogue}"</div>
+      `;
+      card.addEventListener('click', () => {
+        socket.emit('send-message', { text: '', sticker });
+        if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
+      });
+      stickerGrid.appendChild(card);
+    });
+  }
+
+  initEmojiAndStickerPicker();
+
+  if (btnEmojiPicker) {
+    btnEmojiPicker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (emojiPickerPanel) emojiPickerPanel.classList.toggle('hidden');
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker) {
+      emojiPickerPanel.classList.add('hidden');
+    }
+  });
+
+  if (tabEmojis && tabStickers) {
+    tabEmojis.addEventListener('click', () => {
+      tabEmojis.classList.add('active');
+      tabStickers.classList.remove('active');
+      pickerContentEmojis.classList.remove('hidden');
+      pickerContentStickers.classList.add('hidden');
+    });
+
+    tabStickers.addEventListener('click', () => {
+      tabStickers.classList.add('active');
+      tabEmojis.classList.remove('active');
+      pickerContentStickers.classList.remove('hidden');
+      pickerContentEmojis.classList.add('hidden');
+    });
+  }
+
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
@@ -710,6 +813,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
 
+    let contentHtml = '';
+    if (msg.sticker) {
+      contentHtml = `
+        <div class="chat-sticker-bubble">
+          <div class="chat-sticker-icon">${msg.sticker.emoji}</div>
+          <div class="chat-sticker-body">
+            <span class="chat-sticker-name">🎭 ${msg.sticker.tag}</span>
+            <span class="chat-sticker-dialogue">"${msg.sticker.dialogue}"</span>
+          </div>
+        </div>
+      `;
+    } else {
+      contentHtml = `<div class="chat-text">${escapeHTML(msg.text)}</div>`;
+    }
+
     bubble.innerHTML = `
       <div class="chat-sender-row">
         <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">
@@ -717,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </span>
         <span class="chat-time">${msg.timestamp}</span>
       </div>
-      <div class="chat-text">${escapeHTML(msg.text)}</div>
+      ${contentHtml}
     `;
 
     chatMessages.appendChild(bubble);

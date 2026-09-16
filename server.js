@@ -142,7 +142,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('send-message', ({ text }) => {
+  socket.on('send-message', ({ text, sticker }) => {
     const user = users.get(socket.id);
     if (!user) return;
 
@@ -152,7 +152,8 @@ io.on('connection', (socket) => {
       senderName: user.name,
       senderColor: user.color,
       isAdmin: user.isAdmin,
-      text: text.trim(),
+      text: text ? text.trim() : '',
+      sticker: sticker || null,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
