@@ -1,4 +1,4 @@
-/* OfficeTalk Styling - Direct 1-on-1 & Admin Crown */
+/* OfficeTalk Styling - Multi-Target Voice & Admin Crown */
 :root {
   --bg-dark: #0f172a;
   --bg-card: #1e293b;
@@ -165,11 +165,11 @@ body.dark-theme {
   overflow: hidden;
 }
 
-/* Target Selection Bar */
+/* Multi-Target Selection Bar */
 .target-select-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   padding: 12px 20px;
@@ -178,28 +178,49 @@ body.dark-theme {
   margin-bottom: 20px;
 }
 
+.target-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .target-label {
   font-size: 13px;
   font-weight: 800;
   color: var(--accent-gold);
 }
 
-.select-target-dropdown {
+.btn-target-all {
   background: var(--bg-dark);
-  border: 1px solid var(--accent-gold);
-  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
   padding: 8px 14px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  outline: none;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-target-all.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.target-summary-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .target-hint {
   font-size: 12px;
   color: var(--text-muted);
-  margin-left: auto;
 }
 
 /* Participant Grid */
@@ -249,8 +270,8 @@ body.dark-theme {
 }
 
 .participant-card.selected-target {
-  border-color: var(--accent-gold);
-  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--accent-gold) !important;
+  background: rgba(245, 158, 11, 0.12) !important;
   box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
 }
 
@@ -701,5 +722,5 @@ body.dark-theme {
 @media (max-width: 768px) {
   .app-body { flex-direction: column; }
   .sidebar-chat { display: none; }
-  .target-select-bar { flex-direction: column; align-items: stretch; }
+  .target-select-bar { flex-direction: column; align-items: stretch; gap: 8px; }
 }

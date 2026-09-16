@@ -48,7 +48,6 @@ io.on('connection', (socket) => {
       isMuted: false,
       isDeafened: false,
       isTalking: false,
-      talkTargetId: 'all',
       talkMode: userData.talkMode || 'ptt'
     };
 
@@ -71,23 +70,25 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Ultra-Low Latency PCM Voice Stream Relay (Guaranteed 100% Audibility)
-  socket.on('voice-pcm', ({ targetSocketId, pcmData }) => {
+  // Multi-Target & Broadcast Ultra-Low Latency PCM Voice Stream Relay
+  socket.on('voice-pcm', ({ targetSocketIds, pcmData }) => {
     const senderUser = users.get(socket.id);
     if (!senderUser || senderUser.isMuted) return;
 
-    if (targetSocketId === 'all') {
-      socket.broadcast.emit('voice-pcm', {
-        fromSocketId: socket.id,
-        senderName: senderUser.name,
-        pcmData
+    const payload = {
+      fromSocketId: socket.id,
+      senderName: senderUser.name,
+      pcmData
+    };
+
+    if (!targetSocketIds || targetSocketIds === 'all' || (Array.isArray(targetSocketIds) && targetSocketIds.includes('all'))) {
+      socket.broadcast.emit('voice-pcm', payload);
+    } else if (Array.isArray(targetSocketIds)) {
+      targetSocketIds.forEach(targetId => {
+        io.to(targetId).emit('voice-pcm', payload);
       });
-    } else if (targetSocketId) {
-      io.to(targetSocketId).emit('voice-pcm', {
-        fromSocketId: socket.id,
-        senderName: senderUser.name,
-        pcmData
-      });
+    } else if (typeof targetSocketIds === 'string') {
+      io.to(targetSocketIds).emit('voice-pcm', payload);
     }
   });
 
@@ -103,7 +104,6 @@ io.on('connection', (socket) => {
         isMuted: user.isMuted,
         isDeafened: user.isDeafened,
         isTalking: user.isTalking,
-        talkTargetId: user.talkTargetId,
         talkMode: user.talkMode
       }
     });
@@ -152,7 +152,7 @@ const protocol = USE_HTTPS ? 'https' : 'http';
 server.listen(PORT, '0.0.0.0', () => {
   const ips = getLocalIpAddresses();
   console.log(`====================================================`);
-  console.log(` 🎙️  OfficeTalk PCM Voice Engine Server is LIVE on ${protocol.toUpperCase()}!`);
+  console.log(` 🎙️  OfficeTalk Multi-Target Voice Server is LIVE on ${protocol.toUpperCase()}!`);
   console.log(` 💻 Local Access:    ${protocol}://localhost:${PORT}`);
   ips.forEach(ip => {
     console.log(` 📱 Mobile / Network: ${protocol}://${ip}:${PORT}`);

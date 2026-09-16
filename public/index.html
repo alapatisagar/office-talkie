@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>OfficeTalk - Direct Voice Line</title>
+  <title>OfficeTalk - Multi-Target Voice Call</title>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -20,21 +20,18 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=6">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="dark-theme">
-  <!-- Hidden Remote Audio Container for Autoplay Unlocking -->
-  <div id="remoteAudioContainer" style="display:none;"></div>
-
   <!-- Header -->
   <header class="app-header">
     <div class="logo-container">
       <div class="logo-icon">🎙️</div>
       <div class="logo-text">
         <span class="app-title">OfficeTalk</span>
-        <span class="app-tagline">Direct Office Voice Line</span>
+        <span class="app-tagline">Multi-User & Direct Voice Line</span>
       </div>
     </div>
 
@@ -60,13 +57,14 @@
   <div class="app-body">
     <!-- Main Center Stage -->
     <main class="voice-stage">
-      <!-- Target Recipient Selection Bar -->
+      <!-- Multi-Target Recipient Selection Bar -->
       <div class="target-select-bar">
-        <span class="target-label">🎯 Talking To:</span>
-        <select id="selectTalkTarget" class="select-target-dropdown">
-          <option value="all">🌐 Everyone (Broadcast Call)</option>
-        </select>
-        <span class="target-hint" id="targetHint">Click a colleague's card below to talk 1-on-1 directly!</span>
+        <div class="target-left">
+          <span class="target-label">🎯 Talking To:</span>
+          <button class="btn-target-all active" id="btnTargetEveryone">🌐 Everyone (Broadcast)</button>
+          <span class="target-summary-badge" id="targetSummaryBadge">All Online Colleagues</span>
+        </div>
+        <span class="target-hint">Click cards below to multi-select colleagues to talk with!</span>
       </div>
 
       <!-- Live Participant Grid -->
@@ -74,7 +72,7 @@
         <div class="empty-room-placeholder" id="emptyRoomPlaceholder">
           <div class="placeholder-icon">🎙️</div>
           <h3>Waiting for Colleagues</h3>
-          <p>Share this link with your team to start talking 1-on-1 or with everyone.</p>
+          <p>Share this link with your team to start talking with multiple people or everyone.</p>
         </div>
       </div>
 
@@ -136,7 +134,7 @@
     </aside>
   </div>
 
-  <!-- Setup Modal: Enter Name Only -->
+  <!-- Setup Modal: Name Only -->
   <div class="modal-backdrop" id="modalSetup">
     <div class="modal-card">
       <div class="modal-header">
@@ -179,7 +177,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <script src="audio-fx.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

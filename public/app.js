@@ -1,4 +1,4 @@
-// OfficeTalk Real-time PCM Voice Engine (Guaranteed High-Clarity Audio)
+// OfficeTalk Client Logic - Multi-Target Person Selection & PCM Voice Engine
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const headerAdminTag = document.getElementById('headerAdminTag');
   const onlineCountBadge = document.getElementById('onlineCountBadge');
 
-  const selectTalkTarget = document.getElementById('selectTalkTarget');
+  const btnTargetEveryone = document.getElementById('btnTargetEveryone');
+  const targetSummaryBadge = document.getElementById('targetSummaryBadge');
   const pttTargetInfo = document.getElementById('pttTargetInfo');
-  const targetHint = document.getElementById('targetHint');
 
   const participantGrid = document.getElementById('participantGrid');
   const emptyRoomPlaceholder = document.getElementById('emptyRoomPlaceholder');
@@ -48,7 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Application State
   const socket = io();
   let currentUser = null;
-  let currentTargetId = 'all';
+
+  // Multi-target Selection Set (stores socketIds or 'all')
+  const selectedTargetIds = new Set(['all']);
 
   let localStream = null;
   let txAudioContext = null;
@@ -87,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('touchstart', unlockAudioContexts);
   document.addEventListener('keydown', unlockAudioContexts);
 
-  // Initialize Receiver Audio Context (16kHz for crystal clear voice playback)
+  // Initialize Receiver Audio Context
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   rxAudioContext = new AudioCtx({ sampleRate: 16000 });
 
@@ -129,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 2. PCM Audio Stream Capture (ScriptProcessor PCM Int16)
+  // 2. PCM Audio Capture (ScriptProcessor PCM Int16)
   // -------------------------------------------------------------
   async function initLocalMicrophone(deviceId = null) {
     try {
@@ -165,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const source = txAudioContext.createMediaStreamSource(stream);
       source.connect(analyser);
 
-      // ScriptProcessor for ultra-low latency PCM sampling
       scriptProcessor = txAudioContext.createScriptProcessor(2048, 1, 1);
 
       scriptProcessor.onaudioprocess = (e) => {
@@ -176,15 +177,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const inputData = e.inputBuffer.getChannelData(0);
         
-        // Convert Float32Array to Int16Array binary buffer
         const pcm16 = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const s = Math.max(-1, Math.min(1, inputData[i]));
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
+        const targetsPayload = selectedTargetIds.has('all') ? 'all' : Array.from(selectedTargetIds);
+
         socket.emit('voice-pcm', {
-          targetSocketId: currentTargetId,
+          targetSocketIds: targetsPayload,
           pcmData: pcm16.buffer
         });
       };
@@ -220,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentlySpeaking !== isSpeakingState) {
         isSpeakingState = currentlySpeaking;
         updateUserCardTalking(socket.id, currentlySpeaking);
-        socket.emit('update-state', { isTalking: currentlySpeaking, talkTargetId: currentTargetId });
+        socket.emit('update-state', { isTalking: currentlySpeaking });
       }
 
       requestAnimationFrame(checkLevel);
@@ -251,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 3. Socket.io PCM Voice Receiver (High-Clarity Speaker Playback)
+  // 3. Socket.io PCM Voice Receiver
   // -------------------------------------------------------------
   socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData }) => {
     if (isDeafened) return;
@@ -260,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
       rxAudioContext.resume();
     }
 
-    // Visual speaking aura
     updateUserCardTalking(fromSocketId, true);
     setTimeout(() => updateUserCardTalking(fromSocketId, false), 250);
 
@@ -277,8 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const source = rxAudioContext.createBufferSource();
       source.buffer = audioBuffer;
-
-      // Connect to speakers / headset
       source.connect(rxAudioContext.destination);
       source.start();
     } catch (err) {
@@ -294,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onlineUsersMap.set(socket.id, selfData);
     renderParticipantCard(socket.id, selfData);
-    rebuildTargetDropdown();
   });
 
   socket.on('online-users', (users) => {
@@ -305,14 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     updateOnlineCount();
-    rebuildTargetDropdown();
   });
 
   socket.on('user-joined', (user) => {
     onlineUsersMap.set(user.socketId, user);
     renderParticipantCard(user.socketId, user);
     updateOnlineCount();
-    rebuildTargetDropdown();
 
     appendChatMessage({
       senderName: 'System',
@@ -333,14 +329,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (currentTargetId === socketId) {
-      setTalkTarget('all');
+    selectedTargetIds.delete(socketId);
+    if (selectedTargetIds.size === 0) {
+      selectedTargetIds.add('all');
     }
+    updateTargetUI();
 
     onlineUsersMap.delete(socketId);
     removeParticipantCard(socketId);
     updateOnlineCount();
-    rebuildTargetDropdown();
   });
 
   socket.on('user-state-changed', ({ socketId, state }) => {
@@ -356,56 +353,70 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 4. Targeted 1-on-1 Person Selector Logic
+  // 4. Multi-Target Person Selection Logic
   // -------------------------------------------------------------
-  function setTalkTarget(targetId) {
-    currentTargetId = targetId;
-    selectTalkTarget.value = targetId;
-
-    if (targetId === 'all') {
-      pttTargetInfo.textContent = 'to Everyone';
-      targetHint.textContent = 'Talking to EVERYONE on call';
-    } else {
-      const user = onlineUsersMap.get(targetId);
-      const targetName = user ? user.name : 'Selected Colleague';
-      pttTargetInfo.textContent = `to ${targetName} (1-on-1)`;
-      targetHint.textContent = `Talking ONLY with ${targetName}`;
-    }
-
-    document.querySelectorAll('.participant-card').forEach(card => {
-      card.classList.remove('selected-target');
-    });
-
-    if (targetId !== 'all') {
-      const card = document.getElementById(`pcard-${targetId}`);
-      if (card) card.classList.add('selected-target');
-    }
-  }
-
-  selectTalkTarget.addEventListener('change', (e) => {
-    setTalkTarget(e.target.value);
+  btnTargetEveryone.addEventListener('click', () => {
+    selectedTargetIds.clear();
+    selectedTargetIds.add('all');
+    updateTargetUI();
   });
 
-  function rebuildTargetDropdown() {
-    selectTalkTarget.innerHTML = '<option value="all">🌐 Everyone (Broadcast Call)</option>';
+  function toggleTargetPerson(socketId) {
+    if (selectedTargetIds.has('all')) {
+      selectedTargetIds.clear();
+    }
+
+    if (selectedTargetIds.has(socketId)) {
+      selectedTargetIds.delete(socketId);
+    } else {
+      selectedTargetIds.add(socketId);
+    }
+
+    if (selectedTargetIds.size === 0) {
+      selectedTargetIds.add('all');
+    }
+
+    updateTargetUI();
+  }
+
+  function updateTargetUI() {
+    const isEveryone = selectedTargetIds.has('all');
+
+    if (isEveryone) {
+      btnTargetEveryone.classList.add('active');
+      targetSummaryBadge.textContent = 'All Online Colleagues';
+      pttTargetInfo.textContent = 'to Everyone';
+    } else {
+      btnTargetEveryone.classList.remove('active');
+      const targetNames = [];
+      selectedTargetIds.forEach(id => {
+        const u = onlineUsersMap.get(id);
+        if (u) targetNames.push(u.name);
+      });
+
+      const count = selectedTargetIds.size;
+      targetSummaryBadge.textContent = `🎯 ${count} Colleague${count === 1 ? '' : 's'} (${targetNames.join(', ')})`;
+      pttTargetInfo.textContent = `to ${count} Colleague${count === 1 ? '' : 's'}`;
+    }
+
+    // Highlight participant cards
     onlineUsersMap.forEach((user, sId) => {
-      if (sId !== socket.id) {
-        const opt = document.createElement('option');
-        opt.value = sId;
-        opt.textContent = `👤 ${user.name} ${user.isAdmin ? '👑 (Admin)' : ''} (1-on-1)`;
-        selectTalkTarget.appendChild(opt);
+      const card = document.getElementById(`pcard-${sId}`);
+      if (card) {
+        const btn = card.querySelector('.btn-select-talk');
+        if (selectedTargetIds.has(sId)) {
+          card.classList.add('selected-target');
+          if (btn) btn.textContent = '✓ Selected';
+        } else {
+          card.classList.remove('selected-target');
+          if (btn) btn.textContent = '+ Select to Talk';
+        }
       }
     });
-
-    if (currentTargetId !== 'all' && !onlineUsersMap.has(currentTargetId)) {
-      setTalkTarget('all');
-    } else {
-      selectTalkTarget.value = currentTargetId;
-    }
   }
 
   // -------------------------------------------------------------
-  // 5. Push-To-Talk & Voice Transmission Controls
+  // 5. Push-To-Talk & Voice Controls
   // -------------------------------------------------------------
   function startTransmitting() {
     if (isTransmitting || isMuted || isDeafened) return;
@@ -417,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
     unlockAudioContexts();
     window.soundFX.playPttStart();
 
-    socket.emit('update-state', { isTalking: true, talkTargetId: currentTargetId });
+    socket.emit('update-state', { isTalking: true });
     updateUserCardTalking(socket.id, true);
   }
 
@@ -430,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.soundFX.playPttEnd();
 
-    socket.emit('update-state', { isTalking: false, talkTargetId: currentTargetId });
+    socket.emit('update-state', { isTalking: false });
     updateUserCardTalking(socket.id, false);
   }
 
@@ -519,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 6. Participant Card Rendering & 1-on-1 Selection
+  // 6. Participant Card Rendering & Multi-Selection
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
     if (document.getElementById('emptyRoomPlaceholder')) {
@@ -530,9 +541,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (existingCard) existingCard.remove();
 
     const isSelf = socketId === socket.id;
+    const isSelected = selectedTargetIds.has(socketId);
 
     const card = document.createElement('div');
-    card.className = `participant-card ${currentTargetId === socketId ? 'selected-target' : ''}`;
+    card.className = `participant-card ${isSelected ? 'selected-target' : ''}`;
     card.id = `pcard-${socketId}`;
 
     card.innerHTML = `
@@ -548,14 +560,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
         <span class="badge-tag muted ${user.isMuted ? '' : 'hidden'}">MUTED</span>
       </div>
-      ${!isSelf ? `<button class="btn-select-talk" data-id="${socketId}">🎯 Talk 1-on-1</button>` : ''}
+      ${!isSelf ? `<button class="btn-select-talk">${isSelected ? '✓ Selected' : '+ Select to Talk'}</button>` : ''}
     `;
 
     if (!isSelf) {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-select-talk') || e.currentTarget) {
-          setTalkTarget(socketId);
-        }
+      card.addEventListener('click', () => {
+        toggleTargetPerson(socketId);
       });
     }
 
