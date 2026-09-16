@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>OfficeTalk - Real-time Voice & Walkie-Talkie</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+  <!-- Top App Navigation -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="logo-icon">🎙️</div>
+      <div class="logo-text">
+        <span class="app-title">OfficeTalk</span>
+        <span class="app-tagline">Instant Office Walkie-Talkie & Voice Rooms</span>
+      </div>
+    </div>
+
+    <div class="header-status">
+      <div class="current-channel-pill" id="headerChannelBadge">
+        <span class="status-dot disconnected"></span>
+        <span id="headerChannelName">Not Connected</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn" id="btnAudioSettings" title="Audio & Mic Settings">
+        ⚙️ Settings
+      </button>
+      <button class="icon-btn" id="btnToggleSoundFX" title="Toggle Sound Effects">
+        🔊 Sound: ON
+      </button>
+
+      <div class="user-profile-badge" id="userProfileBadge">
+        <span class="user-avatar" id="headerUserAvatar">👤</span>
+        <div class="user-meta">
+          <span class="user-name" id="headerUserName">Employee</span>
+          <span class="user-dept" id="headerUserDept">General</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <div class="app-body">
+    <!-- Left Sidebar: Office Channels -->
+    <aside class="sidebar-channels">
+      <div class="sidebar-header">
+        <h3>🏢 Office Channels</h3>
+        <button class="btn-small-add" id="btnOpenCreateChannel" title="Create Custom Channel">+ New</button>
+      </div>
+
+      <div class="channels-list" id="channelsList">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Quick Hotkey Info Banner -->
+      <div class="hotkey-guide">
+        <div class="guide-title">⌨️ Keyboard Shortcuts</div>
+        <div class="key-row"><kbd>Space</kbd> <span>Hold to Talk (PTT)</span></div>
+        <div class="key-row"><kbd>M</kbd> <span>Toggle Mute</span></div>
+        <div class="key-row"><kbd>D</kbd> <span>Toggle Deafen</span></div>
+      </div>
+    </aside>
+
+    <!-- Center Stage: Live Voice Room -->
+    <main class="voice-stage">
+      <!-- Room Header -->
+      <div class="room-banner" id="roomBanner">
+        <div class="room-info">
+          <span class="room-icon" id="roomIcon">📢</span>
+          <div>
+            <h2 id="roomTitle">Select a Channel</h2>
+            <p id="roomDesc">Click any channel on the left sidebar to connect and talk with colleagues.</p>
+          </div>
+        </div>
+        <div class="room-meta">
+          <span class="member-count-badge" id="roomMemberCount">0 Active Colleagues</span>
+        </div>
+      </div>
+
+      <!-- Live Participant Cards Grid -->
+      <div class="participant-grid" id="participantGrid">
+        <div class="empty-room-placeholder" id="emptyRoomPlaceholder">
+          <div class="placeholder-icon">🎙️</div>
+          <h3>Join an Office Channel to Start Talking</h3>
+          <p>Choose a department channel or create a custom room to talk live or walkie-talkie style.</p>
+        </div>
+      </div>
+
+      <!-- Bottom Audio & PTT Control Dock -->
+      <div class="control-dock disabled" id="controlDock">
+        <!-- Audio Visualizer Level Meter -->
+        <div class="vu-meter-container">
+          <span class="vu-label">Mic Input Level</span>
+          <div class="vu-bar-wrapper">
+            <div class="vu-bar-fill" id="vuBarFill"></div>
+          </div>
+        </div>
+
+        <!-- Central Talk Controls -->
+        <div class="controls-main">
+          <!-- Mode Toggle Switcher -->
+          <div class="mode-toggle-group">
+            <button class="mode-btn active" id="btnModePTT" data-mode="ptt">
+              📻 Walkie-Talkie (PTT)
+            </button>
+            <button class="mode-btn" id="btnModeOpen" data-mode="open">
+              📞 Open Call (Hands-Free)
+            </button>
+          </div>
+
+          <!-- BIG Push-To-Talk Button -->
+          <div class="ptt-button-wrapper">
+            <button class="btn-ptt" id="btnPTT">
+              <span class="ptt-icon">🎙️</span>
+              <span class="ptt-text" id="pttText">HOLD TO TALK</span>
+              <span class="ptt-hint">(or hold Spacebar)</span>
+            </button>
+          </div>
+
+          <!-- Quick Action Mute & Deafen Buttons -->
+          <div class="action-buttons-group">
+            <button class="btn-action" id="btnToggleMute">
+              <span class="btn-icon" id="muteIcon">🎙️</span>
+              <span class="btn-label" id="muteLabel">Mute</span>
+            </button>
+            <button class="btn-action" id="btnToggleDeafen">
+              <span class="btn-icon" id="deafenIcon">🎧</span>
+              <span class="btn-label" id="deafenLabel">Deafen</span>
+            </button>
+            <button class="btn-action btn-leave" id="btnLeaveRoom">
+              <span class="btn-icon">🚪</span>
+              <span class="btn-label">Leave</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Sidebar: Room Text Chat -->
+    <aside class="sidebar-chat">
+      <div class="chat-header">
+        <h3>💬 Room Chat</h3>
+        <span class="chat-subtitle" id="chatChannelSubtitle">#general</span>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-notice">Welcome to the channel! Send quick text messages, links, or notes while on voice call.</div>
+      </div>
+
+      <form class="chat-input-form" id="chatForm">
+        <input type="text" id="chatInput" placeholder="Type a message or link..." autocomplete="off">
+        <button type="submit" id="btnSendChat">Send</button>
+      </form>
+    </aside>
+  </div>
+
+  <!-- Modal 1: Employee Setup Identity Modal -->
+  <div class="modal-backdrop" id="modalSetup">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>👋 Welcome to OfficeTalk</h2>
+        <p>Set up your profile to connect with your team</p>
+      </div>
+      <form id="formSetup">
+        <div class="form-group">
+          <label for="setupName">Your Name</label>
+          <input type="text" id="setupName" placeholder="e.g. Alex Morgan" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="setupDept">Department / Team</label>
+          <select id="setupDept">
+            <option value="Engineering">Engineering / IT</option>
+            <option value="Sales">Sales & Marketing</option>
+            <option value="Management">Management & Ops</option>
+            <option value="Product">Product & Design</option>
+            <option value="Customer Support">Customer Support</option>
+            <option value="General">General Staff</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Choose Avatar Icon</label>
+          <div class="avatar-selector" id="avatarSelector">
+            <span class="avatar-option selected" data-avatar="👨‍💼">👨‍💼</span>
+            <span class="avatar-option" data-avatar="👩‍💼">👩‍💼</span>
+            <span class="avatar-option" data-avatar="👨‍💻">👨‍💻</span>
+            <span class="avatar-option" data-avatar="👩‍💻">👩‍💻</span>
+            <span class="avatar-option" data-avatar="🦸‍♂️">🦸‍♂️</span>
+            <span class="avatar-option" data-avatar="🦸‍♀️">🦸‍♀️</span>
+            <span class="avatar-option" data-avatar="🎙️">🎙️</span>
+            <span class="avatar-option" data-avatar="⚡">⚡</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary-block">Start Calling & Talking 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Create Custom Channel Modal -->
+  <div class="modal-backdrop hidden" id="modalCreateChannel">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>➕ Create Custom Room</h2>
+        <p>Create a dedicated channel for your team project</p>
+      </div>
+      <form id="formCreateChannel">
+        <div class="form-group">
+          <label for="newChannelName">Channel Name</label>
+          <input type="text" id="newChannelName" placeholder="e.g. Project Alpha Standup" required>
+        </div>
+        <div class="form-group">
+          <label for="newChannelDesc">Description</label>
+          <input type="text" id="newChannelDesc" placeholder="e.g. Daily 10 AM sync for Project Alpha">
+        </div>
+        <div class="form-group">
+          <label for="newChannelPin">Optional Passcode PIN (Leave blank for public)</label>
+          <input type="password" id="newChannelPin" placeholder="4-digit PIN (optional)">
+        </div>
+        <div class="modal-buttons">
+          <button type="button" class="btn-secondary" id="btnCloseCreateChannel">Cancel</button>
+          <button type="submit" class="btn-primary">Create Channel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Audio & Device Settings Modal -->
+  <div class="modal-backdrop hidden" id="modalAudioSettings">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>⚙️ Audio Device Settings</h2>
+        <p>Configure your microphone & speaker preferences</p>
+      </div>
+      <div class="form-group">
+        <label for="selectMicInput">Microphone Device</label>
+        <select id="selectMicInput">
+          <option value="">Default System Microphone</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Microphone Test Bar</label>
+        <div class="vu-bar-wrapper">
+          <div class="vu-bar-fill" id="settingsVuFill"></div>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button type="button" class="btn-primary" id="btnCloseAudioSettings">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW reg error:', err));
+    }
+  </script>
+  <!-- Socket.io Script -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- App Audio FX and Main Scripts -->
+  <script src="audio-fx.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
