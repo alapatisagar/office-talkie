@@ -1,4 +1,4 @@
-// OfficeTalk Client Logic - Instant Entry & Non-blocking Mic Setup
+// OfficeTalk Client Logic - High-Clarity Voice, Autoplay Unlocking & WebRTC P2P Mesh
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const participantGrid = document.getElementById('participantGrid');
   const emptyRoomPlaceholder = document.getElementById('emptyRoomPlaceholder');
+  const remoteAudioContainer = document.getElementById('remoteAudioContainer');
 
   const controlDock = document.getElementById('controlDock');
   const btnPTT = document.getElementById('btnPTT');
@@ -60,13 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
   let isTransmitting = false;
   let pttKeyPressed = false;
 
-  const peerConnections = new Map();
-  const onlineUsersMap = new Map();
+  const peerConnections = new Map(); // targetSocketId -> { pc, remoteStream, audioElement }
+  const onlineUsersMap = new Map(); // socketId -> userData
 
+  // Multi-region STUN configuration for global connectivity behind NAT/firewalls
   const rtcConfig = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun.services.mozilla.com' },
+      { urls: 'stun:stun.cloudflare.com:3478' }
     ]
   };
 
@@ -77,7 +82,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 1. Setup Form (Instant Hide & Non-Blocking Entry)
+  // Autoplay & AudioContext Unlocking Helper
+  // -------------------------------------------------------------
+  function unlockAudioContextAndElements() {
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    if (window.soundFX) {
+      window.soundFX.init();
+    }
+    peerConnections.forEach((conn) => {
+      if (conn.audioElement) {
+        conn.audioElement.play().catch(e => console.log('[Autoplay Play Error]', e));
+      }
+    });
+  }
+
+  // Unlock on user interaction (clicks, touches, keys)
+  document.addEventListener('click', unlockAudioContextAndElements);
+  document.addEventListener('touchstart', unlockAudioContextAndElements);
+  document.addEventListener('keydown', unlockAudioContextAndElements);
+
+  // -------------------------------------------------------------
+  // 1. Setup Form (Instant Hide & Non-blocking Mic Setup)
   // -------------------------------------------------------------
   formSetup.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -104,19 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
       headerAdminTag.classList.add('hidden');
     }
 
-    // 1. Instantly hide modal synchronously so user enters site IMMEDIATELY!
     modalSetup.style.display = 'none';
     modalSetup.classList.add('hidden');
 
-    // 2. Emit user init to socket
     socket.emit('init-user', currentUser);
+    unlockAudioContextAndElements();
 
-    // 3. Request mic in background (non-blocking)
     initLocalMicrophone().catch(err => console.log('Mic init error:', err));
   });
 
   // -------------------------------------------------------------
-  // 2. Microphone Capture & Audio Analysis
+  // 2. Microphone Capture & High-Clarity Audio Constraints
   // -------------------------------------------------------------
   async function initLocalMicrophone(deviceId = null) {
     try {
@@ -129,6 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 48000,
           deviceId: deviceId ? { exact: deviceId } : undefined
         }
       };
@@ -136,10 +163,19 @@ document.addEventListener('DOMContentLoaded', () => {
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       setupAudioAnalyzer(localStream);
 
+      // In Open mode, enable track; in PTT mode, track stays active but senders are controlled
       setMicTrackEnabled(talkMode === 'open' && !isMuted);
       populateAudioDevices();
+
+      // Update local tracks on all existing peer connections
+      peerConnections.forEach((conn) => {
+        const sender = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+        if (sender && localStream.getAudioTracks()[0]) {
+          sender.replaceTrack(localStream.getAudioTracks()[0]);
+        }
+      });
     } catch (err) {
-      console.error('[Microphone Notice]', err);
+      console.error('[Microphone Capture Error]', err);
     }
   }
 
@@ -184,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
       vuBarFill.style.width = percent + '%';
       if (settingsVuFill) settingsVuFill.style.width = percent + '%';
 
-      const currentlySpeaking = percent > 12 && (talkMode === 'open' ? !isMuted : isTransmitting);
+      const currentlySpeaking = percent > 10 && (talkMode === 'open' ? !isMuted : isTransmitting);
       if (currentlySpeaking !== isSpeakingState) {
         isSpeakingState = currentlySpeaking;
         updateUserCardTalking(socket.id, currentlySpeaking);
@@ -219,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 3. Socket.io Events & Online Users
+  // 3. Socket.io Signaling & Presence
   // -------------------------------------------------------------
   socket.on('user-initialized', (selfData) => {
     window.soundFX.playJoinChime();
@@ -293,23 +329,38 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // 4. WebRTC Peer Connection & Selective 1-on-1 Audio Filtering
+  // 4. Robust WebRTC Peer Connection & Autoplay HTML5 Audio
   // -------------------------------------------------------------
   function initiatePeerConnection(targetSocketId, isInitiator) {
     if (peerConnections.has(targetSocketId)) return;
 
     const pc = new RTCPeerConnection(rtcConfig);
     const remoteStream = new MediaStream();
+
+    // Create HTML5 <audio> element with full mobile/desktop autoplay attributes
     const audioElement = document.createElement('audio');
     audioElement.autoplay = true;
+    audioElement.setAttribute('playsinline', 'true');
+    audioElement.setAttribute('controls', 'false');
+
+    if (remoteAudioContainer) {
+      remoteAudioContainer.appendChild(audioElement);
+    }
 
     if (localStream) {
       localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    } else {
+      pc.addTransceiver('audio', { direction: 'sendrecv' });
     }
 
     pc.ontrack = (event) => {
+      console.log(`[WebRTC Track Received] from ${targetSocketId}`);
       event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
       audioElement.srcObject = remoteStream;
+
+      audioElement.play().catch(err => {
+        console.log('[Autoplay play blocked by browser, waiting for user gesture]', err);
+      });
     };
 
     pc.onicecandidate = (event) => {
@@ -321,10 +372,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
+    pc.oniceconnectionstatechange = () => {
+      console.log(`[ICE State ${targetSocketId}] ${pc.iceConnectionState}`);
+    };
+
     peerConnections.set(targetSocketId, { pc, remoteStream, audioElement });
 
     if (isInitiator) {
-      pc.createOffer()
+      pc.createOffer({ offerToReceiveAudio: true })
         .then(offer => pc.setLocalDescription(offer))
         .then(() => {
           socket.emit('signal', {
@@ -428,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 6. PTT & Open Call Controls
+  // 6. Push-To-Talk & Audio Transmission Engine
   // -------------------------------------------------------------
   function startTransmitting() {
     if (isTransmitting || isMuted || isDeafened) return;
@@ -437,13 +492,18 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPTT.classList.add('transmitting');
     pttText.textContent = 'TRANSMITTING...';
 
+    unlockAudioContextAndElements();
     window.soundFX.playPttStart();
 
+    setMicTrackEnabled(true);
+
     peerConnections.forEach((conn, peerSocketId) => {
-      const sendTrack = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
-      if (sendTrack) {
-        sendTrack.track.enabled = (currentTargetId === 'all' || currentTargetId === peerSocketId);
-      }
+      const senders = conn.pc.getSenders();
+      senders.forEach(sender => {
+        if (sender.track && sender.track.kind === 'audio') {
+          sender.track.enabled = (currentTargetId === 'all' || currentTargetId === peerSocketId);
+        }
+      });
     });
 
     socket.emit('update-state', { isTalking: true, talkTargetId: currentTargetId });
@@ -460,11 +520,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.soundFX.playPttEnd();
 
     if (talkMode === 'ptt') {
+      setMicTrackEnabled(false);
       peerConnections.forEach((conn) => {
-        const sendTrack = conn.pc.getSenders().find(s => s.track && s.track.kind === 'audio');
-        if (sendTrack && sendTrack.track) {
-          sendTrack.track.enabled = false;
-        }
+        conn.pc.getSenders().forEach(sender => {
+          if (sender.track && sender.track.kind === 'audio') {
+            sender.track.enabled = false;
+          }
+        });
       });
     }
 
