@@ -78,16 +78,35 @@ document.addEventListener('DOMContentLoaded', () => {
     return clean.includes('sagar');
   }
 
+  function createSafeAudioContext(preferredRate = 16000) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    try {
+      return new AudioCtx({ sampleRate: preferredRate });
+    } catch (e) {
+      try {
+        return new AudioCtx();
+      } catch (e2) {
+        console.warn('AudioContext creation fallback warning:', e2);
+        return null;
+      }
+    }
+  }
+
   // Audio Context Resumer
   function unlockAudioContexts() {
-    if (txAudioContext && txAudioContext.state === 'suspended') {
-      txAudioContext.resume();
-    }
-    if (rxAudioContext && rxAudioContext.state === 'suspended') {
-      rxAudioContext.resume();
-    }
-    if (window.soundFX) {
-      window.soundFX.init();
+    try {
+      if (txAudioContext && txAudioContext.state === 'suspended') {
+        txAudioContext.resume();
+      }
+      if (rxAudioContext && rxAudioContext.state === 'suspended') {
+        rxAudioContext.resume();
+      }
+      if (window.soundFX && typeof window.soundFX.init === 'function') {
+        window.soundFX.init();
+      }
+    } catch (e) {
+      console.warn('Audio unlock warning:', e);
     }
   }
 
@@ -95,46 +114,57 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('touchstart', unlockAudioContexts);
   document.addEventListener('keydown', unlockAudioContexts);
 
-  // Initialize Receiver Audio Context
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  rxAudioContext = new AudioCtx({ sampleRate: 16000 });
+  // Initialize Receiver Audio Context safely
+  rxAudioContext = createSafeAudioContext(16000);
 
   // -------------------------------------------------------------
-  // 1. Setup Form
+  // 1. Setup Form (Guaranteed Entry into Site)
   // -------------------------------------------------------------
-  formSetup.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const rawName = (setupName.value || 'Colleague').trim();
-    const isAdmin = checkIsAdmin(rawName);
+  if (formSetup) {
+    formSetup.addEventListener('submit', (e) => {
+      e.preventDefault();
+      try {
+        const rawName = (setupName ? setupName.value || 'Colleague' : 'Colleague').trim();
+        const isAdmin = checkIsAdmin(rawName);
 
-    const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
-    const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
+        const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
+        const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
 
-    currentUser = {
-      name: rawName,
-      isAdmin,
-      avatar,
-      color: isAdmin ? '#f59e0b' : getRandomColor(),
-      talkMode
-    };
+        currentUser = {
+          name: rawName,
+          isAdmin,
+          avatar,
+          color: isAdmin ? '#f59e0b' : getRandomColor(),
+          talkMode
+        };
 
-    headerUserName.textContent = rawName;
-    headerUserAvatar.textContent = avatar;
+        if (headerUserName) headerUserName.textContent = rawName;
+        if (headerUserAvatar) headerUserAvatar.textContent = avatar;
 
-    if (isAdmin) {
-      headerAdminTag.classList.remove('hidden');
-    } else {
-      headerAdminTag.classList.add('hidden');
-    }
+        if (headerAdminTag) {
+          if (isAdmin) headerAdminTag.classList.remove('hidden');
+          else headerAdminTag.classList.add('hidden');
+        }
 
-    modalSetup.style.display = 'none';
-    modalSetup.classList.add('hidden');
+        // Unconditionally hide setup modal
+        if (modalSetup) {
+          modalSetup.style.display = 'none';
+          modalSetup.classList.add('hidden');
+        }
 
-    socket.emit('init-user', currentUser);
-    unlockAudioContexts();
+        socket.emit('init-user', currentUser);
+        unlockAudioContexts();
 
-    initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
-  });
+        initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
+      } catch (err) {
+        console.error('[Form Setup Failure Handler]', err);
+        if (modalSetup) {
+          modalSetup.style.display = 'none';
+          modalSetup.classList.add('hidden');
+        }
+      }
+    });
+  }
 
   // -------------------------------------------------------------
   // 2. PCM Audio Capture (ScriptProcessor PCM Int16)
@@ -146,27 +176,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const constraints = {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1,
-          sampleRate: 16000,
-          deviceId: deviceId ? { exact: deviceId } : undefined
-        }
+        audio: deviceId ? { deviceId: { exact: deviceId } } : true
       };
 
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       setupPcmAudioCapture(localStream);
       populateAudioDevices();
     } catch (err) {
-      console.error('[Microphone Capture Error]', err);
+      console.warn('[Microphone Capture Notice]', err);
     }
   }
 
   function setupPcmAudioCapture(stream) {
     try {
-      txAudioContext = new AudioCtx({ sampleRate: 16000 });
+      if (!txAudioContext) {
+        txAudioContext = createSafeAudioContext(16000);
+      }
+      if (!txAudioContext) return;
+
       analyser = txAudioContext.createAnalyser();
       analyser.fftSize = 512;
 
