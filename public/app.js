@@ -124,7 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function performUserConnect(inputName = null) {
     try {
-      const rawName = (inputName || (setupName ? setupName.value : '') || 'Colleague').trim();
+      const nameEl = document.getElementById('setupName');
+      const nameVal = inputName || (nameEl ? nameEl.value : '') || '';
+      const rawName = nameVal.trim();
       if (!rawName) return;
 
       try {
@@ -146,17 +148,22 @@ document.addEventListener('DOMContentLoaded', () => {
         talkMode
       };
 
-      if (headerUserName) headerUserName.textContent = rawName;
-      if (headerUserAvatar) headerUserAvatar.textContent = avatar;
+      const hName = document.getElementById('headerUserName');
+      const hAvatar = document.getElementById('headerUserAvatar');
+      const hAdminTag = document.getElementById('headerAdminTag');
+      const modal = document.getElementById('modalSetup');
 
-      if (headerAdminTag) {
-        if (isAdmin) headerAdminTag.classList.remove('hidden');
-        else headerAdminTag.classList.add('hidden');
+      if (hName) hName.textContent = rawName;
+      if (hAvatar) hAvatar.textContent = avatar;
+
+      if (hAdminTag) {
+        if (isAdmin) hAdminTag.classList.remove('hidden');
+        else hAdminTag.classList.add('hidden');
       }
 
-      if (modalSetup) {
-        modalSetup.style.display = 'none';
-        modalSetup.classList.add('hidden');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
       }
 
       socket.emit('init-user', currentUser);
@@ -165,35 +172,37 @@ document.addEventListener('DOMContentLoaded', () => {
       initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
     } catch (err) {
       console.error('[Form Setup Failure Handler]', err);
-      if (modalSetup) {
-        modalSetup.style.display = 'none';
-        modalSetup.classList.add('hidden');
+      const modal = document.getElementById('modalSetup');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
       }
     }
   }
 
-  if (btnSubmitSetup) {
-    btnSubmitSetup.addEventListener('click', (e) => {
+  function handleConnectEvent(e) {
+    if (e) {
       e.preventDefault();
       e.stopPropagation();
-      performUserConnect();
-    });
+    }
+    performUserConnect();
+    return false;
+  }
+
+  if (btnSubmitSetup) {
+    btnSubmitSetup.addEventListener('click', handleConnectEvent);
   }
 
   if (formSetup) {
-    formSetup.addEventListener('submit', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      performUserConnect();
-      return false;
-    });
+    formSetup.addEventListener('submit', handleConnectEvent);
   }
 
   // Auto-login returning users
   try {
     const savedName = localStorage.getItem('officetalk_user_name');
     if (savedName && savedName.trim()) {
-      if (setupName) setupName.value = savedName.trim();
+      const nameEl = document.getElementById('setupName');
+      if (nameEl) nameEl.value = savedName.trim();
       performUserConnect(savedName.trim());
     }
   } catch (e) {

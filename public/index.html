@@ -20,7 +20,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -168,13 +168,13 @@
         <h2>👋 Join OfficeTalk</h2>
         <p>Enter your name to connect instantly</p>
       </div>
-      <form id="formSetup" onsubmit="return false;">
+      <form id="formSetup" action="javascript:void(0);">
         <div class="form-group">
           <label for="setupName">Your Name</label>
           <input type="text" id="setupName" placeholder="Enter your name (e.g. Sagar Alapati)" required autofocus autocomplete="name">
         </div>
 
-        <button type="button" class="btn-primary-block" id="btnSubmitSetup">Connect & Talk 🚀</button>
+        <button type="submit" class="btn-primary-block" id="btnSubmitSetup">Connect & Talk 🚀</button>
       </form>
     </div>
   </div>
@@ -204,7 +204,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+  <script src="audio-fx.js?v=14"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>
