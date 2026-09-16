@@ -118,52 +118,86 @@ document.addEventListener('DOMContentLoaded', () => {
   rxAudioContext = createSafeAudioContext(16000);
 
   // -------------------------------------------------------------
-  // 1. Setup Form (Guaranteed Entry into Site)
+  // 1. Setup Form & Auto-Login Engine (Zero Reload Guarantee)
   // -------------------------------------------------------------
+  const btnSubmitSetup = document.getElementById('btnSubmitSetup');
+
+  function performUserConnect(inputName = null) {
+    try {
+      const rawName = (inputName || (setupName ? setupName.value : '') || 'Colleague').trim();
+      if (!rawName) return;
+
+      try {
+        localStorage.setItem('officetalk_user_name', rawName);
+      } catch (e) {
+        console.warn('LocalStorage unavailable:', e);
+      }
+
+      const isAdmin = checkIsAdmin(rawName);
+
+      const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
+      const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
+
+      currentUser = {
+        name: rawName,
+        isAdmin,
+        avatar,
+        color: isAdmin ? '#f59e0b' : getRandomColor(),
+        talkMode
+      };
+
+      if (headerUserName) headerUserName.textContent = rawName;
+      if (headerUserAvatar) headerUserAvatar.textContent = avatar;
+
+      if (headerAdminTag) {
+        if (isAdmin) headerAdminTag.classList.remove('hidden');
+        else headerAdminTag.classList.add('hidden');
+      }
+
+      if (modalSetup) {
+        modalSetup.style.display = 'none';
+        modalSetup.classList.add('hidden');
+      }
+
+      socket.emit('init-user', currentUser);
+      unlockAudioContexts();
+
+      initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
+    } catch (err) {
+      console.error('[Form Setup Failure Handler]', err);
+      if (modalSetup) {
+        modalSetup.style.display = 'none';
+        modalSetup.classList.add('hidden');
+      }
+    }
+  }
+
+  if (btnSubmitSetup) {
+    btnSubmitSetup.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      performUserConnect();
+    });
+  }
+
   if (formSetup) {
     formSetup.addEventListener('submit', (e) => {
       e.preventDefault();
-      try {
-        const rawName = (setupName ? setupName.value || 'Colleague' : 'Colleague').trim();
-        const isAdmin = checkIsAdmin(rawName);
-
-        const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
-        const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
-
-        currentUser = {
-          name: rawName,
-          isAdmin,
-          avatar,
-          color: isAdmin ? '#f59e0b' : getRandomColor(),
-          talkMode
-        };
-
-        if (headerUserName) headerUserName.textContent = rawName;
-        if (headerUserAvatar) headerUserAvatar.textContent = avatar;
-
-        if (headerAdminTag) {
-          if (isAdmin) headerAdminTag.classList.remove('hidden');
-          else headerAdminTag.classList.add('hidden');
-        }
-
-        // Unconditionally hide setup modal
-        if (modalSetup) {
-          modalSetup.style.display = 'none';
-          modalSetup.classList.add('hidden');
-        }
-
-        socket.emit('init-user', currentUser);
-        unlockAudioContexts();
-
-        initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
-      } catch (err) {
-        console.error('[Form Setup Failure Handler]', err);
-        if (modalSetup) {
-          modalSetup.style.display = 'none';
-          modalSetup.classList.add('hidden');
-        }
-      }
+      e.stopPropagation();
+      performUserConnect();
+      return false;
     });
+  }
+
+  // Auto-login returning users
+  try {
+    const savedName = localStorage.getItem('officetalk_user_name');
+    if (savedName && savedName.trim()) {
+      if (setupName) setupName.value = savedName.trim();
+      performUserConnect(savedName.trim());
+    }
+  } catch (e) {
+    console.warn('Auto-login notice:', e);
   }
 
   // -------------------------------------------------------------
