@@ -393,12 +393,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const hName = document.getElementById('headerUserName');
     const hAvatar = document.getElementById('headerUserAvatar');
     const hAdminTag = document.getElementById('headerAdminTag');
+    const adminPanel = document.getElementById('adminControlPanel');
 
     if (hName) hName.textContent = user.name;
     if (hAvatar) hAvatar.textContent = user.avatar || (user.isAdmin ? '👑' : '👤');
     if (hAdminTag) {
       if (user.isAdmin) hAdminTag.classList.remove('hidden');
       else hAdminTag.classList.add('hidden');
+    }
+    if (adminPanel) {
+      if (user.isAdmin) adminPanel.classList.remove('hidden');
+      else adminPanel.classList.add('hidden');
     }
   }
 
@@ -409,6 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.soundFX) window.soundFX.playJoinChime();
     currentUser = selfData;
     updateHeaderProfile(selfData);
+
 
     if (selfData.isAdmin) {
       if (adminControlPanel) adminControlPanel.classList.remove('hidden');
