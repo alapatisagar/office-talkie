@@ -4,6 +4,7 @@ const https = require('https');
 const { Server } = require('socket.io');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 const selfsigned = require('selfsigned');
 
 const app = express();
@@ -191,6 +192,41 @@ io.on('connection', (socket) => {
     if (!senderUser || !senderUser.isAdmin) return;
 
     socket.broadcast.emit('play-admin-siren', { senderName: senderUser.name });
+  });
+
+  // Admin Real Sticker Asset Upload Handler
+  socket.on('admin-upload-sticker', ({ packId, name, nameTe, category, keywords, fileName, fileData }) => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    try {
+      const cleanPack = (packId || 'brahmanandam-classics').toLowerCase();
+      const dirPath = path.join(__dirname, 'public', 'stickers', 'telugu-movie', cleanPack);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+
+      const safeFileName = fileName ? `${Date.now()}_${path.basename(fileName)}` : `${Date.now()}.webp`;
+      const filePath = path.join(dirPath, safeFileName);
+      const base64Data = fileData.replace(/^data:image\/\w+;base64,/, '');
+      fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+      const relativeUrl = `/stickers/telugu-movie/${cleanPack}/${safeFileName}`;
+      const newStickerObj = {
+        id: `${cleanPack}_${Date.now()}`,
+        packId: cleanPack,
+        name: name || 'Custom Sticker',
+        nameTe: nameTe || '',
+        category: category || 'comedy',
+        keywords: Array.isArray(keywords) ? keywords : (keywords || '').split(',').map(k => k.trim()),
+        image: relativeUrl,
+        sourceType: 'user-provided'
+      };
+
+      io.emit('new-sticker-uploaded', newStickerObj);
+    } catch (err) {
+      console.error('Failed to save uploaded sticker asset:', err);
+    }
   });
 
   // Team Chat Messages & Attachments

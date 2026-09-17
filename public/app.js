@@ -883,13 +883,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 100% Reliable Local Telugu Vector SVG Meme Generator
+  // Real Asset Telugu Movie-Style Sticker Packs v2.0.0 Engine
   // -------------------------------------------------------------
-  // -------------------------------------------------------------
-  // Telugu Movie-Style Sticker Packs v2.0.0 Engine
-  // -------------------------------------------------------------
+  let DYNAMIC_STICKERS_LIST = [];
+
   const TELUGU_ACTOR_PACKS = [
-    { id: 'all', name: '🌟 All Packs', emoji: '🌟' },
+    { id: 'all', name: '🎬 All Packs', emoji: '🎬' },
     { id: 'brahmanandam-classics', name: 'Brahmanandam', emoji: '😂', category: 'comedy' },
     { id: 'ali-comedy', name: 'Ali', emoji: '🤣', category: 'comedy' },
     { id: 'vennela-kishore', name: 'Vennela Kishore', emoji: '😏', category: 'reaction' },
@@ -908,123 +907,6 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'nani', name: 'Nani', emoji: '😊', category: 'comedy' }
   ];
 
-  const TELUGU_MEME_STICKERS = [
-    { id: 'brahmi-adhyaksha', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Adhyaksha! Naku Ee Post Oddhu!', titleTe: 'అధ్యక్షా! నాకు ఈ పోస్ట్ వద్దు!', keywords: ['brahmanandam', 'brahmi', 'adhyaksha', 'comedy', 'funny', 'అధ్యక్షా'] },
-    { id: 'brahmi-enti-comedy', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Enti Comedy-a? Nena Niku Comedy?', titleTe: 'ఏంటి కామెడీయా?', keywords: ['brahmanandam', 'brahmi', 'comedy', 'funny', 'ఏంటి కామెడీయా'] },
-    { id: 'brahmi-mind-block', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'reaction', dialogue: 'Mind Block Aipoyindi Subba Rao!', titleTe: 'మైండ్ బ్లాక్ అయిపోయింది!', keywords: ['brahmanandam', 'mind block', 'shock', 'మైండ్ బ్లాక్'] },
-    { id: 'brahmi-aaha', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Aahaa.. Enna Combo Sir Enna Combo!', titleTe: 'ఎన్నా కాంబో సర్!', keywords: ['brahmanandam', 'combo', 'aaha', 'ఎన్నా కాంబో'] },
-    { id: 'brahmi-escape', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'reaction', dialogue: 'Silently Escaped.. Bye!', titleTe: 'సైలెంట్‌గా ఎస్కేప్.. బై!', keywords: ['brahmanandam', 'escape', 'bye', 'సైలెంట్'] },
-    { id: 'brahmi-karma', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'emotional', dialogue: 'Karma Ra Babu!', titleTe: 'కర్మ రా బాబు!', keywords: ['brahmanandam', 'karma', 'sad', 'కర్మ'] },
-
-    { id: 'ali-jalsa', tag: 'Ali', pack: 'ali-comedy', category: 'comedy', dialogue: 'Jalsa Time.. Full Chill!', titleTe: 'జల్సా టైమ్.. ఫుల్ చిల్!', keywords: ['ali', 'jalsa', 'chill', 'జల్సా'] },
-    { id: 'ali-katravelli', tag: 'Ali', pack: 'ali-comedy', category: 'reaction', dialogue: 'Katravelli.. Kya Bolta!', titleTe: 'కత్రవేల్లి.. క్యా బోల్తా!', keywords: ['ali', 'katravelli', 'కత్రవేల్లి'] },
-
-    { id: 'vennela-brain-zero', tag: 'Vennela Kishore', pack: 'vennela-kishore', category: 'reaction', dialogue: 'Haath Mein Mobile.. Brain Zero!', titleTe: 'బ్రెయిన్ జీరో!', keywords: ['vennela kishore', 'mobile', 'zero', 'బ్రెయిన్'] },
-    { id: 'vennela-confusion', tag: 'Vennela Kishore', pack: 'vennela-kishore', category: 'reaction', dialogue: 'Confusion Express!', titleTe: 'కన్ఫ్యూజన్ ఎక్స్‌ప్రెస్!', keywords: ['vennela kishore', 'confused', 'కన్ఫ్యూజన్'] },
-
-    { id: 'ms-full-bottle', tag: 'MS Narayana', pack: 'ms-narayana', category: 'comedy', dialogue: 'Full Bottle Experience!', titleTe: 'ఫుల్ బాటిల్!', keywords: ['ms narayana', 'bottle', 'drink', 'బాటిల్'] },
-    { id: 'ms-peggy', tag: 'MS Narayana', pack: 'ms-narayana', category: 'comedy', dialogue: 'Peggy Vesthe Siggenduku!', titleTe: 'పెగ్గేస్తే సిగ్గెందుకు!', keywords: ['ms narayana', 'peg', 'సొంతం'] },
-
-    { id: 'sunil-rey-rey', tag: 'Sunil', pack: 'sunil', category: 'comedy', dialogue: 'Rey Rey Agandi Ra Babu!', titleTe: 'రేయ్ రేయ్ ఆగండి రా!', keywords: ['sunil', 'rey rey', 'agandi', 'రేయ్ రేయ్'] },
-    { id: 'sunil-six-pack', tag: 'Sunil', pack: 'sunil', category: 'mass', dialogue: 'Six Pack Super Look!', titleTe: 'సిక్స్ ప్యాక్ లుక్!', keywords: ['sunil', 'six pack', 'mass', 'సిక్స్ ప్యాక్'] },
-
-    { id: 'raghu-em-cheppav', tag: 'Raghu Babu', pack: 'raghu-babu', category: 'reaction', dialogue: 'Em Cheppav Ra Babji!', titleTe: 'ఏం చెప్పావ్ రా బాబ్జీ!', keywords: ['raghu babu', 'babji', 'ఏం చెప్పావ్'] },
-    { id: 'posani-mental', tag: 'Posani Krishna Murali', pack: 'posani-krishna-murali', category: 'angry', dialogue: 'Mental Ekkinchesthunnaru Ra!', titleTe: 'మెంటల్ ఎక్కిస్తున్నారు!', keywords: ['posani', 'mental', 'angry', 'మెంటల్'] },
-
-    { id: 'prithvi-30-years', tag: '30 Years Prithvi', pack: '30-years-prithvi', category: 'mass', dialogue: '30 Years Industry Ikada!', titleTe: '30 ఇయర్స్ ఇండస్ట్రీ!', keywords: ['prithvi', '30 years', 'industry', '30 ఇయర్స్'] },
-    { id: 'pk-chudappa', tag: 'Pawan Kalyan', pack: 'pawan-kalyan', category: 'mass', dialogue: 'Chudappa Siddappa!', titleTe: 'చూడప్పా సిద్దప్పా!', keywords: ['pawan kalyan', 'pk', 'powerstar', 'సిద్దప్పా'] },
-    { id: 'pk-gabbar-singh', tag: 'Pawan Kalyan', pack: 'pawan-kalyan', category: 'mass', dialogue: 'Nenu Koddiga Teradaga Untanu!', titleTe: 'కొద్దిగా తేడాగా ఉంటాను!', keywords: ['pawan kalyan', 'gabbar singh', 'తేడాగా'] },
-
-    { id: 'allu-pushpa', tag: 'Allu Arjun', pack: 'allu-arjun', category: 'mass', dialogue: 'Thaggedhe Le!', titleTe: 'తగ్గేదే లే!', keywords: ['allu arjun', 'pushpa', 'thaggedhele', 'తగ్గేదే లే'] },
-    { id: 'mahesh-pokiri', tag: 'Mahesh Babu', pack: 'mahesh-babu', category: 'mass', dialogue: 'Mind Lo Fix Aithe Blind Ga Vellipotha!', titleTe: 'మైండ్‌లో ఫిక్స్ అయితే!', keywords: ['mahesh babu', 'pokiri', 'blind', 'ఫిక్స్'] },
-    { id: 'ntr-rrr', tag: 'Jr NTR', pack: 'jr-ntr', category: 'mass', dialogue: 'RRR Bheem Mass Fire!', titleTe: 'భీమ్ మాస్ ఫైర్!', keywords: ['jr ntr', 'ntr', 'rrr', 'bheem', 'భీమ్'] },
-    { id: 'charan-rangasthalam', tag: 'Ram Charan', pack: 'ram-charan', category: 'mass', dialogue: 'Rangasthalam Chittibabu Mass!', titleTe: 'చిట్టిబాబు మాస్!', keywords: ['ram charan', 'chittibabu', 'rangasthalam', 'చిట్టిబాబు'] },
-    { id: 'prabhas-chhatrapati', tag: 'Prabhas', pack: 'prabhas', category: 'mass', dialogue: 'Oka Adugu Mungatiki!', titleTe: 'ఒక అడుగు ముంగాటికి!', keywords: ['prabhas', 'darling', 'chhatrapati', 'అడుగు'] },
-    { id: 'chiru-boss', tag: 'Chiranjeevi', pack: 'chiranjeevi', category: 'mass', dialogue: 'Boss Is Back!', titleTe: 'బాస్ ఈజ్ బ్యాక్!', keywords: ['chiranjeevi', 'chiru', 'boss', 'బాస్'] },
-    { id: 'nani-natural', tag: 'Nani', pack: 'nani', category: 'comedy', dialogue: 'Natural Star Simplicity!', titleTe: 'నేచురల్ స్టార్!', keywords: ['nani', 'natural star', 'simplicity', 'నేచురల్'] },
-
-    { id: 'tillu-atla-untadhi', tag: 'DJ Tillu', pack: 'brahmanandam-classics', category: 'mass', dialogue: 'Atla Untadhi Manathoni!', titleTe: 'అట్లా ఉంటది మనతోని!', keywords: ['tillu', 'dj tillu', 'atla untadhi', 'అట్లా ఉంటది'] },
-    { id: 'venky-train', tag: 'Venky', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Train-lo Seet-lu Khali Ena Sir?', titleTe: 'ట్రైన్‌లో సీట్లు ఖాళీ ఏనా?', keywords: ['venky', 'train', 'seet', 'సీట్లు'] },
-    { id: 'balayya-trouble', tag: 'Balayya', pack: 'brahmanandam-classics', category: 'mass', dialogue: "Don't Trouble The Trouble!", titleTe: 'డోంట్ ట్రబుల్ ది ట్రబుల్!', keywords: ['balayya', 'trouble', 'nbk', 'ట్రబుల్'] },
-    { id: 'relangi-manchivadu', tag: 'Relangi Mavayya', pack: 'brahmanandam-classics', category: 'celebration', dialogue: 'Manishi Manchivadu Ra!', titleTe: 'మనిషి మంచివాడు రా!', keywords: ['relangi', 'manchivadu', 'మంచివాడు'] },
-    { id: 'rgv-logic', tag: 'RGV', pack: 'brahmanandam-classics', category: 'reaction', dialogue: 'Logic Undha Inthaki?', dialogue: 'Logic Undha Inthaki?', titleTe: 'లాజిక్ ఉందా ఇంతకీ?', keywords: ['rgv', 'logic', 'లాజిక్'] }
-  ];
-
-  function getActorSvg(stickerId) {
-    switch (stickerId) {
-      case 'brahmi-adhyaksha':
-      case 'brahmi-enti-comedy':
-      case 'brahmi-mind-block':
-      case 'brahmi-aaha':
-      case 'brahmi-escape':
-      case 'brahmi-karma':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="60" cy="55" rx="32" ry="36" fill="#e0a96d"/>
-            <path d="M 30 45 Q 40 25 60 30 Q 80 25 90 45 Q 85 22 60 20 Q 35 22 30 45 Z" fill="#222"/>
-            <rect x="36" y="44" width="20" height="15" rx="3" fill="none" stroke="#111" stroke-width="3"/>
-            <rect x="64" y="44" width="20" height="15" rx="3" fill="none" stroke="#111" stroke-width="3"/>
-            <line x1="56" y1="50" x2="64" y2="50" stroke="#111" stroke-width="3"/>
-            <circle cx="46" cy="51" r="4" fill="#111"/>
-            <circle cx="74" cy="51" r="4" fill="#111"/>
-            <path d="M 36 38 Q 46 31 56 38" stroke="#111" stroke-width="3" fill="none"/>
-            <path d="M 64 38 Q 74 31 84 38" stroke="#111" stroke-width="3" fill="none"/>
-            <ellipse cx="60" cy="76" rx="12" ry="8" fill="#600"/>
-            <path d="M 30 92 L 45 80 L 60 92 L 75 80 L 90 92 L 90 120 L 30 120 Z" fill="#fff"/>
-            <polygon points="60,84 64,112 60,120 56,112" fill="#cc0000"/>
-          </svg>
-        `;
-      case 'tillu-atla-untadhi':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="45" cy="30" r="14" fill="#222"/>
-            <circle cx="60" cy="24" r="16" fill="#222"/>
-            <circle cx="75" cy="30" r="14" fill="#222"/>
-            <ellipse cx="60" cy="60" rx="30" ry="32" fill="#d89a60"/>
-            <polygon points="32,48 56,48 52,62 36,62" fill="#f59e0b" stroke="#000" stroke-width="2"/>
-            <polygon points="64,48 88,48 84,62 68,62" fill="#f59e0b" stroke="#000" stroke-width="2"/>
-            <path d="M 24 65 C 24 100, 96 100, 96 65" fill="none" stroke="#ef4444" stroke-width="8"/>
-            <path d="M 25 90 L 45 78 L 60 95 L 75 78 L 95 90 L 100 120 L 20 120 Z" fill="#7e22ce"/>
-          </svg>
-        `;
-      case 'allu-pushpa':
-      case 'pushpa-thaggedhele':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 28 42 Q 60 15 92 42 Q 80 25 60 25 Q 40 25 28 42 Z" fill="#3a1c06"/>
-            <ellipse cx="60" cy="62" rx="30" ry="32" fill="#c48348"/>
-            <ellipse cx="44" cy="52" rx="5" ry="4" fill="#fff"/>
-            <circle cx="45" cy="52" r="2.5" fill="#111"/>
-            <ellipse cx="76" cy="52" rx="5" ry="4" fill="#fff"/>
-            <circle cx="75" cy="52" r="2.5" fill="#111"/>
-            <path d="M 30 60 C 30 95, 90 95, 90 60 C 85 75, 35 75, 30 60 Z" fill="#271504"/>
-          </svg>
-        `;
-      default:
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 25 45 Q 60 15 95 45 Q 85 20 60 20 Q 35 20 25 45 Z" fill="#1c1917"/>
-            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#ca8a4b"/>
-            <path d="M 24 88 L 60 78 L 96 88 L 98 120 L 22 120 Z" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
-          </svg>
-        `;
-    }
-  }
-
-  function renderVectorMemeSticker(sticker) {
-    return `
-      <div class="vector-meme-sticker">
-        <div class="meme-header-bar">
-          <span class="meme-actor-tag">${sticker.tag}</span>
-        </div>
-        <div class="vector-svg-container">
-          ${getActorSvg(sticker.id)}
-        </div>
-        <div class="vector-dialogue-banner">"${sticker.dialogue}"</div>
-      </div>
-    `;
-  }
-
   const EMOJI_LIST = [
     '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','🤪',
     '😜','🤑','😎','🤩','🥳','🤯','😱','🤬','🤡','👻','💩','🔥','⭐','✨','💥','🎉',
@@ -1033,32 +915,6 @@ document.addEventListener('DOMContentLoaded', () => {
     '🎧','🔊','📱','💻','☕','🍺','🍿'
   ];
 
-  const STICKER_PACK_EMOJIS = {
-    'telugu-comedy': '😂',
-    'mass': '😎',
-    'emotional': '😭',
-    'angry': '😡',
-    'reaction': '🤦',
-    'love': '❤️',
-    'celebration': '🎉'
-  };
-
-  const TELUGU_REACTION_STICKERS = [
-    { id: "telugu_001", title: "Ayyo", titleTe: "అయ్యో", pack: "telugu-comedy", category: "comedy", keywords: ["ayyo", "అయ్యో"] },
-    { id: "telugu_002", title: "Ayyababoi", titleTe: "అయ్యబాబోయ్", pack: "telugu-comedy", category: "comedy", keywords: ["ayyababoi", "అయ్యబాబోయ్"] },
-    { id: "telugu_003", title: "Enti Idi?", titleTe: "ఏంటి ఇది?", pack: "telugu-comedy", category: "comedy", keywords: ["enti idi", "ఏంటి ఇది"] },
-    { id: "telugu_004", title: "Na Valla Kaadu", titleTe: "నా వల్ల కాదు", pack: "telugu-comedy", category: "comedy", keywords: ["na valla kaadu", "నా వల్ల కాదు"] },
-    { id: "telugu_005", title: "Artham Kaaledu", titleTe: "అర్థం కాలేదు", pack: "telugu-comedy", category: "comedy", keywords: ["artham kaaledu", "అర్థం కాలేదు"] },
-    { id: "telugu_021", title: "Mass", titleTe: "మాస్", pack: "mass", category: "mass", keywords: ["mass", "మాస్"] },
-    { id: "telugu_022", title: "Thaggede Le", titleTe: "తగ్గేదే లే", pack: "mass", category: "mass", keywords: ["thaggede le", "తగ్గేదే లే"] },
-    { id: "telugu_031", title: "Edustunna", titleTe: "ఏడుస్తున్నా 😭", pack: "emotional", category: "emotional", keywords: ["edustunna", "ఏడుస్తున్నా"] },
-    { id: "telugu_041", title: "Naaku Kopam Vastundi", titleTe: "నాకు కోపం వస్తుంది", pack: "angry", category: "angry", keywords: ["kopam", "కోపం"] },
-    { id: "telugu_051", title: "Ayyo Devuda", titleTe: "అయ్యో దేవుడా", pack: "reaction", category: "reaction", keywords: ["ayyo devuda", "అయ్యో దేవుడా"] },
-    { id: "telugu_061", title: "Nuvve Na World", titleTe: "నువ్వే నా వరల్డ్ ❤️", pack: "love", category: "love", keywords: ["love", "నువ్వే నా వరల్డ్"] },
-    { id: "telugu_071", title: "Super", titleTe: "సూపర్! 🎉", pack: "celebration", category: "celebration", keywords: ["super", "సూపర్"] }
-  ];
-
-  // Helper functions for Favorites and Recent
   function getRecentStickers() {
     try { return JSON.parse(localStorage.getItem('officetalk_recent_stickers') || '[]'); } catch(e) { return []; }
   }
@@ -1085,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { localStorage.setItem('officetalk_favorite_stickers', JSON.stringify(favs)); } catch(e) {}
   }
 
-  // DOM elements for Picker
+  // DOM elements for Picker & Admin Upload
   const btnEmojiPicker = document.getElementById('btnEmojiPicker');
   const btnStickerPicker = document.getElementById('btnStickerPicker');
   const btnClosePicker = document.getElementById('btnClosePicker');
@@ -1105,6 +961,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const emojiGrid = document.getElementById('emojiGrid');
   const stickerGrid = document.getElementById('stickerGrid');
 
+  // Admin Sticker Upload Elements
+  const btnAdminUploadSticker = document.getElementById('btnAdminUploadSticker');
+  const modalAdminStickerUpload = document.getElementById('modalAdminStickerUpload');
+  const btnCloseStickerUpload = document.getElementById('btnCloseStickerUpload');
+  const formAdminStickerUpload = document.getElementById('formAdminStickerUpload');
+
   let activeCategory = 'trending';
   let activeActorPack = 'all';
   let activeSearchQuery = '';
@@ -1120,6 +982,20 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'love', name: '❤️ Love' },
     { id: 'celebration', name: '🎉 Celebration' }
   ];
+
+  async function loadStickerAssetConfig() {
+    try {
+      const res = await fetch('/telugu_movie_sticker_packs_antigravity.json');
+      const data = await res.json();
+      if (data && Array.isArray(data.stickers)) {
+        DYNAMIC_STICKERS_LIST = data.stickers;
+      }
+    } catch (err) {
+      console.warn('Notice loading sticker json config:', err);
+    }
+  }
+
+  loadStickerAssetConfig();
 
   function renderCategoryPills() {
     const bar = document.getElementById('stickerCategoryTabs');
@@ -1167,12 +1043,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const recents = getRecentStickers();
     const query = activeSearchQuery.trim().toLowerCase();
 
-    let list = [...TELUGU_MEME_STICKERS];
+    let list = [...DYNAMIC_STICKERS_LIST];
 
     // Filter by Search Query
     if (query) {
       list = list.filter(stk => {
-        const textToSearch = `${stk.tag} ${stk.dialogue} ${stk.titleTe} ${(stk.keywords||[]).join(' ')} ${stk.pack} ${stk.category}`.toLowerCase();
+        const textToSearch = `${stk.name || ''} ${stk.nameTe || ''} ${(stk.keywords||[]).join(' ')} ${stk.packId || ''} ${stk.category || ''}`.toLowerCase();
         return textToSearch.includes(query);
       });
     } else {
@@ -1188,26 +1064,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Filter by Actor Pack
       if (activeActorPack !== 'all') {
-        list = list.filter(stk => stk.pack === activeActorPack);
+        list = list.filter(stk => stk.packId === activeActorPack);
       }
     }
 
     if (list.length === 0) {
       stickerGrid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 20px;">
-          No stickers found matching your search.
+        <div class="no-stickers-notice">
+          No stickers available in this pack yet.
         </div>
       `;
       return;
     }
 
+    let renderedCount = 0;
+
     list.forEach(stk => {
+      if (!stk.image) return;
+
       const isFav = favs.includes(stk.id);
       const card = document.createElement('div');
       card.className = 'sticker-card';
+      card.setAttribute('data-id', stk.id);
+
       card.innerHTML = `
         <button type="button" class="favorite-star-btn ${isFav ? 'is-favorite' : ''}" title="${isFav ? 'Remove Favorite' : 'Add Favorite'}">⭐</button>
-        ${renderVectorMemeSticker(stk)}
+        <img src="${stk.image}" class="sticker-img" alt="${escapeHTML(stk.name || 'Sticker')}" loading="lazy" onerror="this.onerror=null; this.parentElement.remove(); checkEmptyGridState();">
+        ${stk.nameTe || stk.name ? `<div class="sticker-label">${escapeHTML(stk.nameTe || stk.name)}</div>` : ''}
       `;
 
       const favBtn = card.querySelector('.favorite-star-btn');
@@ -1219,12 +1102,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.addEventListener('click', () => {
         addRecentSticker(stk.id);
-        socket.emit('send-message', { text: '', sticker: stk });
+        socket.emit('send-message', {
+          text: '',
+          type: 'sticker',
+          sticker: {
+            stickerId: stk.id,
+            packId: stk.packId,
+            imageUrl: stk.image,
+            name: stk.name,
+            nameTe: stk.nameTe
+          }
+        });
         if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
       });
 
       stickerGrid.appendChild(card);
+      renderedCount++;
     });
+
+    if (renderedCount === 0) {
+      stickerGrid.innerHTML = `
+        <div class="no-stickers-notice">
+          No stickers available in this pack yet.
+        </div>
+      `;
+    }
+  }
+
+  function checkEmptyGridState() {
+    if (stickerGrid && stickerGrid.querySelectorAll('.sticker-card').length === 0) {
+      stickerGrid.innerHTML = `
+        <div class="no-stickers-notice">
+          No stickers available in this pack yet.
+        </div>
+      `;
+    }
   }
 
   function initEmojiAndStickerPicker() {
@@ -1326,6 +1238,66 @@ document.addEventListener('DOMContentLoaded', () => {
   if (tabStickers) tabStickers.addEventListener('click', () => openPickerTab('stickers'));
   if (tabGifs) tabGifs.addEventListener('click', () => openPickerTab('gifs'));
 
+  // Admin Sticker Upload Event Handlers
+  if (btnAdminUploadSticker) {
+    btnAdminUploadSticker.addEventListener('click', () => {
+      if (modalAdminStickerUpload) modalAdminStickerUpload.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseStickerUpload) {
+    btnCloseStickerUpload.addEventListener('click', () => {
+      if (modalAdminStickerUpload) modalAdminStickerUpload.classList.add('hidden');
+    });
+  }
+
+  if (formAdminStickerUpload) {
+    formAdminStickerUpload.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const packId = document.getElementById('selectStickerPack').value;
+      const category = document.getElementById('selectStickerCategory').value;
+      const fileInput = document.getElementById('inputStickerFile');
+      const name = document.getElementById('inputStickerName').value;
+      const nameTe = document.getElementById('inputStickerNameTe').value;
+      const keywords = document.getElementById('inputStickerKeywords').value;
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a sticker image file (.webp, .png, .gif).');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Sticker image file size must be under 2 MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        socket.emit('admin-upload-sticker', {
+          packId,
+          category,
+          name,
+          nameTe,
+          keywords,
+          fileName: file.name,
+          fileData: evt.target.result
+        });
+
+        alert('🎨 Sticker asset uploaded successfully!');
+        if (modalAdminStickerUpload) modalAdminStickerUpload.classList.add('hidden');
+        formAdminStickerUpload.reset();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Socket listener when Admin uploads a new sticker asset
+  socket.on('new-sticker-uploaded', (newSticker) => {
+    DYNAMIC_STICKERS_LIST.push(newSticker);
+    renderStickersGrid();
+  });
+
   // Outside click & ESC key dismiss
   document.addEventListener('click', (e) => {
     if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker && e.target !== btnStickerPicker) {
@@ -1334,8 +1306,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && emojiPickerPanel && !emojiPickerPanel.classList.contains('hidden')) {
-      emojiPickerPanel.classList.add('hidden');
+    if (e.key === 'Escape') {
+      if (emojiPickerPanel && !emojiPickerPanel.classList.contains('hidden')) emojiPickerPanel.classList.add('hidden');
+      if (modalAdminStickerUpload && !modalAdminStickerUpload.classList.contains('hidden')) modalAdminStickerUpload.classList.add('hidden');
     }
   });
 
@@ -1474,9 +1447,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let contentHtml = '';
     if (msg.sticker) {
+      const stickerImgUrl = msg.sticker.imageUrl || msg.sticker.image || (typeof msg.sticker === 'string' ? msg.sticker : '');
       contentHtml = `
-        <div class="chat-sticker-photo-wrapper">
-          ${renderVectorMemeSticker(msg.sticker)}
+        <div class="chat-sticker-wrapper">
+          <img src="${stickerImgUrl}" class="chat-sticker-img" alt="${escapeHTML(msg.sticker.name || 'Sticker')}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\'font-size:12px;color:var(--text-muted);\'>Sticker unavailable</span>';">
         </div>
       `;
     } else if (msg.reactionSticker) {
