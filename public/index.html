@@ -20,11 +20,11 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="dark-theme">
+<body class="dark-theme theme-yellowred">
   <!-- Header -->
   <header class="app-header">
     <div class="logo-container">
@@ -44,8 +44,14 @@
     </div>
 
     <div class="header-actions">
+      <!-- Chat Panel Toggle Button -->
+      <button class="icon-btn btn-chat-toggle" id="btnToggleChatSidebar" title="Toggle Team Chat Panel">
+        💬 Chat <span class="badge-unread hidden" id="chatUnreadBadge">0</span>
+      </button>
+
       <!-- App Visual Theme Selector -->
       <select id="selectAppTheme" class="status-select" title="Change App Theme">
+        <option value="yellowred" selected>🔥 Bright Yellow & Red</option>
         <option value="slate">🌌 Dark Slate</option>
         <option value="cyberpunk">🌆 Cyberpunk Neon</option>
         <option value="matrix">🌲 Matrix Dark</option>
@@ -150,13 +156,16 @@
     </main>
 
     <!-- Side Panel: Chat -->
-    <aside class="sidebar-chat">
+    <aside class="sidebar-chat" id="sidebarChat">
       <div class="chat-header">
         <div class="chat-tab-buttons">
           <button type="button" class="chat-tab-btn active" id="chatTabEveryone">🌐 Everyone</button>
           <button type="button" class="chat-tab-btn" id="chatTabDM">🔒 Private DM</button>
         </div>
-        <button type="button" class="btn-export-chat" id="btnExportChat" title="Export Chat Log">📥 Export</button>
+        <div class="chat-header-actions" style="display:flex; gap:6px; align-items:center;">
+          <button type="button" class="btn-export-chat" id="btnExportChat" title="Export Chat Log">📥 Export</button>
+          <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="Hide Chat Panel">✖</button>
+        </div>
       </div>
 
       <!-- Chat Message Search Bar -->
@@ -349,7 +358,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=21"></script>
-  <script src="app.js?v=21"></script>
+  <script src="audio-fx.js?v=22"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>

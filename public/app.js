@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const vuBarFill = document.getElementById('vuBarFill');
 
   // Sidebar Chat & Pinned Banner
+  const sidebarChat = document.getElementById('sidebarChat');
+  const btnToggleChatSidebar = document.getElementById('btnToggleChatSidebar');
+  const chatUnreadBadge = document.getElementById('chatUnreadBadge');
+  const btnCloseSidebar = document.getElementById('btnCloseSidebar');
   const pinnedChatBanner = document.getElementById('pinnedChatBanner');
   const pinnedBannerText = document.getElementById('pinnedBannerText');
   const btnUnpinBanner = document.getElementById('btnUnpinBanner');
@@ -87,6 +91,31 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedDmSocketId = null;
   let typingTimeout = null;
   let activeVoiceFilter = 'normal';
+  let unreadChatCount = 0;
+
+  function updateUnreadBadge() {
+    if (chatUnreadBadge) {
+      if (unreadChatCount > 0) {
+        chatUnreadBadge.textContent = unreadChatCount;
+        chatUnreadBadge.classList.remove('hidden');
+      } else {
+        chatUnreadBadge.textContent = '0';
+        chatUnreadBadge.classList.add('hidden');
+      }
+    }
+  }
+
+  function toggleChatSidebar(show) {
+    if (!sidebarChat) return;
+    const shouldShow = show !== undefined ? show : sidebarChat.classList.contains('collapsed');
+    if (shouldShow) {
+      sidebarChat.classList.remove('collapsed');
+      unreadChatCount = 0;
+      updateUnreadBadge();
+    } else {
+      sidebarChat.classList.add('collapsed');
+    }
+  }
 
   let localStream = null;
   let txAudioContext = null;
@@ -1548,6 +1577,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function appendChatMessage(msg) {
+    if (sidebarChat && sidebarChat.classList.contains('collapsed') && msg.senderId !== socket.id) {
+      unreadChatCount++;
+      updateUnreadBadge();
+    }
+
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
     if (msg.id) chatMessagesMap.set(msg.id, bubble);
@@ -1757,6 +1791,32 @@ document.addEventListener('DOMContentLoaded', () => {
       a.download = `OfficeTalk_Chat_Export_${Date.now()}.txt`;
       a.click();
       URL.revokeObjectURL(url);
+    });
+  }
+
+  // Sidebar Chat Toggle & Close Listeners
+  if (btnToggleChatSidebar) {
+    btnToggleChatSidebar.addEventListener('click', () => toggleChatSidebar());
+  }
+
+  if (btnCloseSidebar) {
+    btnCloseSidebar.addEventListener('click', () => toggleChatSidebar(false));
+  }
+
+  // App Visual Theme Switcher (Bright Yellow & Red default)
+  function applyAppTheme(theme) {
+    document.body.className = `dark-theme theme-${theme}`;
+  }
+
+  if (selectAppTheme) {
+    const savedTheme = localStorage.getItem('officetalk_theme') || 'yellowred';
+    selectAppTheme.value = savedTheme;
+    applyAppTheme(savedTheme);
+
+    selectAppTheme.addEventListener('change', () => {
+      const selected = selectAppTheme.value;
+      applyAppTheme(selected);
+      localStorage.setItem('officetalk_theme', selected);
     });
   }
 
