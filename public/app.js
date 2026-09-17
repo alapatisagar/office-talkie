@@ -941,25 +941,73 @@ document.addEventListener('DOMContentLoaded', () => {
     try { localStorage.setItem('officetalk_favorite_stickers', JSON.stringify(favs)); } catch(e) {}
   }
 
-  // DOM elements for Picker & Admin Upload
+  // -------------------------------------------------------------
+  // Giphy GIF Engine (Telugu Priority & English Support)
+  // -------------------------------------------------------------
+  const FEATURED_GIFS = [
+    // Telugu Comedy (Brahmanandam, Ali, Vennela Kishore, Sunil)
+    { id: 'brahmi-shock', title: 'Brahmanandam Shock', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'shock', 'comedy', 'funny', 'reaction', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDFvZ3FyeHVxcWcxcThicmxreHpocTB2bmZ4OHBhdnlwdmNocTJ3ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9DosE8knCVPPy/giphy.gif' },
+    { id: 'brahmi-dance', title: 'Brahmi Mass Dance', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'dance', 'mass', 'funny', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcDJycHdpNXE1MWdweHZvZmtndmtua2J6OGx5YmVrZmFvNmdxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/NipFetnQOuKhW/giphy.gif' },
+    { id: 'brahmi-laugh', title: 'Brahmanandam Ultra Laugh', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'laugh', 'ha', 'funny', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmtpd3dqcTF4N3d5NHp4dmx1OHRmbjMxeHFwdWJndm42eG05ZmxrdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/10Jhvt693jN20/giphy.gif' },
+    { id: 'brahmi-confused', title: 'Brahmi Confused Ayyo', category: 'telugu-reactions', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'confused', 'ayyo', 'what', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnYyZnM0NDZnd3E2ZHhnbmt3M2twYXc0OG1hcnRwZGpyNzEwaGllZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7bu3XilJ5BOiSGic/giphy.gif' },
+    { id: 'ali-comedy-look', title: 'Ali Funny Look', category: 'telugu-comedy', lang: 'TE', keywords: ['ali', 'comedy', 'funny', 'look', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdTFqOW85cmlyZmFmNmQzcjE0dmdwdTZpNHR4a2V1ZmFscW4zM2djaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dZeXwS8X00m2L74W2d/giphy.gif' },
+    { id: 'vennela-kishore-smile', title: 'Vennela Kishore Smile', category: 'telugu-comedy', lang: 'TE', keywords: ['vennela kishore', 'smile', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGNzYms1bmMwbDBybDZlZzJ1dzdnbXFvdXgzeWF5dzJzdzFua3E0byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlUxcWRsqROFY4g/giphy.gif' },
+
+    // Telugu Mass (Pushpa, Tillu, Balayya, Pawan Kalyan, Allu Arjun)
+    { id: 'pushpa-thaggedhe-le', title: 'Pushpa Raj Thaggedhe Le', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['pushpa', 'allu arjun', 'thaggedhele', 'mass', 'swag', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW1uOXcyYnpudDF5aHJocHF0NXR3N2E1Zms4dWtsNzg3cXpxcnRjdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3j2a3i4L2V7Kk/giphy.gif' },
+    { id: 'dj-tillu-atlu-untadi', title: 'DJ Tillu Mass Swag', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['tillu', 'dj tillu', 'atlu untadi', 'mass', 'telugu', 'hero'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmRwNmQzbWJ6dmU0NG84NGt4emx5Z2txcm8zMW9sZ20xcGZydnNmYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41YkxvU8c7J7BbaE/giphy.gif' },
+    { id: 'balayya-dont-trouble-trouble', title: 'Balayya Mass Dialogue', category: 'telugu-mass', lang: 'TE', keywords: ['balakrishna', 'balayya', 'mass', 'roar', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJ2c2N2Zm4wODR3NXozOHd4NmE0aGtxNmljZzEzMnc5OTlsZXZvMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13n7XeeDY322yY/giphy.gif' },
+    { id: 'pawan-kalyan-gabbar', title: 'Pawan Kalyan Gabbar Singh', category: 'telugu-mass', lang: 'TE', keywords: ['pawan kalyan', 'gabbar singh', 'mass', 'power star', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGxxc2Rxb3Brc3dqZHRxYWZpdTR1Z3VtdDFnNjdsNWtzbHZteWtrdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l2SpR03mR14h8LqAU/giphy.gif' },
+    { id: 'allu-arjun-ramuloo', title: 'Allu Arjun Dance Swag', category: 'telugu-mass', lang: 'TE', keywords: ['allu arjun', 'dance', 'bunny', 'mass', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzI5Zmp4czE1OTJ0ZnhmYmJ4b2N0bms1cmVnd2ZvaGtrcnlyNGNnYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5xaOcLGvzUv25f3wx3O/giphy.gif' },
+
+    // Telugu Reactions (Ayyo, Cheppa Kada, Abbo, Chii)
+    { id: 'telugu-ayyo-face', title: 'Ayyo Rama Reaction', category: 'telugu-reactions', lang: 'TE', keywords: ['ayyo', 'reaction', 'facepalm', 'telugu', 'funny'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbms1Ynl4aGtpdWh0aTFnZTBqYmV1bzV4cXN1cWhkOWttZjdpOHFjZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o6Zt62PeJeFUDwBUI/giphy.gif' },
+    { id: 'telugu-clap-mass', title: 'Telugu Super Clap', category: 'telugu-reactions', lang: 'TE', keywords: ['clap', 'super', 'praise', 'mass', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnAxdXg2YXBhNDYxcXljYmEzaTF2a3U5bjgxb3p3YXl1Nnlid3l1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d31w24psGYeekCZy/giphy.gif' },
+
+    // Love & Romance (Telugu Movies)
+    { id: 'telugu-love-heart', title: 'Telugu Romance Heart', category: 'love', lang: 'TE', keywords: ['love', 'heart', 'romance', 'cute', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnpxNnA4NWZxdW4ybXZsN2R5bXN0bmcybmoxOWdpcXZhODkwaDhpOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26fldmIp6PeajdqFO/giphy.gif' },
+    
+    // Celebration & Dance
+    { id: 'telugu-dance-party', title: 'Telugu Mass Dance Party', category: 'celebration', lang: 'TE', keywords: ['dance', 'party', 'celebration', 'mass', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmtxYmltNmUybGFxMnd4OGFucTR2bzZhcDVwZzEycG5uNW8ycDRkNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3V0lsGcqU71nRiEg/giphy.gif' },
+
+    // Trending English GIFs
+    { id: 'english-funny-cat', title: 'Funny Cat Dance', category: 'english', lang: 'EN', keywords: ['cat', 'dance', 'funny', 'english'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcDJycHdpNXE1MWdweHZvZmtndmtua2J6OGx5YmVrZmFvNmdxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JIX9t2j0ZTN9S/giphy.gif' },
+    { id: 'english-popcorn', title: 'Eating Popcorn Reaction', category: 'english', lang: 'EN', keywords: ['popcorn', 'watching', 'english', 'reaction'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHJsdzE5eXpsbzliYmxpazlsdjdrdTF1NXltdmdybmV0cnZ2OWo5NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pUeXcg80cO8I8/giphy.gif' },
+    { id: 'english-mind-blown', title: 'Mind Blown Reaction', category: 'english', lang: 'EN', keywords: ['mind blown', 'wow', 'english', 'reaction'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWk3amFqODg5c3psdzFndjlsbWxuaTlyczdpMXNjcjVuaWRmdnVsZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26ufdipQqU2lhNA4g/giphy.gif' }
+  ];
+
+  const GIF_CATEGORIES = [
+    { id: 'all', name: '🔥 All GIFs', lang: 'TE' },
+    { id: 'telugu-comedy', name: '🔥 Telugu Comedy', lang: 'TE' },
+    { id: 'telugu-mass', name: '😎 Telugu Mass', lang: 'TE' },
+    { id: 'brahmanandam', name: '🤣 Brahmanandam', lang: 'TE' },
+    { id: 'pushpa-tillu', name: '🔥 Pushpa & Tillu', lang: 'TE' },
+    { id: 'telugu-reactions', name: '🤦 Telugu Reactions', lang: 'TE' },
+    { id: 'love', name: '❤️ Love & Romance', lang: 'TE' },
+    { id: 'celebration', name: '🎉 Celebration', lang: 'TE' },
+    { id: 'english', name: '🌐 English GIFs', lang: 'EN' }
+  ];
+
+  let activeGifCategory = 'all';
+  let activeGifSearchQuery = '';
+
+  const btnGifPicker = document.getElementById('btnGifPicker');
   const btnEmojiPicker = document.getElementById('btnEmojiPicker');
-  const btnStickerPicker = document.getElementById('btnStickerPicker');
   const btnClosePicker = document.getElementById('btnClosePicker');
   const emojiPickerPanel = document.getElementById('emojiPickerPanel');
-  const pickerSearchContainer = document.getElementById('pickerSearchContainer');
-  const stickerSearchInput = document.getElementById('stickerSearchInput');
-  const btnClearStickerSearch = document.getElementById('btnClearStickerSearch');
 
-  const tabEmojis = document.getElementById('tabEmojis');
-  const tabStickers = document.getElementById('tabStickers');
   const tabGifs = document.getElementById('tabGifs');
+  const tabEmojis = document.getElementById('tabEmojis');
 
-  const pickerContentEmojis = document.getElementById('pickerContentEmojis');
-  const pickerContentStickers = document.getElementById('pickerContentStickers');
   const pickerContentGifs = document.getElementById('pickerContentGifs');
+  const pickerContentEmojis = document.getElementById('pickerContentEmojis');
 
+  const gifCategoryTabs = document.getElementById('gifCategoryTabs');
+  const gifGrid = document.getElementById('gifGrid');
   const emojiGrid = document.getElementById('emojiGrid');
-  const stickerGrid = document.getElementById('stickerGrid');
+
+  const gifSearchInput = document.getElementById('gifSearchInput');
+  const btnClearGifSearch = document.getElementById('btnClearGifSearch');
 
   // Admin Sticker Upload Elements
   const btnAdminUploadSticker = document.getElementById('btnAdminUploadSticker');
@@ -967,276 +1015,136 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCloseStickerUpload = document.getElementById('btnCloseStickerUpload');
   const formAdminStickerUpload = document.getElementById('formAdminStickerUpload');
 
-  let activeCategory = 'trending';
-  let activeActorPack = 'all';
-  let activeSearchQuery = '';
-
-  const STICKER_CATEGORIES = [
-    { id: 'trending', name: '🔥 Trending' },
-    { id: 'recent', name: '🕘 Recent' },
-    { id: 'favorites', name: '⭐ Favorites' },
-    { id: 'comedy', name: '😂 Comedy' },
-    { id: 'mass', name: '😎 Mass' },
-    { id: 'reaction', name: '🤦 Reactions' },
-    { id: 'emotional', name: '😭 Emotional' },
-    { id: 'love', name: '❤️ Love' },
-    { id: 'celebration', name: '🎉 Celebration' }
-  ];
-
-  async function loadStickerAssetConfig() {
-    try {
-      const res = await fetch('/telugu_movie_sticker_packs_antigravity.json');
-      const data = await res.json();
-      if (data && Array.isArray(data.stickers)) {
-        DYNAMIC_STICKERS_LIST = data.stickers;
-      }
-    } catch (err) {
-      console.warn('Notice loading sticker json config:', err);
-    }
-  }
-
-  loadStickerAssetConfig();
-
-  function renderCategoryPills() {
-    const bar = document.getElementById('stickerCategoryTabs');
-    if (!bar) return;
-    bar.innerHTML = '';
-    STICKER_CATEGORIES.forEach(cat => {
+  function renderGifCategoryPills() {
+    if (!gifCategoryTabs) return;
+    gifCategoryTabs.innerHTML = '';
+    GIF_CATEGORIES.forEach(cat => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = `cat-pill ${activeCategory === cat.id ? 'active' : ''}`;
+      btn.className = `cat-pill ${activeGifCategory === cat.id ? 'active' : ''}`;
       btn.textContent = cat.name;
       btn.addEventListener('click', () => {
-        activeCategory = cat.id;
-        activeActorPack = 'all';
-        renderCategoryPills();
-        renderActorSubnavPills();
-        renderStickersGrid();
+        activeGifCategory = cat.id;
+        renderGifCategoryPills();
+        renderGifsGrid();
       });
-      bar.appendChild(btn);
+      gifCategoryTabs.appendChild(btn);
     });
   }
 
-  function renderActorSubnavPills() {
-    const subnav = document.getElementById('stickerPacksSubnav');
-    if (!subnav) return;
-    subnav.innerHTML = '';
-    TELUGU_ACTOR_PACKS.forEach(pack => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `pack-pill ${activeActorPack === pack.id ? 'active' : ''}`;
-      btn.textContent = `${pack.emoji} ${pack.name}`;
-      btn.addEventListener('click', () => {
-        activeActorPack = pack.id;
-        renderActorSubnavPills();
-        renderStickersGrid();
-      });
-      subnav.appendChild(btn);
-    });
-  }
+  function renderGifsGrid() {
+    if (!gifGrid) return;
+    gifGrid.innerHTML = '';
 
-  function renderStickersGrid() {
-    if (!stickerGrid) return;
-    stickerGrid.innerHTML = '';
+    const query = activeGifSearchQuery.trim().toLowerCase();
+    let list = [...FEATURED_GIFS];
 
-    const favs = getFavoriteStickers();
-    const recents = getRecentStickers();
-    const query = activeSearchQuery.trim().toLowerCase();
-
-    let list = [...DYNAMIC_STICKERS_LIST];
-
-    // Filter by Search Query
     if (query) {
-      list = list.filter(stk => {
-        const textToSearch = `${stk.name || ''} ${stk.nameTe || ''} ${(stk.keywords||[]).join(' ')} ${stk.packId || ''} ${stk.category || ''}`.toLowerCase();
+      list = list.filter(gif => {
+        const textToSearch = `${gif.title} ${gif.category} ${gif.subCategory || ''} ${(gif.keywords || []).join(' ')} ${gif.lang}`.toLowerCase();
         return textToSearch.includes(query);
       });
-    } else {
-      // Filter by Category
-      if (activeCategory === 'recent') {
-        list = list.filter(stk => recents.includes(stk.id));
-        list.sort((a, b) => recents.indexOf(a.id) - recents.indexOf(b.id));
-      } else if (activeCategory === 'favorites') {
-        list = list.filter(stk => favs.includes(stk.id));
-      } else if (activeCategory !== 'trending') {
-        list = list.filter(stk => stk.category === activeCategory);
-      }
-
-      // Filter by Actor Pack
-      if (activeActorPack !== 'all') {
-        list = list.filter(stk => stk.packId === activeActorPack);
-      }
+    } else if (activeGifCategory !== 'all') {
+      list = list.filter(gif => gif.category === activeGifCategory || gif.subCategory === activeGifCategory);
     }
 
+    // MANDATORY SORT: Prioritize Telugu (lang === 'TE') GIFs FIRST
+    list.sort((a, b) => {
+      if (a.lang === 'TE' && b.lang !== 'TE') return -1;
+      if (a.lang !== 'TE' && b.lang === 'TE') return 1;
+      return 0;
+    });
+
     if (list.length === 0) {
-      stickerGrid.innerHTML = `
-        <div class="no-stickers-notice">
-          No stickers available in this pack yet.
-        </div>
-      `;
+      gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No GIFs found for this search.</div>`;
       return;
     }
 
-    let renderedCount = 0;
-
-    list.forEach(stk => {
-      if (!stk.image) return;
-
-      const isFav = favs.includes(stk.id);
+    list.forEach(gif => {
       const card = document.createElement('div');
-      card.className = 'sticker-card';
-      card.setAttribute('data-id', stk.id);
-
+      card.className = 'gif-card';
       card.innerHTML = `
-        <button type="button" class="favorite-star-btn ${isFav ? 'is-favorite' : ''}" title="${isFav ? 'Remove Favorite' : 'Add Favorite'}">⭐</button>
-        <img src="${stk.image}" class="sticker-img" alt="${escapeHTML(stk.name || 'Sticker')}" loading="lazy" onerror="this.onerror=null; this.parentElement.remove(); checkEmptyGridState();">
-        ${stk.nameTe || stk.name ? `<div class="sticker-label">${escapeHTML(stk.nameTe || stk.name)}</div>` : ''}
+        <span class="gif-badge-lang">${gif.lang === 'TE' ? 'TELUGU' : 'ENGLISH'}</span>
+        <img src="${gif.url}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy">
+        <div class="gif-title-tag">${escapeHTML(gif.title)}</div>
       `;
 
-      const favBtn = card.querySelector('.favorite-star-btn');
-      favBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleFavoriteSticker(stk.id);
-        renderStickersGrid();
-      });
-
       card.addEventListener('click', () => {
-        addRecentSticker(stk.id);
         socket.emit('send-message', {
-          text: '',
-          type: 'sticker',
-          sticker: {
-            stickerId: stk.id,
-            packId: stk.packId,
-            imageUrl: stk.image,
-            name: stk.name,
-            nameTe: stk.nameTe
-          }
+          gifUrl: gif.url,
+          gifTitle: gif.title
         });
         if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
       });
 
-      stickerGrid.appendChild(card);
-      renderedCount++;
+      gifGrid.appendChild(card);
     });
-
-    if (renderedCount === 0) {
-      stickerGrid.innerHTML = `
-        <div class="no-stickers-notice">
-          No stickers available in this pack yet.
-        </div>
-      `;
-    }
   }
 
-  function checkEmptyGridState() {
-    if (stickerGrid && stickerGrid.querySelectorAll('.sticker-card').length === 0) {
-      stickerGrid.innerHTML = `
-        <div class="no-stickers-notice">
-          No stickers available in this pack yet.
-        </div>
-      `;
-    }
-  }
-
-  function initEmojiAndStickerPicker() {
-    if (!emojiGrid) return;
-    emojiGrid.innerHTML = '';
-    EMOJI_LIST.forEach(emoji => {
-      const item = document.createElement('div');
-      item.className = 'emoji-item';
-      item.textContent = emoji;
-      item.addEventListener('click', () => {
-        chatInput.value += emoji;
-        chatInput.focus();
+  function initGifAndEmojiPicker() {
+    if (emojiGrid) {
+      emojiGrid.innerHTML = '';
+      EMOJI_LIST.forEach(emoji => {
+        const item = document.createElement('div');
+        item.className = 'emoji-item';
+        item.textContent = emoji;
+        item.addEventListener('click', () => {
+          chatInput.value += emoji;
+          chatInput.focus();
+        });
+        emojiGrid.appendChild(item);
       });
-      emojiGrid.appendChild(item);
-    });
+    }
 
-    renderCategoryPills();
-    renderActorSubnavPills();
-    renderStickersGrid();
+    renderGifCategoryPills();
+    renderGifsGrid();
   }
 
-  initEmojiAndStickerPicker();
+  initGifAndEmojiPicker();
 
-  // Search input listeners
-  if (stickerSearchInput) {
-    stickerSearchInput.addEventListener('input', () => {
-      activeSearchQuery = stickerSearchInput.value;
-      if (btnClearStickerSearch) {
-        if (activeSearchQuery) btnClearStickerSearch.classList.remove('hidden');
-        else btnClearStickerSearch.classList.add('hidden');
+  if (gifSearchInput) {
+    gifSearchInput.addEventListener('input', () => {
+      activeGifSearchQuery = gifSearchInput.value;
+      if (btnClearGifSearch) {
+        if (activeGifSearchQuery) btnClearGifSearch.classList.remove('hidden');
+        else btnClearGifSearch.classList.add('hidden');
       }
-      renderStickersGrid();
+      renderGifsGrid();
     });
   }
 
-  if (btnClearStickerSearch) {
-    btnClearStickerSearch.addEventListener('click', () => {
-      if (stickerSearchInput) stickerSearchInput.value = '';
-      activeSearchQuery = '';
-      btnClearStickerSearch.classList.add('hidden');
-      renderStickersGrid();
+  if (btnClearGifSearch) {
+    btnClearGifSearch.addEventListener('click', () => {
+      if (gifSearchInput) gifSearchInput.value = '';
+      activeGifSearchQuery = '';
+      btnClearGifSearch.classList.add('hidden');
+      renderGifsGrid();
     });
   }
 
-  // Trigger buttons
-  if (btnEmojiPicker) {
-    btnEmojiPicker.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openPickerTab('emoji');
-    });
-  }
-
-  if (btnStickerPicker) {
-    btnStickerPicker.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openPickerTab('stickers');
-    });
-  }
-
-  if (btnClosePicker) {
-    btnClosePicker.addEventListener('click', () => {
-      if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
-    });
-  }
-
-  function openPickerTab(tabName) {
+  function openPicker(tab) {
     if (!emojiPickerPanel) return;
     emojiPickerPanel.classList.remove('hidden');
 
-    if (tabName === 'emoji') {
-      tabEmojis.classList.add('active');
-      tabStickers.classList.remove('active');
-      tabGifs.classList.remove('active');
-      pickerContentEmojis.classList.remove('hidden');
-      pickerContentStickers.classList.add('hidden');
-      pickerContentGifs.classList.add('hidden');
-      if (pickerSearchContainer) pickerSearchContainer.classList.add('hidden');
-    } else if (tabName === 'stickers') {
-      tabStickers.classList.add('active');
-      tabEmojis.classList.remove('active');
-      tabGifs.classList.remove('active');
-      pickerContentStickers.classList.remove('hidden');
-      pickerContentEmojis.classList.add('hidden');
-      pickerContentGifs.classList.add('hidden');
-      if (pickerSearchContainer) pickerSearchContainer.classList.remove('hidden');
-      renderStickersGrid();
-    } else if (tabName === 'gifs') {
+    if (tab === 'gifs') {
       tabGifs.classList.add('active');
       tabEmojis.classList.remove('active');
-      tabStickers.classList.remove('active');
       pickerContentGifs.classList.remove('hidden');
       pickerContentEmojis.classList.add('hidden');
-      pickerContentStickers.classList.add('hidden');
-      if (pickerSearchContainer) pickerSearchContainer.classList.add('hidden');
+      renderGifsGrid();
+    } else {
+      tabEmojis.classList.add('active');
+      tabGifs.classList.remove('active');
+      pickerContentEmojis.classList.remove('hidden');
+      pickerContentGifs.classList.add('hidden');
     }
   }
 
-  if (tabEmojis) tabEmojis.addEventListener('click', () => openPickerTab('emoji'));
-  if (tabStickers) tabStickers.addEventListener('click', () => openPickerTab('stickers'));
-  if (tabGifs) tabGifs.addEventListener('click', () => openPickerTab('gifs'));
+  if (btnGifPicker) btnGifPicker.addEventListener('click', (e) => { e.stopPropagation(); openPicker('gifs'); });
+  if (btnEmojiPicker) btnEmojiPicker.addEventListener('click', (e) => { e.stopPropagation(); openPicker('emojis'); });
+  if (tabGifs) tabGifs.addEventListener('click', () => openPicker('gifs'));
+  if (tabEmojis) tabEmojis.addEventListener('click', () => openPicker('emojis'));
+  if (btnClosePicker) btnClosePicker.addEventListener('click', () => emojiPickerPanel.classList.add('hidden'));
 
   // Admin Sticker Upload Event Handlers
   if (btnAdminUploadSticker) {
@@ -1292,15 +1200,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Socket listener when Admin uploads a new sticker asset
-  socket.on('new-sticker-uploaded', (newSticker) => {
-    DYNAMIC_STICKERS_LIST.push(newSticker);
-    renderStickersGrid();
-  });
-
   // Outside click & ESC key dismiss
   document.addEventListener('click', (e) => {
-    if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker && e.target !== btnStickerPicker) {
+    if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker && e.target !== btnGifPicker) {
       emojiPickerPanel.classList.add('hidden');
     }
   });
@@ -1446,7 +1348,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (msg.id) chatMessagesMap.set(msg.id, bubble);
 
     let contentHtml = '';
-    if (msg.sticker) {
+    if (msg.gifUrl) {
+      contentHtml = `
+        <div class="chat-gif-wrapper">
+          <img src="${msg.gifUrl}" class="chat-gif-img" alt="${escapeHTML(msg.gifTitle || 'GIF')}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\'font-size:12px;color:var(--text-muted);\'>GIF unavailable</span>';">
+        </div>
+      `;
+    } else if (msg.sticker) {
       const stickerImgUrl = msg.sticker.imageUrl || msg.sticker.image || (typeof msg.sticker === 'string' ? msg.sticker : '');
       contentHtml = `
         <div class="chat-sticker-wrapper">

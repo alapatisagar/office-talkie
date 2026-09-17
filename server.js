@@ -230,7 +230,7 @@ io.on('connection', (socket) => {
   });
 
   // Team Chat Messages & Attachments
-  socket.on('send-message', ({ text, sticker, reactionSticker, fileData, voiceMemo }) => {
+  socket.on('send-message', ({ text, sticker, gifUrl, gifTitle, reactionSticker, fileData, voiceMemo }) => {
     const user = users.get(socket.id);
     if (!user) return;
 
@@ -242,6 +242,8 @@ io.on('connection', (socket) => {
       isAdmin: user.isAdmin,
       text: text ? text.trim() : '',
       sticker: sticker || null,
+      gifUrl: gifUrl || null,
+      gifTitle: gifTitle || null,
       reactionSticker: reactionSticker || null,
       fileData: fileData || null,
       voiceMemo: voiceMemo || null,
