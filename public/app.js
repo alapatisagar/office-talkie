@@ -142,9 +142,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function performUserConnect(inputName = null) {
     try {
       const nameEl = document.getElementById('setupName');
-      const nameVal = inputName || (nameEl ? nameEl.value : '') || '';
+      const nameVal = inputName || (nameEl ? nameEl.value : '') || localStorage.getItem('officetalk_user_name') || '';
       const rawName = nameVal.trim();
-      if (!rawName) return;
+      
+      const modal = document.getElementById('modalSetup');
+      if (!rawName) {
+        if (modal) {
+          modal.style.cssText = 'display: flex !important; opacity: 1 !important; pointer-events: auto !important; visibility: visible !important;';
+          modal.classList.remove('hidden');
+        }
+        return;
+      }
 
       try { localStorage.setItem('officetalk_user_name', rawName); } catch (e) {}
 
@@ -162,31 +170,21 @@ document.addEventListener('DOMContentLoaded', () => {
         presenceStatus
       };
 
-      if (headerUserName) headerUserName.textContent = rawName;
-      if (headerUserAvatar) headerUserAvatar.textContent = avatar;
-      if (headerAdminTag) {
-        if (isAdmin) headerAdminTag.classList.remove('hidden');
-        else headerAdminTag.classList.add('hidden');
-      }
+      updateHeaderProfile(currentUser);
 
-      const modal = document.getElementById('modalSetup');
       if (modal) {
         modal.style.display = 'none';
         modal.classList.add('hidden');
         try { modal.remove(); } catch(e) {}
       }
 
-      socket.emit('init-user', currentUser);
+      if (socket) {
+        socket.emit('init-user', currentUser);
+      }
       unlockAudioContexts();
       initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
     } catch (err) {
       console.error('[User Connect Error]', err);
-      const modal = document.getElementById('modalSetup');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.classList.add('hidden');
-        try { modal.remove(); } catch(e) {}
-      }
     }
   }
 
@@ -202,25 +200,30 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSubmitSetup) btnSubmitSetup.addEventListener('click', handleConnectEvent);
   if (formSetup) formSetup.addEventListener('submit', handleConnectEvent);
 
-  // Auto-login returning user
-  try {
-    const savedName = localStorage.getItem('officetalk_user_name');
-    if (savedName && savedName.trim()) {
-      if (setupName) setupName.value = savedName.trim();
-      performUserConnect(savedName.trim());
-    }
-  } catch (e) {}
-
-  socket.on('connect', () => {
+  function syncUserWithServer() {
     try {
       const savedName = localStorage.getItem('officetalk_user_name');
       if (currentUser) {
+        updateHeaderProfile(currentUser);
         socket.emit('init-user', currentUser);
       } else if (savedName && savedName.trim()) {
         performUserConnect(savedName.trim());
+      } else {
+        const modal = document.getElementById('modalSetup');
+        if (modal) {
+          modal.style.cssText = 'display: flex !important; opacity: 1 !important; pointer-events: auto !important; visibility: visible !important;';
+          modal.classList.remove('hidden');
+        }
       }
-    } catch (e) {}
-  });
+    } catch(e) {}
+  }
+
+  socket.on('connect', syncUserWithServer);
+  if (socket.connected) {
+    syncUserWithServer();
+  }
+  syncUserWithServer();
+
 
   socket.on('room-locked-error', ({ message }) => {
     alert(`🔒 Connection Blocked: ${message}`);
