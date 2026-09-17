@@ -237,8 +237,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Team Chat Messages & Attachments
-  socket.on('send-message', ({ text, sticker, gifUrl, gifTitle, reactionSticker, fileData, voiceMemo }) => {
+  // Team Chat Messages, Attachments & Private DMs
+  socket.on('send-message', ({ text, sticker, gifUrl, gifTitle, reactionSticker, fileData, voiceMemo, isPrivate, targetSocketId }) => {
     const user = users.get(socket.id);
     if (!user) return;
 
@@ -255,11 +255,40 @@ io.on('connection', (socket) => {
       reactionSticker: reactionSticker || null,
       fileData: fileData || null,
       voiceMemo: voiceMemo || null,
+      isPrivate: !!isPrivate,
+      targetSocketId: targetSocketId || null,
       reactions: {},
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    io.emit('new-message', messageObj);
+    if (isPrivate && targetSocketId) {
+      io.to(targetSocketId).emit('new-message', messageObj);
+      if (targetSocketId !== socket.id) {
+        socket.emit('new-message', messageObj);
+      }
+    } else {
+      io.emit('new-message', messageObj);
+    }
+  });
+
+  // Typing Indicators
+  socket.on('typing', ({ targetSocketId }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    if (targetSocketId && targetSocketId !== 'all') {
+      io.to(targetSocketId).emit('user-typing', { socketId: socket.id, name: user.name, isPrivate: true });
+    } else {
+      socket.broadcast.emit('user-typing', { socketId: socket.id, name: user.name, isPrivate: false });
+    }
+  });
+
+  socket.on('stop-typing', ({ targetSocketId }) => {
+    if (targetSocketId && targetSocketId !== 'all') {
+      io.to(targetSocketId).emit('user-stop-typing', { socketId: socket.id });
+    } else {
+      socket.broadcast.emit('user-stop-typing', { socketId: socket.id });
+    }
   });
 
   // Message Reaction

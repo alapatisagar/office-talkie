@@ -20,7 +20,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -44,6 +44,14 @@
     </div>
 
     <div class="header-actions">
+      <!-- App Visual Theme Selector -->
+      <select id="selectAppTheme" class="status-select" title="Change App Theme">
+        <option value="slate">🌌 Dark Slate</option>
+        <option value="cyberpunk">🌆 Cyberpunk Neon</option>
+        <option value="matrix">🌲 Matrix Dark</option>
+        <option value="midnight">🌊 Midnight Blue</option>
+      </select>
+
       <!-- Presence Status Selector -->
       <select id="selectPresenceStatus" class="status-select" title="Change Presence Status">
         <option value="Available 🟢">Available 🟢</option>
@@ -144,7 +152,16 @@
     <!-- Side Panel: Chat -->
     <aside class="sidebar-chat">
       <div class="chat-header">
-        <h3>💬 Team Chat</h3>
+        <div class="chat-tab-buttons">
+          <button type="button" class="chat-tab-btn active" id="chatTabEveryone">🌐 Everyone</button>
+          <button type="button" class="chat-tab-btn" id="chatTabDM">🔒 Private DM</button>
+        </div>
+        <button type="button" class="btn-export-chat" id="btnExportChat" title="Export Chat Log">📥 Export</button>
+      </div>
+
+      <!-- Chat Message Search Bar -->
+      <div class="chat-search-bar">
+        <input type="text" id="chatSearchInput" placeholder="🔍 Search chat history..." autocomplete="off">
       </div>
 
       <!-- Pinned Announcement Banner -->
@@ -157,8 +174,14 @@
         <button class="btn-unpin-banner hidden" id="btnUnpinBanner" title="Unpin Announcement">✖</button>
       </div>
 
+      <!-- Live Typing Indicator Banner -->
+      <div class="typing-indicator-banner hidden" id="typingIndicatorBanner">
+        <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>
+        <span class="typing-text" id="typingText">Someone is typing...</span>
+      </div>
+
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-notice">Send quick text messages, voice memos, files & Telugu meme stickers!</div>
+        <div class="chat-notice" id="chatNotice">Send quick text messages, voice memos, files & Telugu meme stickers!</div>
       </div>
 
       <!-- Emoji & Giphy GIF Picker Popup -->
@@ -239,6 +262,23 @@
         </select>
       </div>
       <div class="form-group">
+        <label for="selectVoiceFilter">Voice Filter & Audio Effect</label>
+        <select id="selectVoiceFilter">
+          <option value="normal">🎙️ Normal Voice (Default)</option>
+          <option value="robot">🤖 Robot Effect</option>
+          <option value="megaphone">📢 Megaphone / Walkie Filter</option>
+          <option value="scifi">🛸 Sci-Fi Pitch Shift</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Microphone AI Audio Enhancements</label>
+        <div class="checkbox-group" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+          <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleNoiseSuppression" checked> 🔇 AI Noise Suppression</label>
+          <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleEchoCancellation" checked> 🎙️ Acoustic Echo Cancellation</label>
+          <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleAutoGain" checked> 🎚️ Auto Gain Control</label>
+        </div>
+      </div>
+      <div class="form-group">
         <label>Mic Level Test</label>
         <div class="vu-bar-wrapper">
           <div class="vu-bar-fill" id="settingsVuFill"></div>
@@ -309,7 +349,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=20"></script>
-  <script src="app.js?v=20"></script>
+  <script src="audio-fx.js?v=21"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

@@ -57,6 +57,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsVuFill = document.getElementById('settingsVuFill');
   const btnToggleSoundFX = document.getElementById('btnToggleSoundFX');
 
+  // App Theme & New Options Elements
+  const selectAppTheme = document.getElementById('selectAppTheme');
+  const chatTabEveryone = document.getElementById('chatTabEveryone');
+  const chatTabDM = document.getElementById('chatTabDM');
+  const btnExportChat = document.getElementById('btnExportChat');
+  const chatSearchInput = document.getElementById('chatSearchInput');
+  const typingIndicatorBanner = document.getElementById('typingIndicatorBanner');
+  const typingText = document.getElementById('typingText');
+  const selectVoiceFilter = document.getElementById('selectVoiceFilter');
+  const toggleNoiseSuppression = document.getElementById('toggleNoiseSuppression');
+  const toggleEchoCancellation = document.getElementById('toggleEchoCancellation');
+  const toggleAutoGain = document.getElementById('toggleAutoGain');
+
   // Admin Control Panel Elements
   const adminControlPanel = document.getElementById('adminControlPanel');
   const btnAdminBroadcast = document.getElementById('btnAdminBroadcast');
@@ -69,6 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const socket = io();
   let currentUser = null;
   const selectedTargetIds = new Set(['all']);
+
+  let activeChatTab = 'everyone';
+  let selectedDmSocketId = null;
+  let typingTimeout = null;
+  let activeVoiceFilter = 'normal';
 
   let localStream = null;
   let txAudioContext = null;
@@ -84,6 +102,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const onlineUsersMap = new Map(); // socketId -> userData
   const chatMessagesMap = new Map(); // messageId -> DOMElement
+
+  // Haptic feedback helper
+  function triggerHaptic(pattern = [30]) {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
+
+  // App Theme Switcher
+  function applyAppTheme(themeName) {
+    document.body.classList.remove('theme-cyberpunk', 'theme-matrix', 'theme-midnight');
+    if (themeName !== 'slate') document.body.classList.add(`theme-${themeName}`);
+    try { localStorage.setItem('officetalk_app_theme', themeName); } catch (e) {}
+  }
+
+  if (selectAppTheme) {
+    const savedTheme = localStorage.getItem('officetalk_app_theme') || 'slate';
+    selectAppTheme.value = savedTheme;
+    applyAppTheme(savedTheme);
+    selectAppTheme.addEventListener('change', () => applyAppTheme(selectAppTheme.value));
+  }
+
+  // Desktop Web Push Notification Helper
+  function triggerDesktopNotification(title, options) {
+    if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+      try { new Notification(title, options); } catch (e) {}
+    }
+  }
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
 
   // Voice Memo recording variables
   let mediaRecorder = null;
@@ -262,8 +311,19 @@ document.addEventListener('DOMContentLoaded', () => {
   async function initLocalMicrophone(deviceId = null) {
     try {
       if (localStream) localStream.getTracks().forEach(track => track.stop());
-      const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
-      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const noiseSuppression = toggleNoiseSuppression ? toggleNoiseSuppression.checked : true;
+      const echoCancellation = toggleEchoCancellation ? toggleEchoCancellation.checked : true;
+      const autoGainControl = toggleAutoGain ? toggleAutoGain.checked : true;
+
+      const audioOptions = {
+        noiseSuppression,
+        echoCancellation,
+        autoGainControl
+      };
+      if (deviceId) audioOptions.deviceId = { exact: deviceId };
+
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: audioOptions });
       setupPcmAudioCapture(localStream);
       populateAudioDevices();
     } catch (err) {
@@ -282,6 +342,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const source = txAudioContext.createMediaStreamSource(stream);
       source.connect(analyser);
 
+      // Voice Filter Node Chain
+      let lastNode = source;
+      if (activeVoiceFilter === 'robot') {
+        const filter = txAudioContext.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1200;
+        filter.Q.value = 3;
+        lastNode.connect(filter);
+        lastNode = filter;
+      } else if (activeVoiceFilter === 'megaphone') {
+        const hp = txAudioContext.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 400;
+        const lp = txAudioContext.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 2500;
+        lastNode.connect(hp);
+        hp.connect(lp);
+        lastNode = lp;
+      } else if (activeVoiceFilter === 'scifi') {
+        const notch = txAudioContext.createBiquadFilter();
+        notch.type = 'notch';
+        notch.frequency.value = 1000;
+        notch.Q.value = 8;
+        lastNode.connect(notch);
+        lastNode = notch;
+      }
+
       scriptProcessor = txAudioContext.createScriptProcessor(2048, 1, 1);
       scriptProcessor.onaudioprocess = (e) => {
         if (isMuted) return;
@@ -299,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('voice-pcm', { targetSocketIds: targetsPayload, pcmData: pcm16.buffer });
       };
 
-      source.connect(scriptProcessor);
+      lastNode.connect(scriptProcessor);
       scriptProcessor.connect(txAudioContext.destination);
 
       monitorAudioVolume();
@@ -601,10 +689,18 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedTargetIds.delete(socketId);
     } else {
       selectedTargetIds.add(socketId);
+      selectedDmSocketId = socketId;
     }
 
     if (selectedTargetIds.size === 0) selectedTargetIds.add('all');
     updateTargetUI();
+
+    if (activeChatTab === 'dm') {
+      const targetUser = selectedDmSocketId ? onlineUsersMap.get(selectedDmSocketId) : null;
+      const chatNoticeEl = document.getElementById('chatNotice');
+      if (chatNoticeEl) chatNoticeEl.textContent = targetUser ? `Showing Private DMs with ${targetUser.name}` : 'Click any colleague card in the grid to start a Private DM';
+      filterMessagesByTab();
+    }
   }
 
   function updateTargetUI() {
@@ -1368,18 +1464,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Chat Form Submit
+  // Chat Form Submit & Typing Event Handlers
+  if (chatInput) {
+    chatInput.addEventListener('input', () => {
+      const targetId = (activeChatTab === 'dm' && selectedDmSocketId) ? selectedDmSocketId : 'all';
+      socket.emit('typing', { targetSocketId: targetId });
+
+      if (typingTimeout) clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        socket.emit('stop-typing', { targetSocketId: targetId });
+      }, 1500);
+    });
+  }
+
+  socket.on('user-typing', ({ name, isPrivate }) => {
+    if (typingIndicatorBanner && typingText) {
+      typingText.textContent = `${name} is typing ${isPrivate ? '(Private DM)' : ''}...`;
+      typingIndicatorBanner.classList.remove('hidden');
+    }
+  });
+
+  socket.on('user-stop-typing', () => {
+    if (typingIndicatorBanner) {
+      typingIndicatorBanner.classList.add('hidden');
+    }
+  });
+
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text) return;
 
-    socket.emit('send-message', { text });
+    const isPrivate = activeChatTab === 'dm';
+    const targetSocketId = isPrivate ? selectedDmSocketId : null;
+
+    if (isPrivate && !targetSocketId) {
+      alert('Please click on a colleague in the grid to send a Private DM.');
+      return;
+    }
+
+    socket.emit('send-message', { text, isPrivate, targetSocketId });
+    socket.emit('stop-typing', { targetSocketId: targetSocketId || 'all' });
     chatInput.value = '';
   });
 
   socket.on('new-message', (msg) => {
     appendChatMessage(msg);
+    if (msg.senderId !== socket.id) {
+      if (msg.isPrivate) {
+        triggerDesktopNotification(`🔒 Private DM from ${msg.senderName}`, { body: msg.text || 'Sent a media message' });
+      }
+    }
   });
 
   socket.on('reaction-updated', ({ messageId, emoji, userName }) => {
@@ -1416,6 +1551,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
     if (msg.id) chatMessagesMap.set(msg.id, bubble);
+
+    if (msg.isPrivate) {
+      bubble.setAttribute('data-private', 'true');
+      if (msg.senderId) bubble.setAttribute('data-sender-id', msg.senderId);
+      if (msg.targetSocketId) bubble.setAttribute('data-target-id', msg.targetSocketId);
+    }
 
     let contentHtml = '';
     if (msg.gifUrl) {
@@ -1474,6 +1615,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="chat-sender-row">
         <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">
           ${msg.senderName} ${msg.isAdmin ? '👑 (Admin)' : ''}
+          ${msg.isPrivate ? '<span class="private-msg-tag">🔒 Private DM</span>' : ''}
         </span>
         <div style="display:flex; gap:6px; align-items:center;">
           <span class="chat-time">${msg.timestamp}</span>
@@ -1527,6 +1669,108 @@ document.addEventListener('DOMContentLoaded', () => {
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
+
+  // Chat Tabs (Everyone vs Private DM)
+  if (chatTabEveryone && chatTabDM) {
+    chatTabEveryone.addEventListener('click', () => {
+      activeChatTab = 'everyone';
+      chatTabEveryone.classList.add('active');
+      chatTabDM.classList.remove('active');
+      const chatNoticeEl = document.getElementById('chatNotice');
+      if (chatNoticeEl) chatNoticeEl.textContent = 'Showing Public Team Chat Messages';
+      filterMessagesByTab();
+    });
+
+    chatTabDM.addEventListener('click', () => {
+      activeChatTab = 'dm';
+      chatTabDM.classList.add('active');
+      chatTabEveryone.classList.remove('active');
+      const chatNoticeEl = document.getElementById('chatNotice');
+      const targetUser = selectedDmSocketId ? onlineUsersMap.get(selectedDmSocketId) : null;
+      if (chatNoticeEl) chatNoticeEl.textContent = targetUser ? `Showing Private DMs with ${targetUser.name}` : 'Click any colleague card in the grid to start a Private DM';
+      filterMessagesByTab();
+    });
+  }
+
+  function filterMessagesByTab() {
+    chatMessagesMap.forEach((el) => {
+      const isPrivate = el.hasAttribute('data-private');
+      const msgSender = el.getAttribute('data-sender-id');
+      const msgTarget = el.getAttribute('data-target-id');
+
+      if (activeChatTab === 'everyone') {
+        if (!isPrivate) el.style.display = '';
+        else el.style.display = 'none';
+      } else {
+        if (isPrivate && (
+          (msgSender === socket.id && msgTarget === selectedDmSocketId) ||
+          (msgSender === selectedDmSocketId && msgTarget === socket.id)
+        )) {
+          el.style.display = '';
+        } else {
+          el.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  // Chat History Search
+  if (chatSearchInput) {
+    chatSearchInput.addEventListener('input', () => {
+      const query = chatSearchInput.value.trim().toLowerCase();
+      chatMessagesMap.forEach((el) => {
+        if (!query) {
+          filterMessagesByTab();
+        } else {
+          const text = el.textContent.toLowerCase();
+          if (text.includes(query)) el.style.display = '';
+          else el.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Chat History Export
+  if (btnExportChat) {
+    btnExportChat.addEventListener('click', () => {
+      let transcript = `--- OfficeTalk Chat Log (${new Date().toLocaleString()}) ---\n\n`;
+      let count = 0;
+      chatMessagesMap.forEach((el) => {
+        if (el.style.display !== 'none') {
+          const sender = el.querySelector('.chat-sender-name')?.textContent?.trim() || 'User';
+          const time = el.querySelector('.chat-time')?.textContent?.trim() || '';
+          const text = el.querySelector('.chat-text')?.textContent?.trim() || '[Media / Sticker / Voice Memo]';
+          transcript += `[${time}] ${sender}: ${text}\n`;
+          count++;
+        }
+      });
+
+      if (count === 0) {
+        alert('No chat messages to export.');
+        return;
+      }
+
+      const blob = new Blob([transcript], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `OfficeTalk_Chat_Export_${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Audio Enhancements & Voice Filter Listeners
+  if (selectVoiceFilter) {
+    selectVoiceFilter.addEventListener('change', () => {
+      activeVoiceFilter = selectVoiceFilter.value;
+      if (localStream) setupPcmAudioCapture(localStream);
+    });
+  }
+
+  if (toggleNoiseSuppression) toggleNoiseSuppression.addEventListener('change', () => initLocalMicrophone());
+  if (toggleEchoCancellation) toggleEchoCancellation.addEventListener('change', () => initLocalMicrophone());
+  if (toggleAutoGain) toggleAutoGain.addEventListener('change', () => initLocalMicrophone());
 
   // Audio Settings & Sound FX Theme Selector
   if (btnAudioSettings) btnAudioSettings.addEventListener('click', () => modalAudioSettings.classList.remove('hidden'));
