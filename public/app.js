@@ -385,12 +385,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  function updateHeaderProfile(user) {
+    if (!user) return;
+    const hName = document.getElementById('headerUserName');
+    const hAvatar = document.getElementById('headerUserAvatar');
+    const hAdminTag = document.getElementById('headerAdminTag');
+
+    if (hName) hName.textContent = user.name;
+    if (hAvatar) hAvatar.textContent = user.avatar || (user.isAdmin ? '👑' : '👤');
+    if (hAdminTag) {
+      if (user.isAdmin) hAdminTag.classList.remove('hidden');
+      else hAdminTag.classList.add('hidden');
+    }
+  }
+
   // -------------------------------------------------------------
   // User Management & Admin Socket Listeners
   // -------------------------------------------------------------
   socket.on('user-initialized', (selfData) => {
     if (window.soundFX) window.soundFX.playJoinChime();
     currentUser = selfData;
+    updateHeaderProfile(selfData);
 
     if (selfData.isAdmin) {
       if (adminControlPanel) adminControlPanel.classList.remove('hidden');
@@ -402,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     onlineUsersMap.set(socket.id, selfData);
     renderParticipantCard(socket.id, selfData);
   });
+
 
   socket.on('forced-mute-state', ({ isMuted: newMuteState }) => {
     isMuted = newMuteState;
