@@ -1194,6 +1194,108 @@ body.dark-theme {
   box-sizing: border-box;
 }
 
+/* -------------------------------------------------------------
+   Telugu Reaction Stickers Pack (80 Stickers & 7 Categories)
+   ------------------------------------------------------------- */
+.sticker-categories-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid var(--border-color);
+  scrollbar-width: thin;
+}
+
+.sticker-categories-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.sticker-categories-bar::-webkit-scrollbar-thumb {
+  background: var(--accent-gold);
+  border-radius: 2px;
+}
+
+.cat-pill {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cat-pill.active {
+  background: var(--accent-gold);
+  color: #000000;
+  border-color: var(--accent-gold);
+}
+
+.cat-pill:hover {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.telugu-reaction-sticker-card {
+  background: linear-gradient(135deg, #1e1b4b, #0f172a);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.telugu-reaction-sticker-card:hover {
+  transform: scale(1.06) translateY(-2px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+}
+
+.sticker-pack-emoji {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.sticker-telugu-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.sticker-english-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-sticker-reaction-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #1e1b4b, #0f172a);
+  border: 2px solid var(--accent-gold);
+  border-radius: 16px;
+  padding: 10px 16px;
+  margin-top: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  gap: 4px;
+}
+
+
 
 /* Chat Message Voice Memo Player */
 .voice-memo-player {

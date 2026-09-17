@@ -1070,6 +1070,105 @@ document.addEventListener('DOMContentLoaded', () => {
     '🎧','🔊','📱','💻','☕','🍺','🍿'
   ];
 
+  const STICKER_PACK_EMOJIS = {
+    'telugu-comedy': '😂',
+    'mass': '😎',
+    'emotional': '😭',
+    'angry': '😡',
+    'reaction': '🤦',
+    'love': '❤️',
+    'celebration': '🎉'
+  };
+
+  const TELUGU_REACTION_STICKERS = [
+    { id: "telugu_001", title: "Ayyo", titleTe: "అయ్యో", pack: "telugu-comedy" },
+    { id: "telugu_002", title: "Ayyababoi", titleTe: "అయ్యబాబోయ్", pack: "telugu-comedy" },
+    { id: "telugu_003", title: "Enti Idi?", titleTe: "ఏంటి ఇది?", pack: "telugu-comedy" },
+    { id: "telugu_004", title: "Na Valla Kaadu", titleTe: "నా వల్ల కాదు", pack: "telugu-comedy" },
+    { id: "telugu_005", title: "Artham Kaaledu", titleTe: "అర్థం కాలేదు", pack: "telugu-comedy" },
+    { id: "telugu_006", title: "Chaalu Ra Babu", titleTe: "చాలు రా బాబు", pack: "telugu-comedy" },
+    { id: "telugu_007", title: "Em Chestunnav Ra?", titleTe: "ఏం చేస్తున్నావ్ రా?", pack: "telugu-comedy" },
+    { id: "telugu_008", title: "Aithe Enti?", titleTe: "అయితే ఏంటి?", pack: "telugu-comedy" },
+    { id: "telugu_009", title: "Super Ra", titleTe: "సూపర్ రా", pack: "telugu-comedy" },
+    { id: "telugu_010", title: "Adirindi", titleTe: "అదిరింది", pack: "telugu-comedy" },
+    { id: "telugu_011", title: "Nammaleka Pothunna", titleTe: "నమ్మలేకపోతున్నా", pack: "telugu-comedy" },
+    { id: "telugu_012", title: "Chi Chi", titleTe: "ఛీ ఛీ", pack: "telugu-comedy" },
+    { id: "telugu_013", title: "Ayyayyo", titleTe: "అయ్యయ్యో", pack: "telugu-comedy" },
+    { id: "telugu_014", title: "Babu Please", titleTe: "బాబు ప్లీజ్", pack: "telugu-comedy" },
+    { id: "telugu_015", title: "Inkemundi", titleTe: "ఇంకేముంది", pack: "telugu-comedy" },
+    { id: "telugu_016", title: "Nenu Em Cheppali", titleTe: "నేను ఏం చెప్పాలి?", pack: "telugu-comedy" },
+    { id: "telugu_017", title: "Aha", titleTe: "ఆహా!", pack: "telugu-comedy" },
+    { id: "telugu_018", title: "Oho", titleTe: "ఓహో!", pack: "telugu-comedy" },
+    { id: "telugu_019", title: "Idhi Too Much", titleTe: "ఇది టూ మచ్", pack: "telugu-comedy" },
+    { id: "telugu_020", title: "Sare Sare", titleTe: "సరే సరే", pack: "telugu-comedy" },
+
+    { id: "telugu_021", title: "Mass", titleTe: "మాస్", pack: "mass" },
+    { id: "telugu_022", title: "Thaggede Le", titleTe: "తగ్గేదే లే", pack: "mass" },
+    { id: "telugu_023", title: "Nenu Ready", titleTe: "నేను రెడీ", pack: "mass" },
+    { id: "telugu_024", title: "Scene Vere Level", titleTe: "సీన్ వేరే లెవల్", pack: "mass" },
+    { id: "telugu_025", title: "Manade", titleTe: "మనదే!", pack: "mass" },
+    { id: "telugu_026", title: "King", titleTe: "కింగ్", pack: "mass" },
+    { id: "telugu_027", title: "Mass Entry", titleTe: "మాస్ ఎంట్రీ", pack: "mass" },
+    { id: "telugu_028", title: "One Man Show", titleTe: "వన్ మ్యాన్ షో", pack: "mass" },
+    { id: "telugu_029", title: "Full Josh", titleTe: "ఫుల్ జోష్", pack: "mass" },
+    { id: "telugu_030", title: "Dummu Reputha", titleTe: "దుమ్ము రేపుతా", pack: "mass" },
+
+    { id: "telugu_031", title: "Edustunna", titleTe: "ఏడుస్తున్నా 😭", pack: "emotional" },
+    { id: "telugu_032", title: "Naa Karma", titleTe: "నా కర్మ", pack: "emotional" },
+    { id: "telugu_033", title: "Ayyo Paapam", titleTe: "అయ్యో పాపం", pack: "emotional" },
+    { id: "telugu_034", title: "Chaala Baadha", titleTe: "చాలా బాధ", pack: "emotional" },
+    { id: "telugu_035", title: "Nannu Vadiley", titleTe: "నన్ను వదిలేయ్", pack: "emotional" },
+    { id: "telugu_036", title: "Heart Break", titleTe: "హార్ట్ బ్రేక్ 💔", pack: "emotional" },
+    { id: "telugu_037", title: "Enduku Ila", titleTe: "ఎందుకు ఇలా?", pack: "emotional" },
+    { id: "telugu_038", title: "Baadha Ga Undi", titleTe: "బాధగా ఉంది", pack: "emotional" },
+    { id: "telugu_039", title: "Silent", titleTe: "సైలెంట్", pack: "emotional" },
+    { id: "telugu_040", title: "Emotional Ayya", titleTe: "ఎమోషనల్ అయ్యా", pack: "emotional" },
+
+    { id: "telugu_041", title: "Naaku Kopam Vastundi", titleTe: "నాకు కోపం వస్తుంది", pack: "angry" },
+    { id: "telugu_042", title: "Aapandi", titleTe: "ఆపండి!", pack: "angry" },
+    { id: "telugu_043", title: "Enough", titleTe: "ఎనఫ్!", pack: "angry" },
+    { id: "telugu_044", title: "Nenu Cheppindi Vinandi", titleTe: "నేను చెప్పింది వినండి", pack: "angry" },
+    { id: "telugu_045", title: "Enti Ra Idi", titleTe: "ఏంటి రా ఇది?", pack: "angry" },
+    { id: "telugu_046", title: "Asalu Enduku", titleTe: "అసలు ఎందుకు?", pack: "angry" },
+    { id: "telugu_047", title: "Chiraaku", titleTe: "చిరాకు", pack: "angry" },
+    { id: "telugu_048", title: "Kopam", titleTe: "కోపం", pack: "angry" },
+    { id: "telugu_049", title: "Don't Test Me", titleTe: "నన్ను టెస్ట్ చేయొద్దు", pack: "angry" },
+    { id: "telugu_050", title: "Stop It", titleTe: "ఆపేయ్", pack: "angry" },
+
+    { id: "telugu_051", title: "Ayyo Devuda", titleTe: "అయ్యో దేవుడా", pack: "reaction" },
+    { id: "telugu_052", title: "Em Jarugutundi", titleTe: "ఏం జరుగుతుంది?", pack: "reaction" },
+    { id: "telugu_053", title: "Ala Ela", titleTe: "అలా ఎలా?", pack: "reaction" },
+    { id: "telugu_054", title: "Nijamena", titleTe: "నిజమేనా?", pack: "reaction" },
+    { id: "telugu_055", title: "Really?", titleTe: "నిజంగానా?", pack: "reaction" },
+    { id: "telugu_056", title: "Facepalm", titleTe: "అయ్యో నా తల", pack: "reaction" },
+    { id: "telugu_057", title: "No Comments", titleTe: "నో కామెంట్స్", pack: "reaction" },
+    { id: "telugu_058", title: "What", titleTe: "ఏంటి?", pack: "reaction" },
+    { id: "telugu_059", title: "Okay Bro", titleTe: "ఓకే బ్రో", pack: "reaction" },
+    { id: "telugu_060", title: "Whatever", titleTe: "ఏదైనా సరే", pack: "reaction" },
+
+    { id: "telugu_061", title: "Nuvve Na World", titleTe: "నువ్వే నా వరల్డ్ ❤️", pack: "love" },
+    { id: "telugu_062", title: "Love You", titleTe: "లవ్ యూ ❤️", pack: "love" },
+    { id: "telugu_063", title: "Aww", titleTe: "అవ్ ❤️", pack: "love" },
+    { id: "telugu_064", title: "Na Queen", titleTe: "నా క్వీన్ 👑❤️", pack: "love" },
+    { id: "telugu_065", title: "Na King", titleTe: "నా కింగ్ 👑❤️", pack: "love" },
+    { id: "telugu_066", title: "Miss You", titleTe: "మిస్ యూ 🥺", pack: "love" },
+    { id: "telugu_067", title: "Forever", titleTe: "ఫరెవర్ ❤️", pack: "love" },
+    { id: "telugu_068", title: "Cutie", titleTe: "క్యూటీ ❤️", pack: "love" },
+    { id: "telugu_069", title: "Hug", titleTe: "హగ్ 🤗", pack: "love" },
+    { id: "telugu_070", title: "My Love", titleTe: "నా ప్రేమ ❤️", pack: "love" },
+
+    { id: "telugu_071", title: "Super", titleTe: "సూపర్! 🎉", pack: "celebration" },
+    { id: "telugu_072", title: "Congratulations", titleTe: "కంగ్రాట్స్ 🎉", pack: "celebration" },
+    { id: "telugu_073", title: "Party", titleTe: "పార్టీ! 🥳", pack: "celebration" },
+    { id: "telugu_074", title: "Done", titleTe: "డన్! ✅", pack: "celebration" },
+    { id: "telugu_075", title: "Finally", titleTe: "ఫైనల్లీ! 🎉", pack: "celebration" },
+    { id: "telugu_076", title: "Success", titleTe: "సక్సెస్! 🏆", pack: "celebration" },
+    { id: "telugu_077", title: "Cheers", titleTe: "చీర్స్! 🥳", pack: "celebration" },
+    { id: "telugu_078", title: "Yay", titleTe: "యే! 🎊", pack: "celebration" },
+    { id: "telugu_079", title: "Happy", titleTe: "హ్యాపీ! 😄", pack: "celebration" },
+    { id: "telugu_080", title: "Let's Go", titleTe: "లెట్స్ గో! 🔥", pack: "celebration" }
+  ];
+
   const btnEmojiPicker = document.getElementById('btnEmojiPicker');
   const emojiPickerPanel = document.getElementById('emojiPickerPanel');
   const tabEmojis = document.getElementById('tabEmojis');
@@ -1078,6 +1177,81 @@ document.addEventListener('DOMContentLoaded', () => {
   const pickerContentStickers = document.getElementById('pickerContentStickers');
   const emojiGrid = document.getElementById('emojiGrid');
   const stickerGrid = document.getElementById('stickerGrid');
+
+  function renderStickerCategoriesAndGrid(selectedPackId = 'all') {
+    const categoriesBar = document.getElementById('stickerCategoriesBar');
+    if (!stickerGrid) return;
+
+    const packs = [
+      { id: 'all', name: '🌟 All (80+)', emoji: '🌟' },
+      { id: 'telugu-comedy', name: 'Comedy', emoji: '😂' },
+      { id: 'mass', name: 'Mass', emoji: '😎' },
+      { id: 'emotional', name: 'Emotional', emoji: '😭' },
+      { id: 'angry', name: 'Angry', emoji: '😡' },
+      { id: 'reaction', name: 'Reactions', emoji: '🤦' },
+      { id: 'love', name: 'Love', emoji: '❤️' },
+      { id: 'celebration', name: 'Celebration', emoji: '🎉' }
+    ];
+
+    if (categoriesBar) {
+      categoriesBar.innerHTML = '';
+      packs.forEach(p => {
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = `cat-pill ${selectedPackId === p.id ? 'active' : ''}`;
+        pill.textContent = `${p.emoji} ${p.name}`;
+        pill.addEventListener('click', () => {
+          renderStickerCategoriesAndGrid(p.id);
+        });
+        categoriesBar.appendChild(pill);
+      });
+    }
+
+    stickerGrid.innerHTML = '';
+
+    // Classic movie caricatures
+    if (selectedPackId === 'all' || selectedPackId === 'telugu-comedy') {
+      TELUGU_MEME_STICKERS.forEach(sticker => {
+        const card = document.createElement('div');
+        card.className = 'sticker-card';
+        card.innerHTML = renderVectorMemeSticker(sticker);
+        card.addEventListener('click', () => {
+          socket.emit('send-message', { text: '', sticker });
+          if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
+        });
+        stickerGrid.appendChild(card);
+      });
+    }
+
+    // 80 Telugu Reaction Stickers
+    const filtered = selectedPackId === 'all'
+      ? TELUGU_REACTION_STICKERS
+      : TELUGU_REACTION_STICKERS.filter(s => s.pack === selectedPackId);
+
+    filtered.forEach(stk => {
+      const pEmoji = STICKER_PACK_EMOJIS[stk.pack] || '🎭';
+      const card = document.createElement('div');
+      card.className = 'telugu-reaction-sticker-card';
+      card.innerHTML = `
+        <span class="sticker-pack-emoji">${pEmoji}</span>
+        <span class="sticker-telugu-title">${stk.titleTe}</span>
+        <span class="sticker-english-title">${stk.title}</span>
+      `;
+      card.addEventListener('click', () => {
+        socket.emit('send-message', {
+          text: '',
+          reactionSticker: {
+            title: stk.title,
+            titleTe: stk.titleTe,
+            emoji: pEmoji,
+            pack: stk.pack
+          }
+        });
+        if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
+      });
+      stickerGrid.appendChild(card);
+    });
+  }
 
   function initEmojiAndStickerPicker() {
     if (!emojiGrid || !stickerGrid) return;
@@ -1094,20 +1268,11 @@ document.addEventListener('DOMContentLoaded', () => {
       emojiGrid.appendChild(item);
     });
 
-    stickerGrid.innerHTML = '';
-    TELUGU_MEME_STICKERS.forEach(sticker => {
-      const card = document.createElement('div');
-      card.className = 'sticker-card';
-      card.innerHTML = renderVectorMemeSticker(sticker);
-      card.addEventListener('click', () => {
-        socket.emit('send-message', { text: '', sticker });
-        if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
-      });
-      stickerGrid.appendChild(card);
-    });
+    renderStickerCategoriesAndGrid('all');
   }
 
   initEmojiAndStickerPicker();
+
 
   if (btnEmojiPicker) {
     btnEmojiPicker.addEventListener('click', (e) => {
@@ -1276,6 +1441,14 @@ document.addEventListener('DOMContentLoaded', () => {
       contentHtml = `
         <div class="chat-sticker-photo-wrapper">
           ${renderVectorMemeSticker(msg.sticker)}
+        </div>
+      `;
+    } else if (msg.reactionSticker) {
+      contentHtml = `
+        <div class="chat-sticker-reaction-wrapper">
+          <span class="sticker-pack-emoji" style="font-size: 38px;">${msg.reactionSticker.emoji}</span>
+          <span style="font-size: 16px; font-weight: 900; color: #ffffff; text-align: center;">${msg.reactionSticker.titleTe}</span>
+          <span style="font-size: 10px; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 0.5px;">${msg.reactionSticker.title}</span>
         </div>
       `;
     } else if (msg.voiceMemo) {
