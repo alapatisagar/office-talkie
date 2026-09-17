@@ -942,38 +942,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // Giphy GIF Engine (Telugu Priority & English Support)
+  // Giphy GIF Engine (Telugu Priority & Permanent Giphy CDN URLs)
   // -------------------------------------------------------------
   const FEATURED_GIFS = [
-    // Telugu Comedy (Brahmanandam, Ali, Vennela Kishore, Sunil)
-    { id: 'brahmi-shock', title: 'Brahmanandam Shock', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'shock', 'comedy', 'funny', 'reaction', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDFvZ3FyeHVxcWcxcThicmxreHpocTB2bmZ4OHBhdnlwdmNocTJ3ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9DosE8knCVPPy/giphy.gif' },
-    { id: 'brahmi-dance', title: 'Brahmi Mass Dance', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'dance', 'mass', 'funny', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcDJycHdpNXE1MWdweHZvZmtndmtua2J6OGx5YmVrZmFvNmdxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/NipFetnQOuKhW/giphy.gif' },
-    { id: 'brahmi-laugh', title: 'Brahmanandam Ultra Laugh', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'laugh', 'ha', 'funny', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmtpd3dqcTF4N3d5NHp4dmx1OHRmbjMxeHFwdWJndm42eG05ZmxrdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/10Jhvt693jN20/giphy.gif' },
-    { id: 'brahmi-confused', title: 'Brahmi Confused Ayyo', category: 'telugu-reactions', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'confused', 'ayyo', 'what', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnYyZnM0NDZnd3E2ZHhnbmt3M2twYXc0OG1hcnRwZGpyNzEwaGllZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7bu3XilJ5BOiSGic/giphy.gif' },
-    { id: 'ali-comedy-look', title: 'Ali Funny Look', category: 'telugu-comedy', lang: 'TE', keywords: ['ali', 'comedy', 'funny', 'look', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdTFqOW85cmlyZmFmNmQzcjE0dmdwdTZpNHR4a2V1ZmFscW4zM2djaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dZeXwS8X00m2L74W2d/giphy.gif' },
-    { id: 'vennela-kishore-smile', title: 'Vennela Kishore Smile', category: 'telugu-comedy', lang: 'TE', keywords: ['vennela kishore', 'smile', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGNzYms1bmMwbDBybDZlZzJ1dzdnbXFvdXgzeWF5dzJzdzFua3E0byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l0HlUxcWRsqROFY4g/giphy.gif' },
+    // --- TELUGU COMEDY & BRAHMANANDAM ---
+    { id: '9DosE8knCVPPy', title: 'Brahmanandam Shock', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'shock', 'comedy', 'funny', 'reaction', 'telugu'], url: 'https://i.giphy.com/media/9DosE8knCVPPy/giphy.gif' },
+    { id: 'NipFetnQOuKhW', title: 'Brahmi Mass Dance', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'dance', 'mass', 'funny', 'telugu'], url: 'https://i.giphy.com/media/NipFetnQOuKhW/giphy.gif' },
+    { id: '10Jhvt693jN20', title: 'Brahmanandam Ultra Laugh', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'laugh', 'ha', 'funny', 'comedy', 'telugu'], url: 'https://i.giphy.com/media/10Jhvt693jN20/giphy.gif' },
+    { id: '3o7bu3XilJ5BOiSGic', title: 'Brahmi Confused Ayyo', category: 'telugu-reactions', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'confused', 'ayyo', 'what', 'telugu'], url: 'https://i.giphy.com/media/3o7bu3XilJ5BOiSGic/giphy.gif' },
+    { id: 'l1J3pT77GCuVLL0PA', title: 'Brahmanandam Running', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'run', 'escape', 'funny', 'telugu'], url: 'https://i.giphy.com/media/l1J3pT77GCuVLL0PA/giphy.gif' },
+    { id: 'dZeXwS8X00m2L74W2d', title: 'Ali Funny Reaction', category: 'telugu-comedy', lang: 'TE', keywords: ['ali', 'comedy', 'funny', 'look', 'telugu'], url: 'https://i.giphy.com/media/dZeXwS8X00m2L74W2d/giphy.gif' },
+    { id: 'l0HlUxcWRsqROFY4g', title: 'Vennela Kishore Smile', category: 'telugu-comedy', lang: 'TE', keywords: ['vennela kishore', 'smile', 'comedy', 'telugu'], url: 'https://i.giphy.com/media/l0HlUxcWRsqROFY4g/giphy.gif' },
+    { id: '3o7abKhOpu0NwenH3O', title: 'Sunil Comedy Dance', category: 'telugu-comedy', lang: 'TE', keywords: ['sunil', 'dance', 'comedy', 'telugu'], url: 'https://i.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif' },
 
-    // Telugu Mass (Pushpa, Tillu, Balayya, Pawan Kalyan, Allu Arjun)
-    { id: 'pushpa-thaggedhe-le', title: 'Pushpa Raj Thaggedhe Le', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['pushpa', 'allu arjun', 'thaggedhele', 'mass', 'swag', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdW1uOXcyYnpudDF5aHJocHF0NXR3N2E1Zms4dWtsNzg3cXpxcnRjdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3j2a3i4L2V7Kk/giphy.gif' },
-    { id: 'dj-tillu-atlu-untadi', title: 'DJ Tillu Mass Swag', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['tillu', 'dj tillu', 'atlu untadi', 'mass', 'telugu', 'hero'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbmRwNmQzbWJ6dmU0NG84NGt4emx5Z2txcm8zMW9sZ20xcGZydnNmYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l41YkxvU8c7J7BbaE/giphy.gif' },
-    { id: 'balayya-dont-trouble-trouble', title: 'Balayya Mass Dialogue', category: 'telugu-mass', lang: 'TE', keywords: ['balakrishna', 'balayya', 'mass', 'roar', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYnJ2c2N2Zm4wODR3NXozOHd4NmE0aGtxNmljZzEzMnc5OTlsZXZvMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/13n7XeeDY322yY/giphy.gif' },
-    { id: 'pawan-kalyan-gabbar', title: 'Pawan Kalyan Gabbar Singh', category: 'telugu-mass', lang: 'TE', keywords: ['pawan kalyan', 'gabbar singh', 'mass', 'power star', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGxxc2Rxb3Brc3dqZHRxYWZpdTR1Z3VtdDFnNjdsNWtzbHZteWtrdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l2SpR03mR14h8LqAU/giphy.gif' },
-    { id: 'allu-arjun-ramuloo', title: 'Allu Arjun Dance Swag', category: 'telugu-mass', lang: 'TE', keywords: ['allu arjun', 'dance', 'bunny', 'mass', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzI5Zmp4czE1OTJ0ZnhmYmJ4b2N0bms1cmVnd2ZvaGtrcnlyNGNnYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5xaOcLGvzUv25f3wx3O/giphy.gif' },
+    // --- TELUGU MASS (Pushpa, Tillu, Balayya, Pawan Kalyan, Allu Arjun) ---
+    { id: '3j2a3i4L2V7Kk', title: 'Pushpa Raj Thaggedhe Le', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['pushpa', 'allu arjun', 'thaggedhele', 'mass', 'swag', 'telugu'], url: 'https://i.giphy.com/media/3j2a3i4L2V7Kk/giphy.gif' },
+    { id: 'l41YkxvU8c7J7BbaE', title: 'DJ Tillu Mass Swag', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['tillu', 'dj tillu', 'atlu untadi', 'mass', 'telugu', 'hero'], url: 'https://i.giphy.com/media/l41YkxvU8c7J7BbaE/giphy.gif' },
+    { id: '13n7XeeDY322yY', title: 'Balayya Mass Dialogue', category: 'telugu-mass', lang: 'TE', keywords: ['balakrishna', 'balayya', 'mass', 'roar', 'telugu'], url: 'https://i.giphy.com/media/13n7XeeDY322yY/giphy.gif' },
+    { id: 'l2SpR03mR14h8LqAU', title: 'Pawan Kalyan Gabbar Singh', category: 'telugu-mass', lang: 'TE', keywords: ['pawan kalyan', 'gabbar singh', 'mass', 'power star', 'telugu'], url: 'https://i.giphy.com/media/l2SpR03mR14h8LqAU/giphy.gif' },
+    { id: '5xaOcLGvzUv25f3wx3O', title: 'Allu Arjun Dance Swag', category: 'telugu-mass', lang: 'TE', keywords: ['allu arjun', 'dance', 'bunny', 'mass', 'telugu'], url: 'https://i.giphy.com/media/5xaOcLGvzUv25f3wx3O/giphy.gif' },
 
-    // Telugu Reactions (Ayyo, Cheppa Kada, Abbo, Chii)
-    { id: 'telugu-ayyo-face', title: 'Ayyo Rama Reaction', category: 'telugu-reactions', lang: 'TE', keywords: ['ayyo', 'reaction', 'facepalm', 'telugu', 'funny'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbms1Ynl4aGtpdWh0aTFnZTBqYmV1bzV4cXN1cWhkOWttZjdpOHFjZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o6Zt62PeJeFUDwBUI/giphy.gif' },
-    { id: 'telugu-clap-mass', title: 'Telugu Super Clap', category: 'telugu-reactions', lang: 'TE', keywords: ['clap', 'super', 'praise', 'mass', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnAxdXg2YXBhNDYxcXljYmEzaTF2a3U5bjgxb3p3YXl1Nnlid3l1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d31w24psGYeekCZy/giphy.gif' },
+    // --- TELUGU REACTIONS (Ayyo, Cheppa Kada, Abbo, Chii) ---
+    { id: '3o6Zt62PeJeFUDwBUI', title: 'Ayyo Rama Reaction', category: 'telugu-reactions', lang: 'TE', keywords: ['ayyo', 'reaction', 'facepalm', 'telugu', 'funny'], url: 'https://i.giphy.com/media/3o6Zt62PeJeFUDwBUI/giphy.gif' },
+    { id: 'd31w24psGYeekCZy', title: 'Telugu Super Clap', category: 'telugu-reactions', lang: 'TE', keywords: ['clap', 'super', 'praise', 'mass', 'telugu'], url: 'https://i.giphy.com/media/d31w24psGYeekCZy/giphy.gif' },
+    { id: '3o7bu0Z48xTzR6XyBG', title: 'Telugu Hero Style', category: 'telugu-reactions', lang: 'TE', keywords: ['wink', 'style', 'telugu', 'hero'], url: 'https://i.giphy.com/media/3o7bu0Z48xTzR6XyBG/giphy.gif' },
 
-    // Love & Romance (Telugu Movies)
-    { id: 'telugu-love-heart', title: 'Telugu Romance Heart', category: 'love', lang: 'TE', keywords: ['love', 'heart', 'romance', 'cute', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnpxNnA4NWZxdW4ybXZsN2R5bXN0bmcybmoxOWdpcXZhODkwaDhpOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26fldmIp6PeajdqFO/giphy.gif' },
-    
-    // Celebration & Dance
-    { id: 'telugu-dance-party', title: 'Telugu Mass Dance Party', category: 'celebration', lang: 'TE', keywords: ['dance', 'party', 'celebration', 'mass', 'telugu'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmtxYmltNmUybGFxMnd4OGFucTR2bzZhcDVwZzEycG5uNW8ycDRkNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3V0lsGcqU71nRiEg/giphy.gif' },
+    // --- LOVE & ROMANCE ---
+    { id: '26fldmIp6PeajdqFO', title: 'Telugu Romance Heart', category: 'love', lang: 'TE', keywords: ['love', 'heart', 'romance', 'cute', 'telugu'], url: 'https://i.giphy.com/media/26fldmIp6PeajdqFO/giphy.gif' },
 
-    // Trending English GIFs
-    { id: 'english-funny-cat', title: 'Funny Cat Dance', category: 'english', lang: 'EN', keywords: ['cat', 'dance', 'funny', 'english'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZhcDJycHdpNXE1MWdweHZvZmtndmtua2J6OGx5YmVrZmFvNmdxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/JIX9t2j0ZTN9S/giphy.gif' },
-    { id: 'english-popcorn', title: 'Eating Popcorn Reaction', category: 'english', lang: 'EN', keywords: ['popcorn', 'watching', 'english', 'reaction'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHJsdzE5eXpsbzliYmxpazlsdjdrdTF1NXltdmdybmV0cnZ2OWo5NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/pUeXcg80cO8I8/giphy.gif' },
-    { id: 'english-mind-blown', title: 'Mind Blown Reaction', category: 'english', lang: 'EN', keywords: ['mind blown', 'wow', 'english', 'reaction'], url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWk3amFqODg5c3psdzFndjlsbWxuaTlyczdpMXNjcjVuaWRmdnVsZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26ufdipQqU2lhNA4g/giphy.gif' }
+    // --- CELEBRATION & DANCE ---
+    { id: 'l3V0lsGcqU71nRiEg', title: 'Telugu Mass Dance Party', category: 'celebration', lang: 'TE', keywords: ['dance', 'party', 'celebration', 'mass', 'telugu'], url: 'https://i.giphy.com/media/l3V0lsGcqU71nRiEg/giphy.gif' },
+
+    // --- TRENDING ENGLISH GIFS ---
+    { id: 'JIX9t2j0ZTN9S', title: 'Funny Cat Dance', category: 'english', lang: 'EN', keywords: ['cat', 'dance', 'funny', 'english'], url: 'https://i.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif' },
+    { id: 'pUeXcg80cO8I8', title: 'Eating Popcorn Reaction', category: 'english', lang: 'EN', keywords: ['popcorn', 'watching', 'english', 'reaction'], url: 'https://i.giphy.com/media/pUeXcg80cO8I8/giphy.gif' },
+    { id: '26ufdipQqU2lhNA4g', title: 'Mind Blown Reaction', category: 'english', lang: 'EN', keywords: ['mind blown', 'wow', 'english', 'reaction'], url: 'https://i.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif' },
+    { id: '10uEX5kfeodYgo', title: 'Minions Applause', category: 'english', lang: 'EN', keywords: ['applause', 'clap', 'minions', 'english'], url: 'https://i.giphy.com/media/10uEX5kfeodYgo/giphy.gif' }
   ];
 
   const GIF_CATEGORIES = [
@@ -1065,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'gif-card';
       card.innerHTML = `
         <span class="gif-badge-lang">${gif.lang === 'TE' ? 'TELUGU' : 'ENGLISH'}</span>
-        <img src="${gif.url}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy">
+        <img src="${gif.url}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy" onerror="this.onerror=null; this.src='https://media.giphy.com/media/${gif.id}/200.gif';">
         <div class="gif-title-tag">${escapeHTML(gif.title)}</div>
       `;
 
@@ -1363,9 +1367,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let contentHtml = '';
     if (msg.gifUrl) {
+      let cleanUrl = msg.gifUrl;
+      const match = cleanUrl.match(/(?:v1\.[^\/]+\/)?([a-zA-Z0-9]{10,30})(?:\/|$)/);
+      if (match && match[1]) {
+        cleanUrl = `https://i.giphy.com/media/${match[1]}/giphy.gif`;
+      }
       contentHtml = `
         <div class="chat-gif-wrapper">
-          <img src="${msg.gifUrl}" class="chat-gif-img" alt="${escapeHTML(msg.gifTitle || 'GIF')}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\'font-size:12px;color:var(--text-muted);\'>GIF unavailable</span>';">
+          <img src="${cleanUrl}" class="chat-gif-img" alt="${escapeHTML(msg.gifTitle || 'GIF')}" loading="lazy" onerror="this.onerror=null; this.src='https://i.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif';">
         </div>
       `;
     } else if (msg.sticker) {
