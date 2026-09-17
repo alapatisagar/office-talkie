@@ -1124,27 +1124,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openPicker(tab) {
     if (!emojiPickerPanel) return;
+
+    const isCurrentlyOpen = !emojiPickerPanel.classList.contains('hidden');
+    const isGifsActive = tabGifs && tabGifs.classList.contains('active');
+    const isEmojisActive = tabEmojis && tabEmojis.classList.contains('active');
+
+    // Toggle behavior: if already open on the same tab, close it!
+    if (isCurrentlyOpen && ((tab === 'gifs' && isGifsActive) || (tab === 'emojis' && isEmojisActive))) {
+      emojiPickerPanel.classList.add('hidden');
+      return;
+    }
+
     emojiPickerPanel.classList.remove('hidden');
 
     if (tab === 'gifs') {
-      tabGifs.classList.add('active');
-      tabEmojis.classList.remove('active');
-      pickerContentGifs.classList.remove('hidden');
-      pickerContentEmojis.classList.add('hidden');
+      if (tabGifs) tabGifs.classList.add('active');
+      if (tabEmojis) tabEmojis.classList.remove('active');
+      if (pickerContentGifs) pickerContentGifs.classList.remove('hidden');
+      if (pickerContentEmojis) pickerContentEmojis.classList.add('hidden');
       renderGifsGrid();
     } else {
-      tabEmojis.classList.add('active');
-      tabGifs.classList.remove('active');
-      pickerContentEmojis.classList.remove('hidden');
-      pickerContentGifs.classList.add('hidden');
+      if (tabEmojis) tabEmojis.classList.add('active');
+      if (tabGifs) tabGifs.classList.remove('active');
+      if (pickerContentEmojis) pickerContentEmojis.classList.remove('hidden');
+      if (pickerContentGifs) pickerContentGifs.classList.add('hidden');
     }
   }
 
   if (btnGifPicker) btnGifPicker.addEventListener('click', (e) => { e.stopPropagation(); openPicker('gifs'); });
   if (btnEmojiPicker) btnEmojiPicker.addEventListener('click', (e) => { e.stopPropagation(); openPicker('emojis'); });
-  if (tabGifs) tabGifs.addEventListener('click', () => openPicker('gifs'));
-  if (tabEmojis) tabEmojis.addEventListener('click', () => openPicker('emojis'));
-  if (btnClosePicker) btnClosePicker.addEventListener('click', () => emojiPickerPanel.classList.add('hidden'));
+  if (tabGifs) tabGifs.addEventListener('click', (e) => { e.stopPropagation(); openPicker('gifs'); });
+  if (tabEmojis) tabEmojis.addEventListener('click', (e) => { e.stopPropagation(); openPicker('emojis'); });
+  if (btnClosePicker) btnClosePicker.addEventListener('click', (e) => { e.stopPropagation(); emojiPickerPanel.classList.add('hidden'); });
 
   // Admin Sticker Upload Event Handlers
   if (btnAdminUploadSticker) {
@@ -1200,9 +1211,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Outside click & ESC key dismiss
+  // Outside click & ESC key dismiss (using .contains check for buttons)
   document.addEventListener('click', (e) => {
-    if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker && e.target !== btnGifPicker) {
+    if (emojiPickerPanel && 
+        !emojiPickerPanel.contains(e.target) && 
+        !(btnEmojiPicker && btnEmojiPicker.contains(e.target)) && 
+        !(btnGifPicker && btnGifPicker.contains(e.target))) {
       emojiPickerPanel.classList.add('hidden');
     }
   });
