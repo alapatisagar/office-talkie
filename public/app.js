@@ -864,21 +864,178 @@ document.addEventListener('DOMContentLoaded', () => {
     { id: 'prabhas-chhatrapati', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!', avatar: '⚔️' }
   ];
 
+  function getActorSvg(stickerId) {
+    switch (stickerId) {
+      case 'brahmi-adhyaksha':
+      case 'brahmi-enti-comedy':
+      case 'brahmi-mind-block':
+      case 'brahmi-aaha':
+      case 'brahmi-escape':
+      case 'brahmi-karma':
+      case 'brahmi-sensational':
+      case 'brahmi-shocked':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="55" rx="32" ry="36" fill="#e0a96d"/>
+            <path d="M 30 45 Q 40 25 60 30 Q 80 25 90 45 Q 85 22 60 20 Q 35 22 30 45 Z" fill="#222"/>
+            <rect x="36" y="44" width="20" height="15" rx="3" fill="none" stroke="#111" stroke-width="3"/>
+            <rect x="64" y="44" width="20" height="15" rx="3" fill="none" stroke="#111" stroke-width="3"/>
+            <line x1="56" y1="50" x2="64" y2="50" stroke="#111" stroke-width="3"/>
+            <circle cx="46" cy="51" r="4" fill="#111"/>
+            <circle cx="74" cy="51" r="4" fill="#111"/>
+            <path d="M 36 38 Q 46 31 56 38" stroke="#111" stroke-width="3" fill="none"/>
+            <path d="M 64 38 Q 74 31 84 38" stroke="#111" stroke-width="3" fill="none"/>
+            <path d="M 60 51 Q 65 60 58 64" fill="none" stroke="#b87b43" stroke-width="2.5"/>
+            <path d="M 44 68 Q 60 64 76 68 Q 60 73 44 68 Z" fill="#222"/>
+            <ellipse cx="60" cy="76" rx="12" ry="8" fill="#600"/>
+            <path d="M 52 74 Q 60 78 68 74" fill="#fff"/>
+            <path d="M 30 92 L 45 80 L 60 92 L 75 80 L 90 92 L 90 120 L 30 120 Z" fill="#fff"/>
+            <polygon points="60,84 64,112 60,120 56,112" fill="#cc0000"/>
+          </svg>
+        `;
+      case 'tillu-atla-untadhi':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="45" cy="30" r="14" fill="#222"/>
+            <circle cx="60" cy="24" r="16" fill="#222"/>
+            <circle cx="75" cy="30" r="14" fill="#222"/>
+            <circle cx="35" cy="40" r="12" fill="#222"/>
+            <circle cx="85" cy="40" r="12" fill="#222"/>
+            <ellipse cx="60" cy="60" rx="30" ry="32" fill="#d89a60"/>
+            <polygon points="32,48 56,48 52,62 36,62" fill="#f59e0b" stroke="#000" stroke-width="2"/>
+            <polygon points="64,48 88,48 84,62 68,62" fill="#f59e0b" stroke="#000" stroke-width="2"/>
+            <line x1="56" y1="52" x2="64" y2="52" stroke="#000" stroke-width="3"/>
+            <path d="M 48 78 Q 65 85 74 74" fill="none" stroke="#300" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 24 65 C 24 100, 96 100, 96 65" fill="none" stroke="#ef4444" stroke-width="8"/>
+            <rect x="18" y="55" width="12" height="20" rx="4" fill="#111"/>
+            <rect x="90" y="55" width="12" height="20" rx="4" fill="#111"/>
+            <path d="M 25 90 L 45 78 L 60 95 L 75 78 L 95 90 L 100 120 L 20 120 Z" fill="#7e22ce"/>
+            <path d="M 50 85 Q 60 105 70 85" fill="none" stroke="#fbbf24" stroke-width="3"/>
+          </svg>
+        `;
+      case 'pushpa-thaggedhele':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 28 42 Q 60 15 92 42 Q 80 25 60 25 Q 40 25 28 42 Z" fill="#3a1c06"/>
+            <path d="M 26 40 Q 60 36 94 40 L 92 48 Q 60 44 28 48 Z" fill="#dc2626"/>
+            <ellipse cx="60" cy="62" rx="30" ry="32" fill="#c48348"/>
+            <ellipse cx="44" cy="52" rx="5" ry="4" fill="#fff"/>
+            <circle cx="45" cy="52" r="2.5" fill="#111"/>
+            <ellipse cx="76" cy="52" rx="5" ry="4" fill="#fff"/>
+            <circle cx="75" cy="52" r="2.5" fill="#111"/>
+            <path d="M 36 46 L 52 50" stroke="#222" stroke-width="3"/>
+            <path d="M 84 46 L 68 50" stroke="#222" stroke-width="3"/>
+            <path d="M 30 60 C 30 95, 90 95, 90 60 C 85 75, 35 75, 30 60 Z" fill="#271504"/>
+            <path d="M 42 66 Q 60 62 78 66 Q 60 74 42 66 Z" fill="#1d0e02"/>
+            <path d="M 35 82 Q 60 95 85 82" stroke="#c48348" stroke-width="10" stroke-linecap="round" fill="none"/>
+            <path d="M 35 82 Q 60 95 85 82" stroke="#1d0e02" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </svg>
+        `;
+      case 'venky-train':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 30 45 Q 60 20 90 45 L 88 35 Q 60 15 32 35 Z" fill="#1e1e1e"/>
+            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#df9e62"/>
+            <path d="M 34 46 L 56 46 L 52 62 L 38 62 Z" fill="#111" stroke="#eab308" stroke-width="2"/>
+            <path d="M 64 46 L 86 46 L 82 62 L 68 62 Z" fill="#111" stroke="#eab308" stroke-width="2"/>
+            <line x1="56" y1="48" x2="64" y2="48" stroke="#eab308" stroke-width="2"/>
+            <path d="M 44 68 Q 60 64 76 68 Q 60 72 44 68 Z" fill="#111"/>
+            <path d="M 48 76 Q 60 84 72 76" stroke="#500" stroke-width="2.5" fill="none"/>
+            <path d="M 28 88 L 48 78 L 60 88 L 72 78 L 92 88 L 95 120 L 25 120 Z" fill="#ca8a04"/>
+          </svg>
+        `;
+      case 'balayya-trouble':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 24 45 Q 60 10 96 45 Q 85 20 60 22 Q 35 20 24 45 Z" fill="#1c1917"/>
+            <polygon points="60,32 63,40 57,40" fill="#dc2626"/>
+            <ellipse cx="60" cy="58" rx="30" ry="32" fill="#d6975a"/>
+            <ellipse cx="44" cy="48" rx="5" ry="3.5" fill="#fff"/>
+            <circle cx="45" cy="48" r="2.5" fill="#000"/>
+            <ellipse cx="76" cy="48" rx="5" ry="3.5" fill="#fff"/>
+            <circle cx="75" cy="48" r="2.5" fill="#000"/>
+            <path d="M 36 43 L 52 47" stroke="#000" stroke-width="3.5"/>
+            <path d="M 84 43 L 68 47" stroke="#000" stroke-width="3.5"/>
+            <path d="M 36 64 C 45 60, 55 64, 60 66 C 65 64, 75 60, 84 64 C 90 60, 82 72, 60 70 C 38 72, 30 60, 36 64 Z" fill="#1c1917"/>
+            <path d="M 25 88 L 60 78 L 95 88 L 98 120 L 22 120 Z" fill="#f59e0b"/>
+          </svg>
+        `;
+      case 'ms-full-bottle':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 28 42 Q 60 18 92 42 Q 85 22 60 22 Q 35 22 28 42 Z" fill="#64748b"/>
+            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#d9995d"/>
+            <path d="M 38 48 Q 46 44 54 49" stroke="#111" stroke-width="3" fill="none"/>
+            <path d="M 66 49 Q 74 44 82 48" stroke="#111" stroke-width="3" fill="none"/>
+            <path d="M 26 86 L 45 76 L 60 92 L 75 76 L 94 86 L 96 120 L 24 120 Z" fill="#2563eb"/>
+            <rect x="75" y="70" width="16" height="22" rx="2" fill="rgba(245,158,11,0.8)" stroke="#fff" stroke-width="2"/>
+          </svg>
+        `;
+      case 'ali-jalsa':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="60,10 42,32 78,32" fill="#ec4899"/>
+            <circle cx="60" cy="10" r="4" fill="#f59e0b"/>
+            <ellipse cx="60" cy="58" rx="28" ry="30" fill="#d49354"/>
+            <circle cx="44" cy="50" r="10" fill="#06b6d4" stroke="#000" stroke-width="2"/>
+            <circle cx="76" cy="50" r="10" fill="#06b6d4" stroke="#000" stroke-width="2"/>
+            <path d="M 42 72 Q 60 88 78 72 Z" fill="#fff" stroke="#111" stroke-width="2"/>
+          </svg>
+        `;
+      case 'sunil-rey-rey':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="56" rx="30" ry="32" fill="#df9e62"/>
+            <ellipse cx="60" cy="74" rx="14" ry="10" fill="#800" stroke="#000" stroke-width="2"/>
+            <path d="M 48 70 Q 60 74 72 70" stroke="#fff" stroke-width="3" fill="none"/>
+            <path d="M 18 60 Q 25 45 32 65" stroke="#df9e62" stroke-width="8" stroke-linecap="round" fill="none"/>
+            <path d="M 102 60 Q 95 45 88 65" stroke="#df9e62" stroke-width="8" stroke-linecap="round" fill="none"/>
+          </svg>
+        `;
+      case 'relangi-manchivadu':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="56" rx="28" ry="30" fill="#d9995d"/>
+            <path d="M 44 72 Q 60 84 76 72" stroke="#700" stroke-width="3" fill="none"/>
+            <path d="M 25 85 L 60 78 L 95 85 L 95 120 L 25 120 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+          </svg>
+        `;
+      case 'rgv-logic':
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#c48348"/>
+            <circle cx="44" cy="50" r="9" fill="#111"/>
+            <circle cx="76" cy="50" r="9" fill="#111"/>
+            <line x1="53" y1="50" x2="67" y2="50" stroke="#111" stroke-width="2"/>
+            <path d="M 48 76 Q 60 72 72 76" stroke="#222" stroke-width="3" fill="none"/>
+          </svg>
+        `;
+      case 'prabhas-chhatrapati':
+      default:
+        return `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 25 45 Q 60 15 95 45 Q 85 20 60 20 Q 35 20 25 45 Z" fill="#1c1917"/>
+            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#ca8a4b"/>
+            <path d="M 24 88 L 60 78 L 96 88 L 98 120 L 22 120 Z" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
+          </svg>
+        `;
+    }
+  }
+
   function renderVectorMemeSticker(sticker) {
-    const avatar = sticker.avatar || '🎭';
     return `
       <div class="vector-meme-sticker">
-        <span class="meme-actor-tag">${sticker.tag}</span>
+        <div class="meme-header-bar">
+          <span class="meme-actor-tag">${sticker.tag}</span>
+        </div>
         <div class="vector-svg-container">
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="42" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="2"/>
-            <text x="50" y="58" font-size="44" text-anchor="middle" dominant-baseline="middle">${avatar}</text>
-          </svg>
+          ${getActorSvg(sticker.id)}
         </div>
         <div class="vector-dialogue-banner">"${sticker.dialogue}"</div>
       </div>
     `;
   }
+
 
   const EMOJI_LIST = [
     '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','🤪',
