@@ -1673,4 +1673,45 @@ body.dark-theme {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+/* Emoji Picker Grid (iOS / Android / Windows Cross-Platform Support) */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  padding: 12px;
+  max-height: 340px;
+  overflow-y: auto;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Android Emoji", sans-serif;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    padding: 8px;
+  }
+}
+
+.emoji-item {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.emoji-item:hover {
+  transform: scale(1.25);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.emoji-item:active {
+  transform: scale(0.95);
+}
+
+
 
