@@ -20,7 +20,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -40,9 +40,18 @@
         <span class="status-dot connected"></span>
         <span id="onlineCountBadge">0 Colleagues Online</span>
       </div>
+      <span class="ping-badge" id="pingLatencyBadge">⚡ --ms</span>
     </div>
 
     <div class="header-actions">
+      <!-- Presence Status Selector -->
+      <select id="selectPresenceStatus" class="status-select" title="Change Presence Status">
+        <option value="Available 🟢">Available 🟢</option>
+        <option value="In a Meeting 🔴">In a Meeting 🔴</option>
+        <option value="Lunch Break 🥪">Lunch Break 🥪</option>
+        <option value="Do Not Disturb ⛔">Do Not Disturb ⛔</option>
+      </select>
+
       <button class="icon-btn" id="btnAudioSettings" title="Audio Settings">⚙️ Settings</button>
       <button class="icon-btn" id="btnToggleSoundFX" title="Toggle Sound">🔊 Sound: ON</button>
       <div class="user-profile-badge" id="userProfileBadge">
@@ -63,9 +72,11 @@
           <span class="admin-panel-title">👑 Admin Control Panel</span>
         </div>
         <div class="admin-panel-actions">
-          <button class="btn-admin-action" id="btnAdminBroadcast">📢 Conference Broadcast to All</button>
+          <button class="btn-admin-action" id="btnAdminBroadcast">📢 Broadcast to All</button>
+          <button class="btn-admin-action" id="btnAdminSiren">🚨 Priority Siren</button>
           <button class="btn-admin-action btn-admin-danger" id="btnAdminMuteAll">🔇 Mute All Mics</button>
           <button class="btn-admin-action" id="btnAdminUnmuteAll">🔊 Unmute All Mics</button>
+          <button class="btn-admin-action" id="btnAdminLockRoom">🔒 Lock Room</button>
         </div>
       </div>
 
@@ -135,8 +146,18 @@
         <h3>💬 Team Chat</h3>
       </div>
 
+      <!-- Pinned Announcement Banner -->
+      <div class="pinned-chat-banner hidden" id="pinnedChatBanner">
+        <span class="pinned-icon">📌</span>
+        <div class="pinned-text-wrapper">
+          <span class="pinned-label">PINNED ANNOUNCEMENT</span>
+          <span class="pinned-text" id="pinnedBannerText">No pinned announcements yet.</span>
+        </div>
+        <button class="btn-unpin-banner hidden" id="btnUnpinBanner" title="Unpin Announcement">✖</button>
+      </div>
+
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-notice">Send quick text messages, emojis & Telugu meme stickers!</div>
+        <div class="chat-notice">Send quick text messages, voice memos, files & Telugu meme stickers!</div>
       </div>
 
       <!-- Emoji & Telugu Meme Sticker Picker Popup -->
@@ -154,7 +175,10 @@
       </div>
 
       <form class="chat-input-form" id="chatForm">
-        <button type="button" class="btn-emoji-toggle" id="btnEmojiPicker" title="Emojis & Telugu Meme Stickers">😊</button>
+        <button type="button" class="btn-chat-tool" id="btnEmojiPicker" title="Emojis & Telugu Meme Stickers">😊</button>
+        <button type="button" class="btn-chat-tool" id="btnAttachFile" title="Share Photo/File">📎</button>
+        <input type="file" id="inputFileAttachment" style="display: none;" accept="image/*,.pdf,.doc,.txt">
+        <button type="button" class="btn-chat-tool btn-voice-memo" id="btnRecordVoiceMemo" title="Hold to Record Voice Memo (5s)">🎙️</button>
         <input type="text" id="chatInput" placeholder="Type a message or send stickers..." autocomplete="off">
         <button type="submit" id="btnSendChat">Send</button>
       </form>
@@ -202,6 +226,14 @@
         </select>
       </div>
       <div class="form-group">
+        <label for="selectSoundTheme">Walkie-Talkie Sound Theme</label>
+        <select id="selectSoundTheme">
+          <option value="vintage">📻 Vintage Walkie-Talkie (Default)</option>
+          <option value="scifi">🛸 Sci-Fi Futuristic</option>
+          <option value="modern">🔔 Modern Clean Chimes</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Mic Level Test</label>
         <div class="vu-bar-wrapper">
           <div class="vu-bar-fill" id="settingsVuFill"></div>
@@ -214,7 +246,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=16"></script>
-  <script src="app.js?v=16"></script>
+  <script src="audio-fx.js?v=17"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>

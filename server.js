@@ -28,6 +28,10 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e7
 });
 
+// Global room lock state & pinned announcement
+let isRoomLocked = false;
+let pinnedAnnouncement = null;
+
 function isSagarAlapati(name) {
   if (!name) return false;
   const clean = name.trim().toLowerCase();
@@ -35,9 +39,20 @@ function isSagarAlapati(name) {
 }
 
 io.on('connection', (socket) => {
+  // Ping latency handler
+  socket.on('ping-check', (clientTimestamp) => {
+    socket.emit('pong-check', clientTimestamp);
+  });
+
   socket.on('init-user', (userData) => {
     const rawName = (userData.name || 'Colleague').trim();
     const isAdmin = isSagarAlapati(rawName);
+
+    // Reject non-admin entry if room is locked
+    if (isRoomLocked && !isAdmin) {
+      socket.emit('room-locked-error', { message: 'The voice room is currently locked by the Admin.' });
+      return;
+    }
 
     const newUser = {
       socketId: socket.id,
@@ -48,13 +63,16 @@ io.on('connection', (socket) => {
       isMuted: false,
       isDeafened: false,
       isTalking: false,
-      talkMode: userData.talkMode || 'ptt'
+      talkMode: userData.talkMode || 'ptt',
+      presenceStatus: userData.presenceStatus || 'Available 🟢'
     };
 
     users.set(socket.id, newUser);
 
     socket.emit('user-initialized', newUser);
     socket.emit('online-users', Array.from(users.values()));
+    if (pinnedAnnouncement) socket.emit('pinned-message-updated', pinnedAnnouncement);
+    socket.emit('room-lock-changed', { isRoomLocked });
     socket.broadcast.emit('user-joined', newUser);
   });
 
@@ -104,7 +122,8 @@ io.on('connection', (socket) => {
         isMuted: user.isMuted,
         isDeafened: user.isDeafened,
         isTalking: user.isTalking,
-        talkMode: user.talkMode
+        talkMode: user.talkMode,
+        presenceStatus: user.presenceStatus
       }
     });
   });
@@ -142,7 +161,40 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('send-message', ({ text, sticker }) => {
+  // Admin Kick User
+  socket.on('admin-kick-user', ({ targetSocketId }) => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    const targetUser = users.get(targetSocketId);
+    if (targetUser) {
+      io.to(targetSocketId).emit('kicked-by-admin', { reason: 'You were disconnected by the Admin.' });
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      if (targetSocket) targetSocket.disconnect(true);
+      users.delete(targetSocketId);
+      io.emit('user-left', { socketId: targetSocketId });
+    }
+  });
+
+  // Admin Toggle Room Lock
+  socket.on('admin-toggle-lock', () => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    isRoomLocked = !isRoomLocked;
+    io.emit('room-lock-changed', { isRoomLocked });
+  });
+
+  // Admin Priority Broadcast Siren
+  socket.on('admin-broadcast-siren', () => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    socket.broadcast.emit('play-admin-siren', { senderName: senderUser.name });
+  });
+
+  // Team Chat Messages & Attachments
+  socket.on('send-message', ({ text, sticker, fileData, voiceMemo }) => {
     const user = users.get(socket.id);
     if (!user) return;
 
@@ -154,10 +206,30 @@ io.on('connection', (socket) => {
       isAdmin: user.isAdmin,
       text: text ? text.trim() : '',
       sticker: sticker || null,
+      fileData: fileData || null,
+      voiceMemo: voiceMemo || null,
+      reactions: {},
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     io.emit('new-message', messageObj);
+  });
+
+  // Message Reaction
+  socket.on('add-reaction', ({ messageId, emoji }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+
+    io.emit('reaction-updated', { messageId, emoji, userName: user.name });
+  });
+
+  // Pin Announcement
+  socket.on('pin-message', ({ text }) => {
+    const senderUser = users.get(socket.id);
+    if (!senderUser || !senderUser.isAdmin) return;
+
+    pinnedAnnouncement = text ? { text, pinnedBy: senderUser.name } : null;
+    io.emit('pinned-message-updated', pinnedAnnouncement);
   });
 
   socket.on('disconnect', () => {

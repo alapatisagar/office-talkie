@@ -1,15 +1,18 @@
-// OfficeTalk Client Logic - Multi-Target Person Selection & PCM Voice Engine
+// OfficeTalk Master Client Engine v17 - Multi-Target Voice & Admin Superpowers
 
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
+  // --- DOM Elements ---
   const modalSetup = document.getElementById('modalSetup');
   const formSetup = document.getElementById('formSetup');
   const setupName = document.getElementById('setupName');
+  const btnSubmitSetup = document.getElementById('btnSubmitSetup');
 
   const headerUserName = document.getElementById('headerUserName');
   const headerUserAvatar = document.getElementById('headerUserAvatar');
   const headerAdminTag = document.getElementById('headerAdminTag');
   const onlineCountBadge = document.getElementById('onlineCountBadge');
+  const pingLatencyBadge = document.getElementById('pingLatencyBadge');
+  const selectPresenceStatus = document.getElementById('selectPresenceStatus');
 
   const btnTargetEveryone = document.getElementById('btnTargetEveryone');
   const targetSummaryBadge = document.getElementById('targetSummaryBadge');
@@ -34,28 +37,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const vuBarFill = document.getElementById('vuBarFill');
 
+  // Sidebar Chat & Pinned Banner
+  const pinnedChatBanner = document.getElementById('pinnedChatBanner');
+  const pinnedBannerText = document.getElementById('pinnedBannerText');
+  const btnUnpinBanner = document.getElementById('btnUnpinBanner');
   const chatMessages = document.getElementById('chatMessages');
   const chatForm = document.getElementById('chatForm');
   const chatInput = document.getElementById('chatInput');
+  const btnAttachFile = document.getElementById('btnAttachFile');
+  const inputFileAttachment = document.getElementById('inputFileAttachment');
+  const btnRecordVoiceMemo = document.getElementById('btnRecordVoiceMemo');
 
+  // Settings Modal
   const btnAudioSettings = document.getElementById('btnAudioSettings');
   const modalAudioSettings = document.getElementById('modalAudioSettings');
   const btnCloseAudioSettings = document.getElementById('btnCloseAudioSettings');
   const selectMicInput = document.getElementById('selectMicInput');
+  const selectSoundTheme = document.getElementById('selectSoundTheme');
   const settingsVuFill = document.getElementById('settingsVuFill');
   const btnToggleSoundFX = document.getElementById('btnToggleSoundFX');
 
   // Admin Control Panel Elements
   const adminControlPanel = document.getElementById('adminControlPanel');
   const btnAdminBroadcast = document.getElementById('btnAdminBroadcast');
+  const btnAdminSiren = document.getElementById('btnAdminSiren');
   const btnAdminMuteAll = document.getElementById('btnAdminMuteAll');
   const btnAdminUnmuteAll = document.getElementById('btnAdminUnmuteAll');
+  const btnAdminLockRoom = document.getElementById('btnAdminLockRoom');
 
-  // Application State
+  // --- State Variables ---
   const socket = io();
   let currentUser = null;
-
-  // Multi-target Selection Set (stores socketIds or 'all')
   const selectedTargetIds = new Set(['all']);
 
   let localStream = null;
@@ -71,11 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let pttKeyPressed = false;
 
   const onlineUsersMap = new Map(); // socketId -> userData
+  const chatMessagesMap = new Map(); // messageId -> DOMElement
+
+  // Voice Memo recording variables
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let isRecordingMemo = false;
 
   function checkIsAdmin(name) {
     if (!name) return false;
-    const clean = name.trim().toLowerCase();
-    return clean.includes('sagar');
+    return name.trim().toLowerCase().includes('sagar');
   }
 
   function createSafeAudioContext(preferredRate = 16000) {
@@ -84,44 +101,44 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       return new AudioCtx({ sampleRate: preferredRate });
     } catch (e) {
-      try {
-        return new AudioCtx();
-      } catch (e2) {
-        console.warn('AudioContext creation fallback warning:', e2);
-        return null;
-      }
+      try { return new AudioCtx(); } catch (e2) { return null; }
     }
   }
 
-  // Audio Context Resumer
   function unlockAudioContexts() {
     try {
-      if (txAudioContext && txAudioContext.state === 'suspended') {
-        txAudioContext.resume();
-      }
-      if (rxAudioContext && rxAudioContext.state === 'suspended') {
-        rxAudioContext.resume();
-      }
-      if (window.soundFX && typeof window.soundFX.init === 'function') {
-        window.soundFX.init();
-      }
-    } catch (e) {
-      console.warn('Audio unlock warning:', e);
-    }
+      if (txAudioContext && txAudioContext.state === 'suspended') txAudioContext.resume();
+      if (rxAudioContext && rxAudioContext.state === 'suspended') rxAudioContext.resume();
+      if (window.soundFX && typeof window.soundFX.init === 'function') window.soundFX.init();
+    } catch (e) { console.warn('Audio unlock notice:', e); }
   }
 
   document.addEventListener('click', unlockAudioContexts);
   document.addEventListener('touchstart', unlockAudioContexts);
   document.addEventListener('keydown', unlockAudioContexts);
 
-  // Initialize Receiver Audio Context safely
   rxAudioContext = createSafeAudioContext(16000);
 
   // -------------------------------------------------------------
-  // 1. Setup Form & Auto-Login Engine (Zero Reload Guarantee)
+  // Latency Ping Checker
   // -------------------------------------------------------------
-  const btnSubmitSetup = document.getElementById('btnSubmitSetup');
+  setInterval(() => {
+    if (socket.connected) {
+      const start = Date.now();
+      socket.emit('ping-check', start);
+    }
+  }, 3000);
 
+  socket.on('pong-check', (clientTimestamp) => {
+    const rtt = Date.now() - clientTimestamp;
+    if (pingLatencyBadge) {
+      pingLatencyBadge.textContent = `⚡ ${rtt}ms`;
+    }
+  });
+
+  // -------------------------------------------------------------
+  // User Login & Setup Engine
+  // -------------------------------------------------------------
   function performUserConnect(inputName = null) {
     try {
       const nameEl = document.getElementById('setupName');
@@ -129,38 +146,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const rawName = nameVal.trim();
       if (!rawName) return;
 
-      try {
-        localStorage.setItem('officetalk_user_name', rawName);
-      } catch (e) {
-        console.warn('LocalStorage unavailable:', e);
-      }
+      try { localStorage.setItem('officetalk_user_name', rawName); } catch (e) {}
 
       const isAdmin = checkIsAdmin(rawName);
-
       const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
       const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
+      const presenceStatus = selectPresenceStatus ? selectPresenceStatus.value : 'Available 🟢';
 
       currentUser = {
         name: rawName,
         isAdmin,
         avatar,
         color: isAdmin ? '#f59e0b' : getRandomColor(),
-        talkMode
+        talkMode,
+        presenceStatus
       };
 
-      const hName = document.getElementById('headerUserName');
-      const hAvatar = document.getElementById('headerUserAvatar');
-      const hAdminTag = document.getElementById('headerAdminTag');
-      const modal = document.getElementById('modalSetup');
-
-      if (hName) hName.textContent = rawName;
-      if (hAvatar) hAvatar.textContent = avatar;
-
-      if (hAdminTag) {
-        if (isAdmin) hAdminTag.classList.remove('hidden');
-        else hAdminTag.classList.add('hidden');
+      if (headerUserName) headerUserName.textContent = rawName;
+      if (headerUserAvatar) headerUserAvatar.textContent = avatar;
+      if (headerAdminTag) {
+        if (isAdmin) headerAdminTag.classList.remove('hidden');
+        else headerAdminTag.classList.add('hidden');
       }
 
+      const modal = document.getElementById('modalSetup');
       if (modal) {
         modal.style.display = 'none';
         modal.classList.add('hidden');
@@ -169,10 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       socket.emit('init-user', currentUser);
       unlockAudioContexts();
-
       initLocalMicrophone().catch(err => console.log('Mic init notice:', err));
     } catch (err) {
-      console.error('[Form Setup Failure Handler]', err);
+      console.error('[User Connect Error]', err);
       const modal = document.getElementById('modalSetup');
       if (modal) {
         modal.style.display = 'none';
@@ -191,27 +199,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return false;
   }
 
-  if (btnSubmitSetup) {
-    btnSubmitSetup.addEventListener('click', handleConnectEvent);
-  }
+  if (btnSubmitSetup) btnSubmitSetup.addEventListener('click', handleConnectEvent);
+  if (formSetup) formSetup.addEventListener('submit', handleConnectEvent);
 
-  if (formSetup) {
-    formSetup.addEventListener('submit', handleConnectEvent);
-  }
-
-  // Auto-login returning users
+  // Auto-login returning user
   try {
     const savedName = localStorage.getItem('officetalk_user_name');
     if (savedName && savedName.trim()) {
-      const nameEl = document.getElementById('setupName');
-      if (nameEl) nameEl.value = savedName.trim();
+      if (setupName) setupName.value = savedName.trim();
       performUserConnect(savedName.trim());
     }
-  } catch (e) {
-    console.warn('Auto-login notice:', e);
-  }
+  } catch (e) {}
 
-  // Socket Reconnection Handler
   socket.on('connect', () => {
     try {
       const savedName = localStorage.getItem('officetalk_user_name');
@@ -220,24 +219,32 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (savedName && savedName.trim()) {
         performUserConnect(savedName.trim());
       }
-    } catch (e) {
-      console.warn('Socket connect sync notice:', e);
-    }
+    } catch (e) {}
+  });
+
+  socket.on('room-locked-error', ({ message }) => {
+    alert(`🔒 Connection Blocked: ${message}`);
   });
 
   // -------------------------------------------------------------
-  // 2. PCM Audio Capture (ScriptProcessor PCM Int16)
+  // Presence Status Change
+  // -------------------------------------------------------------
+  if (selectPresenceStatus) {
+    selectPresenceStatus.addEventListener('change', () => {
+      const newStatus = selectPresenceStatus.value;
+      if (currentUser) currentUser.presenceStatus = newStatus;
+      socket.emit('update-state', { presenceStatus: newStatus });
+      updateUserCardState(socket.id, { presenceStatus: newStatus });
+    });
+  }
+
+  // -------------------------------------------------------------
+  // Local Microphone & Audio Capture
   // -------------------------------------------------------------
   async function initLocalMicrophone(deviceId = null) {
     try {
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-      }
-
-      const constraints = {
-        audio: deviceId ? { deviceId: { exact: deviceId } } : true
-      };
-
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      const constraints = { audio: deviceId ? { deviceId: { exact: deviceId } } : true };
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       setupPcmAudioCapture(localStream);
       populateAudioDevices();
@@ -248,9 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setupPcmAudioCapture(stream) {
     try {
-      if (!txAudioContext) {
-        txAudioContext = createSafeAudioContext(16000);
-      }
+      if (!txAudioContext) txAudioContext = createSafeAudioContext(16000);
       if (!txAudioContext) return;
 
       analyser = txAudioContext.createAnalyser();
@@ -260,15 +265,12 @@ document.addEventListener('DOMContentLoaded', () => {
       source.connect(analyser);
 
       scriptProcessor = txAudioContext.createScriptProcessor(2048, 1, 1);
-
       scriptProcessor.onaudioprocess = (e) => {
         if (isMuted) return;
-
         const shouldTransmit = (talkMode === 'open' || isTransmitting);
         if (!shouldTransmit) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
-        
         const pcm16 = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const s = Math.max(-1, Math.min(1, inputData[i]));
@@ -276,11 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const targetsPayload = selectedTargetIds.has('all') ? 'all' : Array.from(selectedTargetIds);
-
-        socket.emit('voice-pcm', {
-          targetSocketIds: targetsPayload,
-          pcmData: pcm16.buffer
-        });
+        socket.emit('voice-pcm', { targetSocketIds: targetsPayload, pcmData: pcm16.buffer });
       };
 
       source.connect(scriptProcessor);
@@ -288,26 +286,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       monitorAudioVolume();
     } catch (err) {
-      console.error('[PCM Audio Setup Error]', err);
+      console.error('[PCM Capture Setup Error]', err);
     }
   }
 
   function monitorAudioVolume() {
     if (!analyser) return;
-
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     let isSpeakingState = false;
 
     function checkLevel() {
       analyser.getByteFrequencyData(dataArray);
       let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
-      }
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
       const average = sum / dataArray.length;
       const percent = Math.min(100, Math.round((average / 128) * 100));
 
-      vuBarFill.style.width = percent + '%';
+      if (vuBarFill) vuBarFill.style.width = percent + '%';
       if (settingsVuFill) settingsVuFill.style.width = percent + '%';
 
       const currentlySpeaking = percent > 6 && (talkMode === 'open' ? !isMuted : isTransmitting);
@@ -319,13 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       requestAnimationFrame(checkLevel);
     }
-
     checkLevel();
   }
 
   async function populateAudioDevices() {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
+      if (!selectMicInput) return;
       selectMicInput.innerHTML = '';
       devices.filter(d => d.kind === 'audioinput').forEach((dev, idx) => {
         const opt = document.createElement('option');
@@ -333,26 +328,29 @@ document.addEventListener('DOMContentLoaded', () => {
         opt.textContent = dev.label || `Microphone ${idx + 1}`;
         selectMicInput.appendChild(opt);
       });
-    } catch (e) {
-      console.error('Error populating audio devices', e);
-    }
+    } catch (e) {}
   }
 
-  selectMicInput.addEventListener('change', () => {
-    if (selectMicInput.value) {
-      initLocalMicrophone(selectMicInput.value);
-    }
-  });
+  if (selectMicInput) {
+    selectMicInput.addEventListener('change', () => {
+      if (selectMicInput.value) initLocalMicrophone(selectMicInput.value);
+    });
+  }
 
   // -------------------------------------------------------------
-  // 3. Socket.io PCM Voice Receiver
+  // Audio Receiver & Spatial Stereo Audio Panning Engine
   // -------------------------------------------------------------
+  function getSpatialPanValue(fromSocketId) {
+    const usersArray = Array.from(onlineUsersMap.keys()).filter(id => id !== socket.id);
+    const index = usersArray.indexOf(fromSocketId);
+    if (index === -1 || usersArray.length <= 1) return 0; // Center
+    const step = 1.6 / (usersArray.length - 1 || 1);
+    return -0.8 + (index * step);
+  }
+
   socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData }) => {
     if (isDeafened) return;
-
-    if (rxAudioContext.state === 'suspended') {
-      rxAudioContext.resume();
-    }
+    if (rxAudioContext.state === 'suspended') rxAudioContext.resume();
 
     updateUserCardTalking(fromSocketId, true);
     setTimeout(() => updateUserCardTalking(fromSocketId, false), 250);
@@ -360,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const int16 = new Int16Array(pcmData);
       const float32 = new Float32Array(int16.length);
-      
       for (let i = 0; i < int16.length; i++) {
         float32[i] = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7FFF);
       }
@@ -370,15 +367,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const source = rxAudioContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(rxAudioContext.destination);
+
+      // Spatial Stereo Panner Node
+      if (rxAudioContext.createStereoPanner) {
+        const panner = rxAudioContext.createStereoPanner();
+        const panValue = getSpatialPanValue(fromSocketId);
+        panner.pan.value = panValue;
+        source.connect(panner);
+        panner.connect(rxAudioContext.destination);
+      } else {
+        source.connect(rxAudioContext.destination);
+      }
+
       source.start();
     } catch (err) {
       console.error('PCM playback error:', err);
     }
   });
 
+  // -------------------------------------------------------------
+  // User Management & Admin Socket Listeners
+  // -------------------------------------------------------------
   socket.on('user-initialized', (selfData) => {
-    window.soundFX.playJoinChime();
+    if (window.soundFX) window.soundFX.playJoinChime();
     currentUser = selfData;
 
     if (selfData.isAdmin) {
@@ -398,20 +409,51 @@ document.addEventListener('DOMContentLoaded', () => {
     muteIcon.textContent = isMuted ? '🔇' : '🎙️';
     muteLabel.textContent = isMuted ? 'Unmute' : 'Mute';
 
-    if (isMuted && isTransmitting) {
-      stopTransmitting();
-    }
+    if (isMuted && isTransmitting) stopTransmitting();
+    if (window.soundFX) window.soundFX.playMuteToggle(isMuted);
+  });
 
-    if (window.soundFX) {
-      window.soundFX.playMuteToggle(isMuted);
+  socket.on('kicked-by-admin', ({ reason }) => {
+    alert(`⛔ ${reason}`);
+    window.location.reload();
+  });
+
+  socket.on('play-admin-siren', ({ senderName }) => {
+    if (window.soundFX) window.soundFX.playPrioritySiren();
+    appendChatMessage({
+      senderName: 'ADMIN ANNOUNCEMENT',
+      senderColor: '#ef4444',
+      text: `🚨 PRIORITY SIREN BROADCAST FROM ADMIN (${senderName})!`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+  });
+
+  socket.on('room-lock-changed', ({ isRoomLocked }) => {
+    if (btnAdminLockRoom) {
+      btnAdminLockRoom.textContent = isRoomLocked ? '🔓 Unlock Room' : '🔒 Lock Room';
+      btnAdminLockRoom.classList.toggle('btn-admin-danger', isRoomLocked);
     }
   });
 
+  // Admin Controls Listeners
   if (btnAdminBroadcast) {
     btnAdminBroadcast.addEventListener('click', () => {
       selectedTargetIds.clear();
       selectedTargetIds.add('all');
       updateTargetUI();
+    });
+  }
+
+  if (btnAdminSiren) {
+    btnAdminSiren.addEventListener('click', () => {
+      socket.emit('admin-broadcast-siren');
+      if (window.soundFX) window.soundFX.playPrioritySiren();
+    });
+  }
+
+  if (btnAdminLockRoom) {
+    btnAdminLockRoom.addEventListener('click', () => {
+      socket.emit('admin-toggle-lock');
     });
   }
 
@@ -462,9 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     selectedTargetIds.delete(socketId);
-    if (selectedTargetIds.size === 0) {
-      selectedTargetIds.add('all');
-    }
+    if (selectedTargetIds.size === 0) selectedTargetIds.add('all');
     updateTargetUI();
 
     onlineUsersMap.delete(socketId);
@@ -480,23 +520,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  socket.on('new-message', (msg) => {
-    appendChatMessage(msg);
+  // -------------------------------------------------------------
+  // Pinned Announcement Banner Handler
+  // -------------------------------------------------------------
+  socket.on('pinned-message-updated', (pinnedObj) => {
+    if (!pinnedChatBanner || !pinnedBannerText) return;
+
+    if (pinnedObj && pinnedObj.text) {
+      pinnedBannerText.textContent = `"${pinnedObj.text}" — by ${pinnedObj.pinnedBy}`;
+      pinnedChatBanner.classList.remove('hidden');
+      if (btnUnpinBanner && currentUser && currentUser.isAdmin) {
+        btnUnpinBanner.classList.remove('hidden');
+      }
+    } else {
+      pinnedChatBanner.classList.add('hidden');
+    }
   });
 
+  if (btnUnpinBanner) {
+    btnUnpinBanner.addEventListener('click', () => {
+      socket.emit('pin-message', { text: null });
+    });
+  }
+
   // -------------------------------------------------------------
-  // 4. Multi-Target Person Selection Logic
+  // Multi-Target Recipient Selection UI
   // -------------------------------------------------------------
-  btnTargetEveryone.addEventListener('click', () => {
-    selectedTargetIds.clear();
-    selectedTargetIds.add('all');
-    updateTargetUI();
-  });
+  if (btnTargetEveryone) {
+    btnTargetEveryone.addEventListener('click', () => {
+      selectedTargetIds.clear();
+      selectedTargetIds.add('all');
+      updateTargetUI();
+    });
+  }
 
   function toggleTargetPerson(socketId) {
-    if (selectedTargetIds.has('all')) {
-      selectedTargetIds.clear();
-    }
+    if (selectedTargetIds.has('all')) selectedTargetIds.clear();
 
     if (selectedTargetIds.has(socketId)) {
       selectedTargetIds.delete(socketId);
@@ -504,10 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
       selectedTargetIds.add(socketId);
     }
 
-    if (selectedTargetIds.size === 0) {
-      selectedTargetIds.add('all');
-    }
-
+    if (selectedTargetIds.size === 0) selectedTargetIds.add('all');
     updateTargetUI();
   }
 
@@ -531,7 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
       pttTargetInfo.textContent = `to ${count} Colleague${count === 1 ? '' : 's'}`;
     }
 
-    // Highlight participant cards
     onlineUsersMap.forEach((user, sId) => {
       const card = document.getElementById(`pcard-${sId}`);
       if (card) {
@@ -548,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 5. Push-To-Talk & Voice Controls
+  // Push-To-Talk Engine
   // -------------------------------------------------------------
   function startTransmitting() {
     if (isTransmitting || isMuted || isDeafened) return;
@@ -558,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pttText.textContent = 'TRANSMITTING...';
 
     unlockAudioContexts();
-    window.soundFX.playPttStart();
+    if (window.soundFX) window.soundFX.playPttStart();
 
     socket.emit('update-state', { isTalking: true });
     updateUserCardTalking(socket.id, true);
@@ -571,24 +626,20 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPTT.classList.remove('transmitting');
     pttText.textContent = 'HOLD TO TALK';
 
-    window.soundFX.playPttEnd();
+    if (window.soundFX) window.soundFX.playPttEnd();
 
     socket.emit('update-state', { isTalking: false });
     updateUserCardTalking(socket.id, false);
   }
 
-  btnPTT.addEventListener('mousedown', startTransmitting);
-  btnPTT.addEventListener('mouseup', stopTransmitting);
-  btnPTT.addEventListener('mouseleave', stopTransmitting);
+  if (btnPTT) {
+    btnPTT.addEventListener('mousedown', startTransmitting);
+    btnPTT.addEventListener('mouseup', stopTransmitting);
+    btnPTT.addEventListener('mouseleave', stopTransmitting);
 
-  btnPTT.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    startTransmitting();
-  });
-  btnPTT.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    stopTransmitting();
-  });
+    btnPTT.addEventListener('touchstart', (e) => { e.preventDefault(); startTransmitting(); });
+    btnPTT.addEventListener('touchend', (e) => { e.preventDefault(); stopTransmitting(); });
+  }
 
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
@@ -612,8 +663,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  btnModePTT.addEventListener('click', () => switchTalkMode('ptt'));
-  btnModeOpen.addEventListener('click', () => switchTalkMode('open'));
+  if (btnModePTT) btnModePTT.addEventListener('click', () => switchTalkMode('ptt'));
+  if (btnModeOpen) btnModeOpen.addEventListener('click', () => switchTalkMode('open'));
 
   function switchTalkMode(mode) {
     talkMode = mode;
@@ -631,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUserCardState(socket.id, { talkMode });
   }
 
-  btnToggleMute.addEventListener('click', toggleMute);
+  if (btnToggleMute) btnToggleMute.addEventListener('click', toggleMute);
 
   function toggleMute() {
     isMuted = !isMuted;
@@ -639,17 +690,14 @@ document.addEventListener('DOMContentLoaded', () => {
     muteIcon.textContent = isMuted ? '🔇' : '🎙️';
     muteLabel.textContent = isMuted ? 'Unmute' : 'Mute';
 
-    window.soundFX.playMuteToggle(isMuted);
-
-    if (isMuted && isTransmitting) {
-      stopTransmitting();
-    }
+    if (window.soundFX) window.soundFX.playMuteToggle(isMuted);
+    if (isMuted && isTransmitting) stopTransmitting();
 
     socket.emit('update-state', { isMuted });
     updateUserCardState(socket.id, { isMuted });
   }
 
-  btnToggleDeafen.addEventListener('click', toggleDeafen);
+  if (btnToggleDeafen) btnToggleDeafen.addEventListener('click', toggleDeafen);
 
   function toggleDeafen() {
     isDeafened = !isDeafened;
@@ -662,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 6. Participant Card Rendering & Multi-Selection
+  // Participant Card Rendering
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
     if (document.getElementById('emptyRoomPlaceholder')) {
@@ -692,6 +740,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="status-badges">
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
         <span class="badge-tag muted ${user.isMuted ? '' : 'hidden'}">MUTED</span>
+        <span class="presence-badge-tag">${user.presenceStatus || 'Available 🟢'}</span>
       </div>
       ${!isSelf ? `
         <div class="card-actions-wrapper">
@@ -700,6 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <button class="btn-admin-mute-user ${user.isMuted ? 'unmute' : ''}">
               ${user.isMuted ? '🔊 Remote Unmute' : '🔇 Remote Mute'}
             </button>
+            <button class="btn-admin-kick-user">⛔ Kick User</button>
           ` : ''}
         </div>
       ` : ''}
@@ -724,6 +774,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      const btnAdminKick = card.querySelector('.btn-admin-kick-user');
+      if (btnAdminKick) {
+        btnAdminKick.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Kick ${user.name} out of the voice room?`)) {
+            socket.emit('admin-kick-user', { targetSocketId: socketId });
+          }
+        });
+      }
+
       card.addEventListener('click', () => {
         toggleTargetPerson(socketId);
       });
@@ -735,7 +795,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function removeParticipantCard(socketId) {
     const card = document.getElementById(`pcard-${socketId}`);
     if (card) card.remove();
-
     if (participantGrid.children.length === 0) {
       participantGrid.appendChild(emptyRoomPlaceholder);
     }
@@ -743,9 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateUserCardTalking(socketId, isTalking) {
     const card = document.getElementById(`pcard-${socketId}`);
-    if (card) {
-      card.classList.toggle('talking', isTalking);
-    }
+    if (card) card.classList.toggle('talking', isTalking);
   }
 
   function updateUserCardState(socketId, state) {
@@ -773,6 +830,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modeTag.textContent = state.talkMode.toUpperCase();
       }
     }
+
+    if (state.presenceStatus !== undefined) {
+      const presenceTag = card.querySelector('.presence-badge-tag');
+      if (presenceTag) presenceTag.textContent = state.presenceStatus;
+    }
   }
 
   function updateOnlineCount() {
@@ -781,16 +843,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // 7. Chat & Emoji/Telugu Meme Stickers Engine
+  // 100% Reliable Local Telugu Vector SVG Meme Generator
   // -------------------------------------------------------------
-  const btnEmojiPicker = document.getElementById('btnEmojiPicker');
-  const emojiPickerPanel = document.getElementById('emojiPickerPanel');
-  const tabEmojis = document.getElementById('tabEmojis');
-  const tabStickers = document.getElementById('tabStickers');
-  const pickerContentEmojis = document.getElementById('pickerContentEmojis');
-  const pickerContentStickers = document.getElementById('pickerContentStickers');
-  const emojiGrid = document.getElementById('emojiGrid');
-  const stickerGrid = document.getElementById('stickerGrid');
+  const TELUGU_MEME_STICKERS = [
+    { id: 'brahmi-adhyaksha', tag: 'Brahmanandam', dialogue: 'Adhyaksha! Naku Ee Post Oddhu!', avatar: '👑' },
+    { id: 'brahmi-enti-comedy', tag: 'Brahmanandam', dialogue: 'Enti Comedy-a? Nena Niku Comedy?', avatar: '😂' },
+    { id: 'brahmi-mind-block', tag: 'Brahmanandam', dialogue: 'Mind Block Aipoyindi Subba Rao!', avatar: '🤯' },
+    { id: 'brahmi-aaha', tag: 'Brahmanandam', dialogue: 'Aahaa.. Enna Combo Sir Enna Combo!', avatar: '😋' },
+    { id: 'tillu-atla-untadhi', tag: 'DJ Tillu', dialogue: 'Atla Untadhi Manathoni!', avatar: '🎧' },
+    { id: 'pushpa-thaggedhele', tag: 'Pushpa Raj', dialogue: 'Thaggedhe Le!', avatar: '🔥' },
+    { id: 'venky-train', tag: 'Venky', dialogue: 'Train-lo Seet-lu Khali Ena Sir?', avatar: '🕶️' },
+    { id: 'ali-jalsa', tag: 'Ali', dialogue: 'Jalsa Time.. Full Chill!', avatar: '🥳' },
+    { id: 'ms-full-bottle', tag: 'MS Narayana', dialogue: 'Full Bottle Experience!', avatar: '🍺' },
+    { id: 'sunil-rey-rey', tag: 'Sunil', dialogue: 'Rey Rey Agandi Ra Babu!', avatar: '🍿' },
+    { id: 'relangi-manchivadu', tag: 'Relangi Mavayya', dialogue: 'Manishi Manchivadu Ra!', avatar: '👏' },
+    { id: 'balayya-trouble', tag: 'Balayya', dialogue: "Don't Trouble The Trouble!", avatar: '🦁' },
+    { id: 'rgv-logic', tag: 'RGV', dialogue: 'Logic Undha Inthaki?', avatar: '🧐' },
+    { id: 'brahmi-escape', tag: 'Brahmanandam', dialogue: 'Silently Escaped.. Bye!', avatar: '🥷' },
+    { id: 'brahmi-karma', tag: 'Brahmanandam', dialogue: 'Karma Ra Babu!', avatar: '🤦‍♂️' },
+    { id: 'prabhas-chhatrapati', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!', avatar: '⚔️' }
+  ];
+
+  function renderVectorMemeSticker(sticker) {
+    const avatar = sticker.avatar || '🎭';
+    return `
+      <div class="vector-meme-sticker">
+        <span class="meme-actor-tag">${sticker.tag}</span>
+        <div class="vector-svg-container">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="42" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="2"/>
+            <text x="50" y="58" font-size="44" text-anchor="middle" dominant-baseline="middle">${avatar}</text>
+          </svg>
+        </div>
+        <div class="vector-dialogue-banner">"${sticker.dialogue}"</div>
+      </div>
+    `;
+  }
 
   const EMOJI_LIST = [
     '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','🤪',
@@ -800,47 +888,18 @@ document.addEventListener('DOMContentLoaded', () => {
     '🎧','🔊','📱','💻','☕','🍺','🍿'
   ];
 
-  const TELUGU_MEME_STICKERS = [
-    { id: 'brahmi-adhyaksha', tag: 'Brahmanandam', dialogue: 'Adhyaksha!', avatar: '👑' },
-    { id: 'brahmi-enti-comedy', tag: 'Brahmanandam', dialogue: 'Enti Comedy-a?', avatar: '😂' },
-    { id: 'brahmi-mind-block', tag: 'Brahmanandam', dialogue: 'Mind Blocked!', avatar: '🤯' },
-    { id: 'brahmi-aaha', tag: 'Brahmanandam', dialogue: 'Aahaa.. Enna Combo Sir!', avatar: '😋' },
-    { id: 'brahmi-shocked', tag: 'Brahmanandam', dialogue: 'Abbo.. Ye Reethi Ga!', avatar: '😱' },
-    { id: 'tillu-atla-untadhi', tag: 'DJ Tillu', dialogue: 'Atla Untadhi Manathoni!', avatar: '🎧' },
-    { id: 'pushpa-thaggedhele', tag: 'Pushpa Raj', dialogue: 'Thaggedhe Le!', avatar: '🔥' },
-    { id: 'venky-train', tag: 'Venky', dialogue: 'Train-lo Seet-lu Khali Ena?', avatar: '🕶️' },
-    { id: 'ali-jalsa', tag: 'Ali', dialogue: 'Jalsa Time.. Full Chill!', avatar: '🥳' },
-    { id: 'ms-full-bottle', tag: 'MS Narayana', dialogue: 'Full Bottle Experience!', avatar: '🍺' },
-    { id: 'sunil-rey-rey', tag: 'Sunil', dialogue: 'Rey Rey Agandi Ra!', avatar: '🍿' },
-    { id: 'relangi-manchivadu', tag: 'Relangi Mavayya', dialogue: 'Manishi Manchivadu!', avatar: '👏' },
-    { id: 'balayya-trouble', tag: 'Balayya', dialogue: "Don't Trouble The Trouble!", avatar: '🦁' },
-    { id: 'rgv-logic', tag: 'RGV', dialogue: 'Logic Undha Inthaki?', avatar: '🧐' },
-    { id: 'brahmi-escape', tag: 'Brahmanandam', dialogue: 'Silently Escaped..', avatar: '🥷' },
-    { id: 'brahmi-karma', tag: 'Brahmanandam', dialogue: 'Karma Ra Babu!', avatar: '🤦‍♂️' },
-    { id: 'prabhas-chhatrapati', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!', avatar: '⚔️' },
-    { id: 'brahmi-sensational', tag: 'Brahmanandam', dialogue: 'Sensational Entry!', avatar: '⭐' }
-  ];
-
-  function renderPhotoMemeSticker(sticker) {
-    const avatar = sticker.avatar || '🎭';
-    return `
-      <div class="photo-meme-sticker">
-        <div class="meme-image-container">
-          <div class="meme-fallback-badge">
-            <span class="meme-fallback-avatar">${avatar}</span>
-          </div>
-          <div class="meme-overlay-gradient"></div>
-          <span class="meme-actor-tag">${sticker.tag}</span>
-        </div>
-        <div class="meme-dialogue-banner">"${sticker.dialogue}"</div>
-      </div>
-    `;
-  }
+  const btnEmojiPicker = document.getElementById('btnEmojiPicker');
+  const emojiPickerPanel = document.getElementById('emojiPickerPanel');
+  const tabEmojis = document.getElementById('tabEmojis');
+  const tabStickers = document.getElementById('tabStickers');
+  const pickerContentEmojis = document.getElementById('pickerContentEmojis');
+  const pickerContentStickers = document.getElementById('pickerContentStickers');
+  const emojiGrid = document.getElementById('emojiGrid');
+  const stickerGrid = document.getElementById('stickerGrid');
 
   function initEmojiAndStickerPicker() {
     if (!emojiGrid || !stickerGrid) return;
 
-    // Populate Emojis
     emojiGrid.innerHTML = '';
     EMOJI_LIST.forEach(emoji => {
       const item = document.createElement('div');
@@ -853,12 +912,11 @@ document.addEventListener('DOMContentLoaded', () => {
       emojiGrid.appendChild(item);
     });
 
-    // Populate Stickers
     stickerGrid.innerHTML = '';
     TELUGU_MEME_STICKERS.forEach(sticker => {
       const card = document.createElement('div');
       card.className = 'sticker-card';
-      card.innerHTML = renderPhotoMemeSticker(sticker);
+      card.innerHTML = renderVectorMemeSticker(sticker);
       card.addEventListener('click', () => {
         socket.emit('send-message', { text: '', sticker });
         if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
@@ -898,6 +956,91 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // -------------------------------------------------------------
+  // File Attachment & Voice Memo Handlers
+  // -------------------------------------------------------------
+  if (btnAttachFile && inputFileAttachment) {
+    btnAttachFile.addEventListener('click', () => inputFileAttachment.click());
+
+    inputFileAttachment.addEventListener('change', () => {
+      const file = inputFileAttachment.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fileData = {
+          name: file.name,
+          type: file.type,
+          dataUrl: e.target.result
+        };
+        socket.emit('send-message', { text: `Attached file: ${file.name}`, fileData });
+        inputFileAttachment.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Voice Memo Recorder (up to 5s)
+  if (btnRecordVoiceMemo) {
+    let memoTimer = null;
+
+    btnRecordVoiceMemo.addEventListener('mousedown', startVoiceMemoRecord);
+    btnRecordVoiceMemo.addEventListener('mouseup', stopVoiceMemoRecord);
+    btnRecordVoiceMemo.addEventListener('mouseleave', stopVoiceMemoRecord);
+
+    btnRecordVoiceMemo.addEventListener('touchstart', (e) => { e.preventDefault(); startVoiceMemoRecord(); });
+    btnRecordVoiceMemo.addEventListener('touchend', (e) => { e.preventDefault(); stopVoiceMemoRecord(); });
+
+    async function startVoiceMemoRecord() {
+      if (isRecordingMemo) return;
+      isRecordingMemo = true;
+      audioChunks = [];
+
+      btnRecordVoiceMemo.classList.add('recording');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = () => {
+            socket.emit('send-message', {
+              text: '🎙️ Voice Memo (5s)',
+              voiceMemo: { dataUrl: reader.result, duration: 5 }
+            });
+          };
+          reader.readAsDataURL(blob);
+        };
+        mediaRecorder.start();
+
+        memoTimer = setTimeout(() => {
+          stopVoiceMemoRecord();
+        }, 5000);
+      } catch (err) {
+        console.warn('Voice memo recording error:', err);
+        isRecordingMemo = false;
+        btnRecordVoiceMemo.classList.remove('recording');
+      }
+    }
+
+    function stopVoiceMemoRecord() {
+      if (!isRecordingMemo) return;
+      isRecordingMemo = false;
+      if (memoTimer) clearTimeout(memoTimer);
+      btnRecordVoiceMemo.classList.remove('recording');
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    }
+  }
+
+  // Chat Form Submit
   chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
@@ -907,62 +1050,154 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.value = '';
   });
 
+  socket.on('new-message', (msg) => {
+    appendChatMessage(msg);
+  });
+
+  socket.on('reaction-updated', ({ messageId, emoji, userName }) => {
+    const bubble = chatMessagesMap.get(messageId);
+    if (!bubble) return;
+
+    let reactionsRow = bubble.querySelector('.chat-reactions-row');
+    if (!reactionsRow) {
+      reactionsRow = document.createElement('div');
+      reactionsRow.className = 'chat-reactions-row';
+      bubble.appendChild(reactionsRow);
+    }
+
+    let pill = reactionsRow.querySelector(`[data-emoji="${emoji}"]`);
+    if (!pill) {
+      pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'reaction-pill';
+      pill.setAttribute('data-emoji', emoji);
+      pill.setAttribute('data-count', '0');
+      pill.innerHTML = `<span class="r-emoji">${emoji}</span> <span class="r-count">0</span>`;
+      reactionsRow.appendChild(pill);
+    }
+
+    let count = parseInt(pill.getAttribute('data-count') || '0', 10) + 1;
+    pill.setAttribute('data-count', count);
+    pill.querySelector('.r-count').textContent = count;
+    if (userName === (currentUser ? currentUser.name : '')) {
+      pill.classList.add('user-reacted');
+    }
+  });
+
   function appendChatMessage(msg) {
     const bubble = document.createElement('div');
     bubble.className = 'chat-bubble';
+    if (msg.id) chatMessagesMap.set(msg.id, bubble);
 
     let contentHtml = '';
     if (msg.sticker) {
       contentHtml = `
         <div class="chat-sticker-photo-wrapper">
-          ${renderPhotoMemeSticker(msg.sticker)}
+          ${renderVectorMemeSticker(msg.sticker)}
         </div>
       `;
+    } else if (msg.voiceMemo) {
+      contentHtml = `
+        <div class="voice-memo-player">
+          <button class="btn-play-memo" type="button">▶</button>
+          <span class="memo-dur-badge">🎙️ Voice Memo (5s)</span>
+          <audio src="${msg.voiceMemo.dataUrl}" style="display:none;"></audio>
+        </div>
+      `;
+    } else if (msg.fileData) {
+      if (msg.fileData.type && msg.fileData.type.startsWith('image/')) {
+        contentHtml = `
+          <div class="chat-text">${escapeHTML(msg.text)}</div>
+          <img src="${msg.fileData.dataUrl}" class="chat-file-attachment" alt="Attached photo">
+        `;
+      } else {
+        contentHtml = `
+          <div class="chat-text">${escapeHTML(msg.text)}</div>
+          <a href="${msg.fileData.dataUrl}" download="${msg.fileData.name}" style="color: var(--accent-gold); font-weight:700;">📎 Download ${msg.fileData.name}</a>
+        `;
+      }
     } else {
       contentHtml = `<div class="chat-text">${escapeHTML(msg.text)}</div>`;
     }
 
-    bubble.innerHTML = `
-      <div class="chat-sender-row">
-        <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">
-          ${msg.senderName} ${msg.isAdmin ? '👑 (Admin)' : ''}
-        </span>
-        <span class="chat-time">${msg.timestamp}</span>
-      </div>
-      ${contentHtml}
-    `;
-
-    chatMessages.appendChild(bubble);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
+    const canPin = currentUser && currentUser.isAdmin;
 
     bubble.innerHTML = `
       <div class="chat-sender-row">
         <span class="chat-sender-name" style="color: ${msg.senderColor || '#3b82f6'};">
           ${msg.senderName} ${msg.isAdmin ? '👑 (Admin)' : ''}
         </span>
-        <span class="chat-time">${msg.timestamp}</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span class="chat-time">${msg.timestamp}</span>
+          ${canPin ? `<button class="btn-add-reaction btn-pin-msg" title="Pin Announcement">📌</button>` : ''}
+          <button class="btn-add-reaction btn-react-msg" title="React">😊</button>
+        </div>
       </div>
       ${contentHtml}
+      <div class="chat-reactions-row"></div>
     `;
+
+    // Voice memo play handler
+    const btnPlayMemo = bubble.querySelector('.btn-play-memo');
+    if (btnPlayMemo) {
+      const audioEl = bubble.querySelector('audio');
+      btnPlayMemo.addEventListener('click', () => {
+        if (audioEl) {
+          audioEl.play();
+          btnPlayMemo.textContent = '🔊';
+          audioEl.onended = () => { btnPlayMemo.textContent = '▶'; };
+        }
+      });
+    }
+
+    // Reaction handler
+    const btnReactMsg = bubble.querySelector('.btn-react-msg');
+    if (btnReactMsg && msg.id) {
+      btnReactMsg.addEventListener('click', () => {
+        const quickEmojis = ['👍', '❤️', '😂', '🔥', '😮', '👏'];
+        const chosen = quickEmojis[Math.floor(Math.random() * quickEmojis.length)];
+        socket.emit('add-reaction', { messageId: msg.id, emoji: chosen });
+      });
+    }
+
+    // Pin announcement handler
+    const btnPinMsg = bubble.querySelector('.btn-pin-msg');
+    if (btnPinMsg) {
+      btnPinMsg.addEventListener('click', () => {
+        const textToPin = msg.text || (msg.sticker ? msg.sticker.dialogue : 'Announcement');
+        socket.emit('pin-message', { text: textToPin });
+      });
+    }
 
     chatMessages.appendChild(bubble);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   function escapeHTML(str) {
+    if (!str) return '';
     return str.replace(/[&<>'"]/g, 
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
 
-  btnAudioSettings.addEventListener('click', () => modalAudioSettings.classList.remove('hidden'));
-  btnCloseAudioSettings.addEventListener('click', () => modalAudioSettings.classList.add('hidden'));
+  // Audio Settings & Sound FX Theme Selector
+  if (btnAudioSettings) btnAudioSettings.addEventListener('click', () => modalAudioSettings.classList.remove('hidden'));
+  if (btnCloseAudioSettings) btnCloseAudioSettings.addEventListener('click', () => modalAudioSettings.classList.add('hidden'));
 
-  btnToggleSoundFX.addEventListener('click', () => {
-    window.soundFX.enabled = !window.soundFX.enabled;
-    btnToggleSoundFX.textContent = `🔊 Sound: ${window.soundFX.enabled ? 'ON' : 'OFF'}`;
-  });
+  if (selectSoundTheme) {
+    selectSoundTheme.addEventListener('change', () => {
+      if (window.soundFX) window.soundFX.setTheme(selectSoundTheme.value);
+    });
+  }
+
+  if (btnToggleSoundFX) {
+    btnToggleSoundFX.addEventListener('click', () => {
+      if (window.soundFX) {
+        window.soundFX.enabled = !window.soundFX.enabled;
+        btnToggleSoundFX.textContent = `🔊 Sound: ${window.soundFX.enabled ? 'ON' : 'OFF'}`;
+      }
+    });
+  }
 
   function getRandomColor() {
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];

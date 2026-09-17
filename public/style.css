@@ -1025,3 +1025,260 @@ body.dark-theme {
 .chat-sticker-photo-wrapper:hover {
   transform: scale(1.05);
 }
+
+/* -------------------------------------------------------------
+   Master Upgrade v17 CSS Rules
+   ------------------------------------------------------------- */
+
+/* Header Status & Ping Badge */
+.ping-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Presence Status Selector */
+.status-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Pinned Announcement Banner */
+.pinned-chat-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 179, 8, 0.1));
+  border-bottom: 2px solid var(--accent-gold);
+  padding: 10px 14px;
+}
+
+.pinned-chat-banner.hidden {
+  display: none !important;
+}
+
+.pinned-icon {
+  font-size: 16px;
+}
+
+.pinned-text-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.pinned-label {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--accent-gold);
+  letter-spacing: 0.5px;
+}
+
+.pinned-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.btn-unpin-banner {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+.btn-unpin-banner:hover {
+  color: var(--accent-red);
+}
+
+/* Participant Presence Badge & Admin Kick Button */
+.presence-badge-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+}
+
+.btn-admin-kick-user {
+  width: 100%;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: var(--accent-red);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.2s ease;
+}
+.btn-admin-kick-user:hover {
+  background: var(--accent-red);
+  color: #fff;
+}
+
+/* Vector SVG Telugu Meme Sticker Cards (100% Reliable Local Rendering) */
+.vector-meme-sticker {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(135deg, #1e1b4b, #0f172a);
+  border: 3px solid var(--accent-gold);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  position: relative;
+  user-select: none;
+}
+
+.vector-svg-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15), transparent 70%);
+}
+
+.vector-svg-container svg {
+  width: 100%;
+  height: 100%;
+  max-height: 90px;
+}
+
+.vector-dialogue-banner {
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+  padding: 6px 8px;
+  line-height: 1.25;
+  border-top: 2px solid var(--accent-gold);
+}
+
+/* Chat Message Voice Memo Player */
+.voice-memo-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin-top: 6px;
+}
+
+.btn-play-memo {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.memo-dur-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-blue);
+}
+
+/* Reactions Container on Chat Messages */
+.chat-reactions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.reaction-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.reaction-pill:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.reaction-pill.user-reacted {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.btn-add-reaction {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.chat-bubble:hover .btn-add-reaction {
+  opacity: 1;
+}
+
+/* Spatial Audio Stereo Panner Pill */
+.spatial-pan-badge {
+  font-size: 9px;
+  font-weight: 800;
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+  padding: 2px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Chat Attachment Image */
+.chat-file-attachment {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 10px;
+  margin-top: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.btn-voice-memo.recording {
+  background: var(--accent-red) !important;
+  animation: pulseRecording 1s infinite alternate;
+}
+
+@keyframes pulseRecording {
+  from { transform: scale(1); box-shadow: 0 0 0 rgba(239, 68, 68, 0.4); }
+  to { transform: scale(1.1); box-shadow: 0 0 12px rgba(239, 68, 68, 0.8); }
+}
+
