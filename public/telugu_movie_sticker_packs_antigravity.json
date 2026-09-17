@@ -1,0 +1,255 @@
+{
+  "version": "2.0.0",
+  "name": "Telugu Movie-Style Sticker Packs",
+  "description": "Chat sticker-pack configuration for Antigravity integration.",
+  "contentPolicy": {
+    "assetRule": "Use only original, user-provided, licensed, or otherwise authorized artwork.",
+    "copyrightedMovieFrames": "Do not scrape, download, or redistribute copyrighted movie frames.",
+    "celebrityArtwork": "Use authorized artwork or original caricature/reaction artwork."
+  },
+  "chatIntegration": {
+    "enabled": true,
+    "messageType": "sticker",
+    "pickerButton": {
+      "icon": "sticker",
+      "label": "Stickers"
+    },
+    "tabs": [
+      "emoji",
+      "stickers",
+      "gifs"
+    ],
+    "sendOnTap": true,
+    "maxRecent": 30,
+    "maxFavorites": 500,
+    "stickerDisplay": {
+      "desktopMaxWidthPx": 220,
+      "mobileMaxWidthPx": 180
+    }
+  },
+  "search": {
+    "enabled": true,
+    "languages": [
+      "te",
+      "en"
+    ],
+    "fields": [
+      "name",
+      "nameTe",
+      "keywords",
+      "pack"
+    ],
+    "instantSearch": true
+  },
+  "categories": [
+    {
+      "id": "trending",
+      "name": "🔥 Trending",
+      "sort": "usage"
+    },
+    {
+      "id": "recent",
+      "name": "🕘 Recent",
+      "sort": "recent"
+    },
+    {
+      "id": "favorites",
+      "name": "⭐ Favorites",
+      "sort": "favorites"
+    },
+    {
+      "id": "comedy",
+      "name": "😂 Comedy",
+      "sort": "category"
+    },
+    {
+      "id": "mass",
+      "name": "😎 Mass",
+      "sort": "category"
+    },
+    {
+      "id": "reaction",
+      "name": "🤦 Reactions",
+      "sort": "category"
+    },
+    {
+      "id": "emotional",
+      "name": "😭 Emotional",
+      "sort": "category"
+    },
+    {
+      "id": "love",
+      "name": "❤️ Love",
+      "sort": "category"
+    },
+    {
+      "id": "celebration",
+      "name": "🎉 Celebration",
+      "sort": "category"
+    }
+  ],
+  "packs": [
+    {
+      "id": "brahmanandam-classics",
+      "name": "Brahmanandam Classics",
+      "emoji": "😂",
+      "category": "comedy",
+      "description": "Original Telugu-style reaction stickers inspired by Brahmanandam Classics.",
+      "assetBasePath": "/stickers/telugu-movie/brahmanandam-classics/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "ali-comedy",
+      "name": "Ali Comedy",
+      "emoji": "🤣",
+      "category": "comedy",
+      "description": "Original Telugu-style reaction stickers inspired by Ali Comedy.",
+      "assetBasePath": "/stickers/telugu-movie/ali-comedy/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "vennela-kishore",
+      "name": "Vennela Kishore",
+      "emoji": "😏",
+      "category": "reaction",
+      "description": "Original Telugu-style reaction stickers inspired by Vennela Kishore.",
+      "assetBasePath": "/stickers/telugu-movie/vennela-kishore/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "ms-narayana",
+      "name": "MS Narayana",
+      "emoji": "😂",
+      "category": "comedy",
+      "description": "Original Telugu-style reaction stickers inspired by MS Narayana.",
+      "assetBasePath": "/stickers/telugu-movie/ms-narayana/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "sunil",
+      "name": "Sunil",
+      "emoji": "😄",
+      "category": "comedy",
+      "description": "Original Telugu-style reaction stickers inspired by Sunil.",
+      "assetBasePath": "/stickers/telugu-movie/sunil/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "raghu-babu",
+      "name": "Raghu Babu",
+      "emoji": "😆",
+      "category": "reaction",
+      "description": "Original Telugu-style reaction stickers inspired by Raghu Babu.",
+      "assetBasePath": "/stickers/telugu-movie/raghu-babu/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "posani-krishna-murali",
+      "name": "Posani Krishna Murali",
+      "emoji": "😤",
+      "category": "reaction",
+      "description": "Original Telugu-style reaction stickers inspired by Posani Krishna Murali.",
+      "assetBasePath": "/stickers/telugu-movie/posani-krishna-murali/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "30-years-prithvi",
+      "name": "30 Years Prithvi",
+      "emoji": "😎",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by 30 Years Prithvi.",
+      "assetBasePath": "/stickers/telugu-movie/30-years-prithvi/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "pawan-kalyan",
+      "name": "Pawan Kalyan",
+      "emoji": "🔥",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by Pawan Kalyan.",
+      "assetBasePath": "/stickers/telugu-movie/pawan-kalyan/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "allu-arjun",
+      "name": "Allu Arjun",
+      "emoji": "😎",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by Allu Arjun.",
+      "assetBasePath": "/stickers/telugu-movie/allu-arjun/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "mahesh-babu",
+      "name": "Mahesh Babu",
+      "emoji": "✨",
+      "category": "reaction",
+      "description": "Original Telugu-style reaction stickers inspired by Mahesh Babu.",
+      "assetBasePath": "/stickers/telugu-movie/mahesh-babu/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "jr-ntr",
+      "name": "Jr NTR",
+      "emoji": "🔥",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by Jr NTR.",
+      "assetBasePath": "/stickers/telugu-movie/jr-ntr/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "ram-charan",
+      "name": "Ram Charan",
+      "emoji": "💥",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by Ram Charan.",
+      "assetBasePath": "/stickers/telugu-movie/ram-charan/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "prabhas",
+      "name": "Prabhas",
+      "emoji": "👑",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by Prabhas.",
+      "assetBasePath": "/stickers/telugu-movie/prabhas/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "chiranjeevi",
+      "name": "Chiranjeevi",
+      "emoji": "⭐",
+      "category": "mass",
+      "description": "Original Telugu-style reaction stickers inspired by Chiranjeevi.",
+      "assetBasePath": "/stickers/telugu-movie/chiranjeevi/",
+      "licensedOrOriginalOnly": true
+    },
+    {
+      "id": "nani",
+      "name": "Nani",
+      "emoji": "😊",
+      "category": "comedy",
+      "description": "Original Telugu-style reaction stickers inspired by Nani.",
+      "assetBasePath": "/stickers/telugu-movie/nani/",
+      "licensedOrOriginalOnly": true
+    }
+  ],
+  "storage": {
+    "localFallback": "/public/stickers/telugu-movie/",
+    "firebaseStoragePath": "/stickers/telugu-movie/{packId}/{stickerId}.webp",
+    "metadataCollection": "stickers"
+  },
+  "performance": {
+    "lazyLoad": true,
+    "thumbnailFirst": true,
+    "webpPreferred": true,
+    "cache": true,
+    "virtualizeAfterCount": 200
+  },
+  "admin": {
+    "uploadEnabled": true,
+    "deleteEnabled": true,
+    "editMetadataEnabled": true,
+    "requiresAdminRole": true
+  }
+}

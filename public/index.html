@@ -162,21 +162,39 @@
 
       <!-- Emoji & Telugu Meme Sticker Picker Popup -->
       <div class="emoji-picker-panel hidden" id="emojiPickerPanel">
-        <div class="picker-tabs">
-          <button type="button" class="picker-tab active" id="tabEmojis">😃 Emojis</button>
-          <button type="button" class="picker-tab" id="tabStickers">🎭 Telugu Memes</button>
+        <div class="picker-top-nav">
+          <div class="picker-tabs">
+            <button type="button" class="picker-tab active" id="tabEmojis">😀 Emoji</button>
+            <button type="button" class="picker-tab" id="tabStickers">🎭 Stickers</button>
+            <button type="button" class="picker-tab" id="tabGifs">🎞️ GIFs</button>
+          </div>
+          <button type="button" class="picker-close-btn" id="btnClosePicker" title="Close (ESC)">✖</button>
         </div>
+
+        <div class="picker-search-container hidden" id="pickerSearchContainer">
+          <input type="text" id="stickerSearchInput" placeholder="🔍 Search Telugu stickers (e.g. Brahmi, Thaggedhe, అయ్యో)..." autocomplete="off">
+          <button type="button" class="btn-clear-search hidden" id="btnClearStickerSearch">✖</button>
+        </div>
+
         <div class="picker-content" id="pickerContentEmojis">
           <div class="emoji-grid" id="emojiGrid"></div>
         </div>
         <div class="picker-content hidden" id="pickerContentStickers">
-          <div class="sticker-categories-bar" id="stickerCategoriesBar"></div>
+          <div class="sticker-categories-bar" id="stickerCategoryTabs"></div>
+          <div class="sticker-packs-subnav" id="stickerPacksSubnav"></div>
           <div class="sticker-grid" id="stickerGrid"></div>
+        </div>
+        <div class="picker-content hidden" id="pickerContentGifs">
+          <div class="gif-placeholder-notice">
+            <span class="gif-icon">🎞️</span>
+            <p>Telugu Movie GIFs & Clips coming soon! Enjoy 100+ Telugu Meme & Actor Reaction Stickers.</p>
+          </div>
         </div>
       </div>
 
       <form class="chat-input-form" id="chatForm">
-        <button type="button" class="btn-chat-tool" id="btnEmojiPicker" title="Emojis & Telugu Meme Stickers">😊</button>
+        <button type="button" class="btn-chat-tool" id="btnEmojiPicker" title="Emojis (😀)">😊</button>
+        <button type="button" class="btn-chat-tool" id="btnStickerPicker" title="Telugu Movie Stickers (🎭)">🎨</button>
         <button type="button" class="btn-chat-tool" id="btnAttachFile" title="Share Photo/File">📎</button>
         <input type="file" id="inputFileAttachment" style="display: none;" accept="image/*,.pdf,.doc,.txt">
         <button type="button" class="btn-chat-tool btn-voice-memo" id="btnRecordVoiceMemo" title="Hold to Record Voice Memo (5s)">🎙️</button>

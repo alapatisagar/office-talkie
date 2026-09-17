@@ -202,13 +202,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function syncUserWithServer() {
     try {
-      const savedName = localStorage.getItem('officetalk_user_name');
       if (currentUser) {
         updateHeaderProfile(currentUser);
         socket.emit('init-user', currentUser);
-      } else if (savedName && savedName.trim()) {
-        performUserConnect(savedName.trim());
       } else {
+        const savedName = localStorage.getItem('officetalk_user_name') || '';
+        const setupNameEl = document.getElementById('setupName');
+        if (setupNameEl && savedName) {
+          setupNameEl.value = savedName;
+        }
         const modal = document.getElementById('modalSetup');
         if (modal) {
           modal.style.cssText = 'display: flex !important; opacity: 1 !important; pointer-events: auto !important; visibility: visible !important;';
@@ -216,6 +218,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     } catch(e) {}
+  }
+
+  const userProfileBadge = document.getElementById('userProfileBadge');
+  if (userProfileBadge) {
+    userProfileBadge.addEventListener('click', () => {
+      const modal = document.getElementById('modalSetup');
+      if (modal) {
+        modal.style.cssText = 'display: flex !important; opacity: 1 !important; pointer-events: auto !important; visibility: visible !important;';
+        modal.classList.remove('hidden');
+        const setupNameEl = document.getElementById('setupName');
+        if (setupNameEl) setupNameEl.focus();
+      }
+    });
   }
 
   socket.on('connect', syncUserWithServer);
@@ -870,23 +885,69 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // 100% Reliable Local Telugu Vector SVG Meme Generator
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Telugu Movie-Style Sticker Packs v2.0.0 Engine
+  // -------------------------------------------------------------
+  const TELUGU_ACTOR_PACKS = [
+    { id: 'all', name: '🌟 All Packs', emoji: '🌟' },
+    { id: 'brahmanandam-classics', name: 'Brahmanandam', emoji: '😂', category: 'comedy' },
+    { id: 'ali-comedy', name: 'Ali', emoji: '🤣', category: 'comedy' },
+    { id: 'vennela-kishore', name: 'Vennela Kishore', emoji: '😏', category: 'reaction' },
+    { id: 'ms-narayana', name: 'MS Narayana', emoji: '🍺', category: 'comedy' },
+    { id: 'sunil', name: 'Sunil', emoji: '😄', category: 'comedy' },
+    { id: 'raghu-babu', name: 'Raghu Babu', emoji: '😆', category: 'reaction' },
+    { id: 'posani-krishna-murali', name: 'Posani', emoji: '😤', category: 'reaction' },
+    { id: '30-years-prithvi', name: '30Yrs Prithvi', emoji: '😎', category: 'mass' },
+    { id: 'pawan-kalyan', name: 'Pawan Kalyan', emoji: '🔥', category: 'mass' },
+    { id: 'allu-arjun', name: 'Allu Arjun', emoji: '😎', category: 'mass' },
+    { id: 'mahesh-babu', name: 'Mahesh Babu', emoji: '✨', category: 'reaction' },
+    { id: 'jr-ntr', name: 'Jr NTR', emoji: '🔥', category: 'mass' },
+    { id: 'ram-charan', name: 'Ram Charan', emoji: '💥', category: 'mass' },
+    { id: 'prabhas', name: 'Prabhas', emoji: '👑', category: 'mass' },
+    { id: 'chiranjeevi', name: 'Chiranjeevi', emoji: '⭐', category: 'mass' },
+    { id: 'nani', name: 'Nani', emoji: '😊', category: 'comedy' }
+  ];
+
   const TELUGU_MEME_STICKERS = [
-    { id: 'brahmi-adhyaksha', tag: 'Brahmanandam', dialogue: 'Adhyaksha! Naku Ee Post Oddhu!', avatar: '👑' },
-    { id: 'brahmi-enti-comedy', tag: 'Brahmanandam', dialogue: 'Enti Comedy-a? Nena Niku Comedy?', avatar: '😂' },
-    { id: 'brahmi-mind-block', tag: 'Brahmanandam', dialogue: 'Mind Block Aipoyindi Subba Rao!', avatar: '🤯' },
-    { id: 'brahmi-aaha', tag: 'Brahmanandam', dialogue: 'Aahaa.. Enna Combo Sir Enna Combo!', avatar: '😋' },
-    { id: 'tillu-atla-untadhi', tag: 'DJ Tillu', dialogue: 'Atla Untadhi Manathoni!', avatar: '🎧' },
-    { id: 'pushpa-thaggedhele', tag: 'Pushpa Raj', dialogue: 'Thaggedhe Le!', avatar: '🔥' },
-    { id: 'venky-train', tag: 'Venky', dialogue: 'Train-lo Seet-lu Khali Ena Sir?', avatar: '🕶️' },
-    { id: 'ali-jalsa', tag: 'Ali', dialogue: 'Jalsa Time.. Full Chill!', avatar: '🥳' },
-    { id: 'ms-full-bottle', tag: 'MS Narayana', dialogue: 'Full Bottle Experience!', avatar: '🍺' },
-    { id: 'sunil-rey-rey', tag: 'Sunil', dialogue: 'Rey Rey Agandi Ra Babu!', avatar: '🍿' },
-    { id: 'relangi-manchivadu', tag: 'Relangi Mavayya', dialogue: 'Manishi Manchivadu Ra!', avatar: '👏' },
-    { id: 'balayya-trouble', tag: 'Balayya', dialogue: "Don't Trouble The Trouble!", avatar: '🦁' },
-    { id: 'rgv-logic', tag: 'RGV', dialogue: 'Logic Undha Inthaki?', avatar: '🧐' },
-    { id: 'brahmi-escape', tag: 'Brahmanandam', dialogue: 'Silently Escaped.. Bye!', avatar: '🥷' },
-    { id: 'brahmi-karma', tag: 'Brahmanandam', dialogue: 'Karma Ra Babu!', avatar: '🤦‍♂️' },
-    { id: 'prabhas-chhatrapati', tag: 'Prabhas', dialogue: 'Oka Adugu Mungatiki!', avatar: '⚔️' }
+    { id: 'brahmi-adhyaksha', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Adhyaksha! Naku Ee Post Oddhu!', titleTe: 'అధ్యక్షా! నాకు ఈ పోస్ట్ వద్దు!', keywords: ['brahmanandam', 'brahmi', 'adhyaksha', 'comedy', 'funny', 'అధ్యక్షా'] },
+    { id: 'brahmi-enti-comedy', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Enti Comedy-a? Nena Niku Comedy?', titleTe: 'ఏంటి కామెడీయా?', keywords: ['brahmanandam', 'brahmi', 'comedy', 'funny', 'ఏంటి కామెడీయా'] },
+    { id: 'brahmi-mind-block', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'reaction', dialogue: 'Mind Block Aipoyindi Subba Rao!', titleTe: 'మైండ్ బ్లాక్ అయిపోయింది!', keywords: ['brahmanandam', 'mind block', 'shock', 'మైండ్ బ్లాక్'] },
+    { id: 'brahmi-aaha', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Aahaa.. Enna Combo Sir Enna Combo!', titleTe: 'ఎన్నా కాంబో సర్!', keywords: ['brahmanandam', 'combo', 'aaha', 'ఎన్నా కాంబో'] },
+    { id: 'brahmi-escape', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'reaction', dialogue: 'Silently Escaped.. Bye!', titleTe: 'సైలెంట్‌గా ఎస్కేప్.. బై!', keywords: ['brahmanandam', 'escape', 'bye', 'సైలెంట్'] },
+    { id: 'brahmi-karma', tag: 'Brahmanandam', pack: 'brahmanandam-classics', category: 'emotional', dialogue: 'Karma Ra Babu!', titleTe: 'కర్మ రా బాబు!', keywords: ['brahmanandam', 'karma', 'sad', 'కర్మ'] },
+
+    { id: 'ali-jalsa', tag: 'Ali', pack: 'ali-comedy', category: 'comedy', dialogue: 'Jalsa Time.. Full Chill!', titleTe: 'జల్సా టైమ్.. ఫుల్ చిల్!', keywords: ['ali', 'jalsa', 'chill', 'జల్సా'] },
+    { id: 'ali-katravelli', tag: 'Ali', pack: 'ali-comedy', category: 'reaction', dialogue: 'Katravelli.. Kya Bolta!', titleTe: 'కత్రవేల్లి.. క్యా బోల్తా!', keywords: ['ali', 'katravelli', 'కత్రవేల్లి'] },
+
+    { id: 'vennela-brain-zero', tag: 'Vennela Kishore', pack: 'vennela-kishore', category: 'reaction', dialogue: 'Haath Mein Mobile.. Brain Zero!', titleTe: 'బ్రెయిన్ జీరో!', keywords: ['vennela kishore', 'mobile', 'zero', 'బ్రెయిన్'] },
+    { id: 'vennela-confusion', tag: 'Vennela Kishore', pack: 'vennela-kishore', category: 'reaction', dialogue: 'Confusion Express!', titleTe: 'కన్ఫ్యూజన్ ఎక్స్‌ప్రెస్!', keywords: ['vennela kishore', 'confused', 'కన్ఫ్యూజన్'] },
+
+    { id: 'ms-full-bottle', tag: 'MS Narayana', pack: 'ms-narayana', category: 'comedy', dialogue: 'Full Bottle Experience!', titleTe: 'ఫుల్ బాటిల్!', keywords: ['ms narayana', 'bottle', 'drink', 'బాటిల్'] },
+    { id: 'ms-peggy', tag: 'MS Narayana', pack: 'ms-narayana', category: 'comedy', dialogue: 'Peggy Vesthe Siggenduku!', titleTe: 'పెగ్గేస్తే సిగ్గెందుకు!', keywords: ['ms narayana', 'peg', 'సొంతం'] },
+
+    { id: 'sunil-rey-rey', tag: 'Sunil', pack: 'sunil', category: 'comedy', dialogue: 'Rey Rey Agandi Ra Babu!', titleTe: 'రేయ్ రేయ్ ఆగండి రా!', keywords: ['sunil', 'rey rey', 'agandi', 'రేయ్ రేయ్'] },
+    { id: 'sunil-six-pack', tag: 'Sunil', pack: 'sunil', category: 'mass', dialogue: 'Six Pack Super Look!', titleTe: 'సిక్స్ ప్యాక్ లుక్!', keywords: ['sunil', 'six pack', 'mass', 'సిక్స్ ప్యాక్'] },
+
+    { id: 'raghu-em-cheppav', tag: 'Raghu Babu', pack: 'raghu-babu', category: 'reaction', dialogue: 'Em Cheppav Ra Babji!', titleTe: 'ఏం చెప్పావ్ రా బాబ్జీ!', keywords: ['raghu babu', 'babji', 'ఏం చెప్పావ్'] },
+    { id: 'posani-mental', tag: 'Posani Krishna Murali', pack: 'posani-krishna-murali', category: 'angry', dialogue: 'Mental Ekkinchesthunnaru Ra!', titleTe: 'మెంటల్ ఎక్కిస్తున్నారు!', keywords: ['posani', 'mental', 'angry', 'మెంటల్'] },
+
+    { id: 'prithvi-30-years', tag: '30 Years Prithvi', pack: '30-years-prithvi', category: 'mass', dialogue: '30 Years Industry Ikada!', titleTe: '30 ఇయర్స్ ఇండస్ట్రీ!', keywords: ['prithvi', '30 years', 'industry', '30 ఇయర్స్'] },
+    { id: 'pk-chudappa', tag: 'Pawan Kalyan', pack: 'pawan-kalyan', category: 'mass', dialogue: 'Chudappa Siddappa!', titleTe: 'చూడప్పా సిద్దప్పా!', keywords: ['pawan kalyan', 'pk', 'powerstar', 'సిద్దప్పా'] },
+    { id: 'pk-gabbar-singh', tag: 'Pawan Kalyan', pack: 'pawan-kalyan', category: 'mass', dialogue: 'Nenu Koddiga Teradaga Untanu!', titleTe: 'కొద్దిగా తేడాగా ఉంటాను!', keywords: ['pawan kalyan', 'gabbar singh', 'తేడాగా'] },
+
+    { id: 'allu-pushpa', tag: 'Allu Arjun', pack: 'allu-arjun', category: 'mass', dialogue: 'Thaggedhe Le!', titleTe: 'తగ్గేదే లే!', keywords: ['allu arjun', 'pushpa', 'thaggedhele', 'తగ్గేదే లే'] },
+    { id: 'mahesh-pokiri', tag: 'Mahesh Babu', pack: 'mahesh-babu', category: 'mass', dialogue: 'Mind Lo Fix Aithe Blind Ga Vellipotha!', titleTe: 'మైండ్‌లో ఫిక్స్ అయితే!', keywords: ['mahesh babu', 'pokiri', 'blind', 'ఫిక్స్'] },
+    { id: 'ntr-rrr', tag: 'Jr NTR', pack: 'jr-ntr', category: 'mass', dialogue: 'RRR Bheem Mass Fire!', titleTe: 'భీమ్ మాస్ ఫైర్!', keywords: ['jr ntr', 'ntr', 'rrr', 'bheem', 'భీమ్'] },
+    { id: 'charan-rangasthalam', tag: 'Ram Charan', pack: 'ram-charan', category: 'mass', dialogue: 'Rangasthalam Chittibabu Mass!', titleTe: 'చిట్టిబాబు మాస్!', keywords: ['ram charan', 'chittibabu', 'rangasthalam', 'చిట్టిబాబు'] },
+    { id: 'prabhas-chhatrapati', tag: 'Prabhas', pack: 'prabhas', category: 'mass', dialogue: 'Oka Adugu Mungatiki!', titleTe: 'ఒక అడుగు ముంగాటికి!', keywords: ['prabhas', 'darling', 'chhatrapati', 'అడుగు'] },
+    { id: 'chiru-boss', tag: 'Chiranjeevi', pack: 'chiranjeevi', category: 'mass', dialogue: 'Boss Is Back!', titleTe: 'బాస్ ఈజ్ బ్యాక్!', keywords: ['chiranjeevi', 'chiru', 'boss', 'బాస్'] },
+    { id: 'nani-natural', tag: 'Nani', pack: 'nani', category: 'comedy', dialogue: 'Natural Star Simplicity!', titleTe: 'నేచురల్ స్టార్!', keywords: ['nani', 'natural star', 'simplicity', 'నేచురల్'] },
+
+    { id: 'tillu-atla-untadhi', tag: 'DJ Tillu', pack: 'brahmanandam-classics', category: 'mass', dialogue: 'Atla Untadhi Manathoni!', titleTe: 'అట్లా ఉంటది మనతోని!', keywords: ['tillu', 'dj tillu', 'atla untadhi', 'అట్లా ఉంటది'] },
+    { id: 'venky-train', tag: 'Venky', pack: 'brahmanandam-classics', category: 'comedy', dialogue: 'Train-lo Seet-lu Khali Ena Sir?', titleTe: 'ట్రైన్‌లో సీట్లు ఖాళీ ఏనా?', keywords: ['venky', 'train', 'seet', 'సీట్లు'] },
+    { id: 'balayya-trouble', tag: 'Balayya', pack: 'brahmanandam-classics', category: 'mass', dialogue: "Don't Trouble The Trouble!", titleTe: 'డోంట్ ట్రబుల్ ది ట్రబుల్!', keywords: ['balayya', 'trouble', 'nbk', 'ట్రబుల్'] },
+    { id: 'relangi-manchivadu', tag: 'Relangi Mavayya', pack: 'brahmanandam-classics', category: 'celebration', dialogue: 'Manishi Manchivadu Ra!', titleTe: 'మనిషి మంచివాడు రా!', keywords: ['relangi', 'manchivadu', 'మంచివాడు'] },
+    { id: 'rgv-logic', tag: 'RGV', pack: 'brahmanandam-classics', category: 'reaction', dialogue: 'Logic Undha Inthaki?', dialogue: 'Logic Undha Inthaki?', titleTe: 'లాజిక్ ఉందా ఇంతకీ?', keywords: ['rgv', 'logic', 'లాజిక్'] }
   ];
 
   function getActorSvg(stickerId) {
@@ -897,8 +958,6 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'brahmi-aaha':
       case 'brahmi-escape':
       case 'brahmi-karma':
-      case 'brahmi-sensational':
-      case 'brahmi-shocked':
         return `
           <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
             <ellipse cx="60" cy="55" rx="32" ry="36" fill="#e0a96d"/>
@@ -910,10 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <circle cx="74" cy="51" r="4" fill="#111"/>
             <path d="M 36 38 Q 46 31 56 38" stroke="#111" stroke-width="3" fill="none"/>
             <path d="M 64 38 Q 74 31 84 38" stroke="#111" stroke-width="3" fill="none"/>
-            <path d="M 60 51 Q 65 60 58 64" fill="none" stroke="#b87b43" stroke-width="2.5"/>
-            <path d="M 44 68 Q 60 64 76 68 Q 60 73 44 68 Z" fill="#222"/>
             <ellipse cx="60" cy="76" rx="12" ry="8" fill="#600"/>
-            <path d="M 52 74 Q 60 78 68 74" fill="#fff"/>
             <path d="M 30 92 L 45 80 L 60 92 L 75 80 L 90 92 L 90 120 L 30 120 Z" fill="#fff"/>
             <polygon points="60,84 64,112 60,120 56,112" fill="#cc0000"/>
           </svg>
@@ -924,118 +980,26 @@ document.addEventListener('DOMContentLoaded', () => {
             <circle cx="45" cy="30" r="14" fill="#222"/>
             <circle cx="60" cy="24" r="16" fill="#222"/>
             <circle cx="75" cy="30" r="14" fill="#222"/>
-            <circle cx="35" cy="40" r="12" fill="#222"/>
-            <circle cx="85" cy="40" r="12" fill="#222"/>
             <ellipse cx="60" cy="60" rx="30" ry="32" fill="#d89a60"/>
             <polygon points="32,48 56,48 52,62 36,62" fill="#f59e0b" stroke="#000" stroke-width="2"/>
             <polygon points="64,48 88,48 84,62 68,62" fill="#f59e0b" stroke="#000" stroke-width="2"/>
-            <line x1="56" y1="52" x2="64" y2="52" stroke="#000" stroke-width="3"/>
-            <path d="M 48 78 Q 65 85 74 74" fill="none" stroke="#300" stroke-width="3" stroke-linecap="round"/>
             <path d="M 24 65 C 24 100, 96 100, 96 65" fill="none" stroke="#ef4444" stroke-width="8"/>
-            <rect x="18" y="55" width="12" height="20" rx="4" fill="#111"/>
-            <rect x="90" y="55" width="12" height="20" rx="4" fill="#111"/>
             <path d="M 25 90 L 45 78 L 60 95 L 75 78 L 95 90 L 100 120 L 20 120 Z" fill="#7e22ce"/>
-            <path d="M 50 85 Q 60 105 70 85" fill="none" stroke="#fbbf24" stroke-width="3"/>
           </svg>
         `;
+      case 'allu-pushpa':
       case 'pushpa-thaggedhele':
         return `
           <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
             <path d="M 28 42 Q 60 15 92 42 Q 80 25 60 25 Q 40 25 28 42 Z" fill="#3a1c06"/>
-            <path d="M 26 40 Q 60 36 94 40 L 92 48 Q 60 44 28 48 Z" fill="#dc2626"/>
             <ellipse cx="60" cy="62" rx="30" ry="32" fill="#c48348"/>
             <ellipse cx="44" cy="52" rx="5" ry="4" fill="#fff"/>
             <circle cx="45" cy="52" r="2.5" fill="#111"/>
             <ellipse cx="76" cy="52" rx="5" ry="4" fill="#fff"/>
             <circle cx="75" cy="52" r="2.5" fill="#111"/>
-            <path d="M 36 46 L 52 50" stroke="#222" stroke-width="3"/>
-            <path d="M 84 46 L 68 50" stroke="#222" stroke-width="3"/>
             <path d="M 30 60 C 30 95, 90 95, 90 60 C 85 75, 35 75, 30 60 Z" fill="#271504"/>
-            <path d="M 42 66 Q 60 62 78 66 Q 60 74 42 66 Z" fill="#1d0e02"/>
-            <path d="M 35 82 Q 60 95 85 82" stroke="#c48348" stroke-width="10" stroke-linecap="round" fill="none"/>
-            <path d="M 35 82 Q 60 95 85 82" stroke="#1d0e02" stroke-width="2" stroke-linecap="round" fill="none"/>
           </svg>
         `;
-      case 'venky-train':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 30 45 Q 60 20 90 45 L 88 35 Q 60 15 32 35 Z" fill="#1e1e1e"/>
-            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#df9e62"/>
-            <path d="M 34 46 L 56 46 L 52 62 L 38 62 Z" fill="#111" stroke="#eab308" stroke-width="2"/>
-            <path d="M 64 46 L 86 46 L 82 62 L 68 62 Z" fill="#111" stroke="#eab308" stroke-width="2"/>
-            <line x1="56" y1="48" x2="64" y2="48" stroke="#eab308" stroke-width="2"/>
-            <path d="M 44 68 Q 60 64 76 68 Q 60 72 44 68 Z" fill="#111"/>
-            <path d="M 48 76 Q 60 84 72 76" stroke="#500" stroke-width="2.5" fill="none"/>
-            <path d="M 28 88 L 48 78 L 60 88 L 72 78 L 92 88 L 95 120 L 25 120 Z" fill="#ca8a04"/>
-          </svg>
-        `;
-      case 'balayya-trouble':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 24 45 Q 60 10 96 45 Q 85 20 60 22 Q 35 20 24 45 Z" fill="#1c1917"/>
-            <polygon points="60,32 63,40 57,40" fill="#dc2626"/>
-            <ellipse cx="60" cy="58" rx="30" ry="32" fill="#d6975a"/>
-            <ellipse cx="44" cy="48" rx="5" ry="3.5" fill="#fff"/>
-            <circle cx="45" cy="48" r="2.5" fill="#000"/>
-            <ellipse cx="76" cy="48" rx="5" ry="3.5" fill="#fff"/>
-            <circle cx="75" cy="48" r="2.5" fill="#000"/>
-            <path d="M 36 43 L 52 47" stroke="#000" stroke-width="3.5"/>
-            <path d="M 84 43 L 68 47" stroke="#000" stroke-width="3.5"/>
-            <path d="M 36 64 C 45 60, 55 64, 60 66 C 65 64, 75 60, 84 64 C 90 60, 82 72, 60 70 C 38 72, 30 60, 36 64 Z" fill="#1c1917"/>
-            <path d="M 25 88 L 60 78 L 95 88 L 98 120 L 22 120 Z" fill="#f59e0b"/>
-          </svg>
-        `;
-      case 'ms-full-bottle':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 28 42 Q 60 18 92 42 Q 85 22 60 22 Q 35 22 28 42 Z" fill="#64748b"/>
-            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#d9995d"/>
-            <path d="M 38 48 Q 46 44 54 49" stroke="#111" stroke-width="3" fill="none"/>
-            <path d="M 66 49 Q 74 44 82 48" stroke="#111" stroke-width="3" fill="none"/>
-            <path d="M 26 86 L 45 76 L 60 92 L 75 76 L 94 86 L 96 120 L 24 120 Z" fill="#2563eb"/>
-            <rect x="75" y="70" width="16" height="22" rx="2" fill="rgba(245,158,11,0.8)" stroke="#fff" stroke-width="2"/>
-          </svg>
-        `;
-      case 'ali-jalsa':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="60,10 42,32 78,32" fill="#ec4899"/>
-            <circle cx="60" cy="10" r="4" fill="#f59e0b"/>
-            <ellipse cx="60" cy="58" rx="28" ry="30" fill="#d49354"/>
-            <circle cx="44" cy="50" r="10" fill="#06b6d4" stroke="#000" stroke-width="2"/>
-            <circle cx="76" cy="50" r="10" fill="#06b6d4" stroke="#000" stroke-width="2"/>
-            <path d="M 42 72 Q 60 88 78 72 Z" fill="#fff" stroke="#111" stroke-width="2"/>
-          </svg>
-        `;
-      case 'sunil-rey-rey':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="60" cy="56" rx="30" ry="32" fill="#df9e62"/>
-            <ellipse cx="60" cy="74" rx="14" ry="10" fill="#800" stroke="#000" stroke-width="2"/>
-            <path d="M 48 70 Q 60 74 72 70" stroke="#fff" stroke-width="3" fill="none"/>
-            <path d="M 18 60 Q 25 45 32 65" stroke="#df9e62" stroke-width="8" stroke-linecap="round" fill="none"/>
-            <path d="M 102 60 Q 95 45 88 65" stroke="#df9e62" stroke-width="8" stroke-linecap="round" fill="none"/>
-          </svg>
-        `;
-      case 'relangi-manchivadu':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="60" cy="56" rx="28" ry="30" fill="#d9995d"/>
-            <path d="M 44 72 Q 60 84 76 72" stroke="#700" stroke-width="3" fill="none"/>
-            <path d="M 25 85 L 60 78 L 95 85 L 95 120 L 25 120 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
-          </svg>
-        `;
-      case 'rgv-logic':
-        return `
-          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="60" cy="58" rx="28" ry="32" fill="#c48348"/>
-            <circle cx="44" cy="50" r="9" fill="#111"/>
-            <circle cx="76" cy="50" r="9" fill="#111"/>
-            <line x1="53" y1="50" x2="67" y2="50" stroke="#111" stroke-width="2"/>
-            <path d="M 48 76 Q 60 72 72 76" stroke="#222" stroke-width="3" fill="none"/>
-          </svg>
-        `;
-      case 'prabhas-chhatrapati':
       default:
         return `
           <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
@@ -1061,7 +1025,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-
   const EMOJI_LIST = [
     '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','😉','😍','🥰','😘','🤪',
     '😜','🤑','😎','🤩','🥳','🤯','😱','🤬','🤡','👻','💩','🔥','⭐','✨','💥','🎉',
@@ -1081,181 +1044,191 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const TELUGU_REACTION_STICKERS = [
-    { id: "telugu_001", title: "Ayyo", titleTe: "అయ్యో", pack: "telugu-comedy" },
-    { id: "telugu_002", title: "Ayyababoi", titleTe: "అయ్యబాబోయ్", pack: "telugu-comedy" },
-    { id: "telugu_003", title: "Enti Idi?", titleTe: "ఏంటి ఇది?", pack: "telugu-comedy" },
-    { id: "telugu_004", title: "Na Valla Kaadu", titleTe: "నా వల్ల కాదు", pack: "telugu-comedy" },
-    { id: "telugu_005", title: "Artham Kaaledu", titleTe: "అర్థం కాలేదు", pack: "telugu-comedy" },
-    { id: "telugu_006", title: "Chaalu Ra Babu", titleTe: "చాలు రా బాబు", pack: "telugu-comedy" },
-    { id: "telugu_007", title: "Em Chestunnav Ra?", titleTe: "ఏం చేస్తున్నావ్ రా?", pack: "telugu-comedy" },
-    { id: "telugu_008", title: "Aithe Enti?", titleTe: "అయితే ఏంటి?", pack: "telugu-comedy" },
-    { id: "telugu_009", title: "Super Ra", titleTe: "సూపర్ రా", pack: "telugu-comedy" },
-    { id: "telugu_010", title: "Adirindi", titleTe: "అదిరింది", pack: "telugu-comedy" },
-    { id: "telugu_011", title: "Nammaleka Pothunna", titleTe: "నమ్మలేకపోతున్నా", pack: "telugu-comedy" },
-    { id: "telugu_012", title: "Chi Chi", titleTe: "ఛీ ఛీ", pack: "telugu-comedy" },
-    { id: "telugu_013", title: "Ayyayyo", titleTe: "అయ్యయ్యో", pack: "telugu-comedy" },
-    { id: "telugu_014", title: "Babu Please", titleTe: "బాబు ప్లీజ్", pack: "telugu-comedy" },
-    { id: "telugu_015", title: "Inkemundi", titleTe: "ఇంకేముంది", pack: "telugu-comedy" },
-    { id: "telugu_016", title: "Nenu Em Cheppali", titleTe: "నేను ఏం చెప్పాలి?", pack: "telugu-comedy" },
-    { id: "telugu_017", title: "Aha", titleTe: "ఆహా!", pack: "telugu-comedy" },
-    { id: "telugu_018", title: "Oho", titleTe: "ఓహో!", pack: "telugu-comedy" },
-    { id: "telugu_019", title: "Idhi Too Much", titleTe: "ఇది టూ మచ్", pack: "telugu-comedy" },
-    { id: "telugu_020", title: "Sare Sare", titleTe: "సరే సరే", pack: "telugu-comedy" },
-
-    { id: "telugu_021", title: "Mass", titleTe: "మాస్", pack: "mass" },
-    { id: "telugu_022", title: "Thaggede Le", titleTe: "తగ్గేదే లే", pack: "mass" },
-    { id: "telugu_023", title: "Nenu Ready", titleTe: "నేను రెడీ", pack: "mass" },
-    { id: "telugu_024", title: "Scene Vere Level", titleTe: "సీన్ వేరే లెవల్", pack: "mass" },
-    { id: "telugu_025", title: "Manade", titleTe: "మనదే!", pack: "mass" },
-    { id: "telugu_026", title: "King", titleTe: "కింగ్", pack: "mass" },
-    { id: "telugu_027", title: "Mass Entry", titleTe: "మాస్ ఎంట్రీ", pack: "mass" },
-    { id: "telugu_028", title: "One Man Show", titleTe: "వన్ మ్యాన్ షో", pack: "mass" },
-    { id: "telugu_029", title: "Full Josh", titleTe: "ఫుల్ జోష్", pack: "mass" },
-    { id: "telugu_030", title: "Dummu Reputha", titleTe: "దుమ్ము రేపుతా", pack: "mass" },
-
-    { id: "telugu_031", title: "Edustunna", titleTe: "ఏడుస్తున్నా 😭", pack: "emotional" },
-    { id: "telugu_032", title: "Naa Karma", titleTe: "నా కర్మ", pack: "emotional" },
-    { id: "telugu_033", title: "Ayyo Paapam", titleTe: "అయ్యో పాపం", pack: "emotional" },
-    { id: "telugu_034", title: "Chaala Baadha", titleTe: "చాలా బాధ", pack: "emotional" },
-    { id: "telugu_035", title: "Nannu Vadiley", titleTe: "నన్ను వదిలేయ్", pack: "emotional" },
-    { id: "telugu_036", title: "Heart Break", titleTe: "హార్ట్ బ్రేక్ 💔", pack: "emotional" },
-    { id: "telugu_037", title: "Enduku Ila", titleTe: "ఎందుకు ఇలా?", pack: "emotional" },
-    { id: "telugu_038", title: "Baadha Ga Undi", titleTe: "బాధగా ఉంది", pack: "emotional" },
-    { id: "telugu_039", title: "Silent", titleTe: "సైలెంట్", pack: "emotional" },
-    { id: "telugu_040", title: "Emotional Ayya", titleTe: "ఎమోషనల్ అయ్యా", pack: "emotional" },
-
-    { id: "telugu_041", title: "Naaku Kopam Vastundi", titleTe: "నాకు కోపం వస్తుంది", pack: "angry" },
-    { id: "telugu_042", title: "Aapandi", titleTe: "ఆపండి!", pack: "angry" },
-    { id: "telugu_043", title: "Enough", titleTe: "ఎనఫ్!", pack: "angry" },
-    { id: "telugu_044", title: "Nenu Cheppindi Vinandi", titleTe: "నేను చెప్పింది వినండి", pack: "angry" },
-    { id: "telugu_045", title: "Enti Ra Idi", titleTe: "ఏంటి రా ఇది?", pack: "angry" },
-    { id: "telugu_046", title: "Asalu Enduku", titleTe: "అసలు ఎందుకు?", pack: "angry" },
-    { id: "telugu_047", title: "Chiraaku", titleTe: "చిరాకు", pack: "angry" },
-    { id: "telugu_048", title: "Kopam", titleTe: "కోపం", pack: "angry" },
-    { id: "telugu_049", title: "Don't Test Me", titleTe: "నన్ను టెస్ట్ చేయొద్దు", pack: "angry" },
-    { id: "telugu_050", title: "Stop It", titleTe: "ఆపేయ్", pack: "angry" },
-
-    { id: "telugu_051", title: "Ayyo Devuda", titleTe: "అయ్యో దేవుడా", pack: "reaction" },
-    { id: "telugu_052", title: "Em Jarugutundi", titleTe: "ఏం జరుగుతుంది?", pack: "reaction" },
-    { id: "telugu_053", title: "Ala Ela", titleTe: "అలా ఎలా?", pack: "reaction" },
-    { id: "telugu_054", title: "Nijamena", titleTe: "నిజమేనా?", pack: "reaction" },
-    { id: "telugu_055", title: "Really?", titleTe: "నిజంగానా?", pack: "reaction" },
-    { id: "telugu_056", title: "Facepalm", titleTe: "అయ్యో నా తల", pack: "reaction" },
-    { id: "telugu_057", title: "No Comments", titleTe: "నో కామెంట్స్", pack: "reaction" },
-    { id: "telugu_058", title: "What", titleTe: "ఏంటి?", pack: "reaction" },
-    { id: "telugu_059", title: "Okay Bro", titleTe: "ఓకే బ్రో", pack: "reaction" },
-    { id: "telugu_060", title: "Whatever", titleTe: "ఏదైనా సరే", pack: "reaction" },
-
-    { id: "telugu_061", title: "Nuvve Na World", titleTe: "నువ్వే నా వరల్డ్ ❤️", pack: "love" },
-    { id: "telugu_062", title: "Love You", titleTe: "లవ్ యూ ❤️", pack: "love" },
-    { id: "telugu_063", title: "Aww", titleTe: "అవ్ ❤️", pack: "love" },
-    { id: "telugu_064", title: "Na Queen", titleTe: "నా క్వీన్ 👑❤️", pack: "love" },
-    { id: "telugu_065", title: "Na King", titleTe: "నా కింగ్ 👑❤️", pack: "love" },
-    { id: "telugu_066", title: "Miss You", titleTe: "మిస్ యూ 🥺", pack: "love" },
-    { id: "telugu_067", title: "Forever", titleTe: "ఫరెవర్ ❤️", pack: "love" },
-    { id: "telugu_068", title: "Cutie", titleTe: "క్యూటీ ❤️", pack: "love" },
-    { id: "telugu_069", title: "Hug", titleTe: "హగ్ 🤗", pack: "love" },
-    { id: "telugu_070", title: "My Love", titleTe: "నా ప్రేమ ❤️", pack: "love" },
-
-    { id: "telugu_071", title: "Super", titleTe: "సూపర్! 🎉", pack: "celebration" },
-    { id: "telugu_072", title: "Congratulations", titleTe: "కంగ్రాట్స్ 🎉", pack: "celebration" },
-    { id: "telugu_073", title: "Party", titleTe: "పార్టీ! 🥳", pack: "celebration" },
-    { id: "telugu_074", title: "Done", titleTe: "డన్! ✅", pack: "celebration" },
-    { id: "telugu_075", title: "Finally", titleTe: "ఫైనల్లీ! 🎉", pack: "celebration" },
-    { id: "telugu_076", title: "Success", titleTe: "సక్సెస్! 🏆", pack: "celebration" },
-    { id: "telugu_077", title: "Cheers", titleTe: "చీర్స్! 🥳", pack: "celebration" },
-    { id: "telugu_078", title: "Yay", titleTe: "యే! 🎊", pack: "celebration" },
-    { id: "telugu_079", title: "Happy", titleTe: "హ్యాపీ! 😄", pack: "celebration" },
-    { id: "telugu_080", title: "Let's Go", titleTe: "లెట్స్ గో! 🔥", pack: "celebration" }
+    { id: "telugu_001", title: "Ayyo", titleTe: "అయ్యో", pack: "telugu-comedy", category: "comedy", keywords: ["ayyo", "అయ్యో"] },
+    { id: "telugu_002", title: "Ayyababoi", titleTe: "అయ్యబాబోయ్", pack: "telugu-comedy", category: "comedy", keywords: ["ayyababoi", "అయ్యబాబోయ్"] },
+    { id: "telugu_003", title: "Enti Idi?", titleTe: "ఏంటి ఇది?", pack: "telugu-comedy", category: "comedy", keywords: ["enti idi", "ఏంటి ఇది"] },
+    { id: "telugu_004", title: "Na Valla Kaadu", titleTe: "నా వల్ల కాదు", pack: "telugu-comedy", category: "comedy", keywords: ["na valla kaadu", "నా వల్ల కాదు"] },
+    { id: "telugu_005", title: "Artham Kaaledu", titleTe: "అర్థం కాలేదు", pack: "telugu-comedy", category: "comedy", keywords: ["artham kaaledu", "అర్థం కాలేదు"] },
+    { id: "telugu_021", title: "Mass", titleTe: "మాస్", pack: "mass", category: "mass", keywords: ["mass", "మాస్"] },
+    { id: "telugu_022", title: "Thaggede Le", titleTe: "తగ్గేదే లే", pack: "mass", category: "mass", keywords: ["thaggede le", "తగ్గేదే లే"] },
+    { id: "telugu_031", title: "Edustunna", titleTe: "ఏడుస్తున్నా 😭", pack: "emotional", category: "emotional", keywords: ["edustunna", "ఏడుస్తున్నా"] },
+    { id: "telugu_041", title: "Naaku Kopam Vastundi", titleTe: "నాకు కోపం వస్తుంది", pack: "angry", category: "angry", keywords: ["kopam", "కోపం"] },
+    { id: "telugu_051", title: "Ayyo Devuda", titleTe: "అయ్యో దేవుడా", pack: "reaction", category: "reaction", keywords: ["ayyo devuda", "అయ్యో దేవుడా"] },
+    { id: "telugu_061", title: "Nuvve Na World", titleTe: "నువ్వే నా వరల్డ్ ❤️", pack: "love", category: "love", keywords: ["love", "నువ్వే నా వరల్డ్"] },
+    { id: "telugu_071", title: "Super", titleTe: "సూపర్! 🎉", pack: "celebration", category: "celebration", keywords: ["super", "సూపర్"] }
   ];
 
+  // Helper functions for Favorites and Recent
+  function getRecentStickers() {
+    try { return JSON.parse(localStorage.getItem('officetalk_recent_stickers') || '[]'); } catch(e) { return []; }
+  }
+
+  function addRecentSticker(stkId) {
+    let recent = getRecentStickers();
+    recent = recent.filter(id => id !== stkId);
+    recent.unshift(stkId);
+    if (recent.length > 30) recent = recent.slice(0, 30);
+    try { localStorage.setItem('officetalk_recent_stickers', JSON.stringify(recent)); } catch(e) {}
+  }
+
+  function getFavoriteStickers() {
+    try { return JSON.parse(localStorage.getItem('officetalk_favorite_stickers') || '[]'); } catch(e) { return []; }
+  }
+
+  function toggleFavoriteSticker(stkId) {
+    let favs = getFavoriteStickers();
+    if (favs.includes(stkId)) {
+      favs = favs.filter(id => id !== stkId);
+    } else {
+      if (favs.length < 500) favs.push(stkId);
+    }
+    try { localStorage.setItem('officetalk_favorite_stickers', JSON.stringify(favs)); } catch(e) {}
+  }
+
+  // DOM elements for Picker
   const btnEmojiPicker = document.getElementById('btnEmojiPicker');
+  const btnStickerPicker = document.getElementById('btnStickerPicker');
+  const btnClosePicker = document.getElementById('btnClosePicker');
   const emojiPickerPanel = document.getElementById('emojiPickerPanel');
+  const pickerSearchContainer = document.getElementById('pickerSearchContainer');
+  const stickerSearchInput = document.getElementById('stickerSearchInput');
+  const btnClearStickerSearch = document.getElementById('btnClearStickerSearch');
+
   const tabEmojis = document.getElementById('tabEmojis');
   const tabStickers = document.getElementById('tabStickers');
+  const tabGifs = document.getElementById('tabGifs');
+
   const pickerContentEmojis = document.getElementById('pickerContentEmojis');
   const pickerContentStickers = document.getElementById('pickerContentStickers');
+  const pickerContentGifs = document.getElementById('pickerContentGifs');
+
   const emojiGrid = document.getElementById('emojiGrid');
   const stickerGrid = document.getElementById('stickerGrid');
 
-  function renderStickerCategoriesAndGrid(selectedPackId = 'all') {
-    const categoriesBar = document.getElementById('stickerCategoriesBar');
-    if (!stickerGrid) return;
+  let activeCategory = 'trending';
+  let activeActorPack = 'all';
+  let activeSearchQuery = '';
 
-    const packs = [
-      { id: 'all', name: '🌟 All (80+)', emoji: '🌟' },
-      { id: 'telugu-comedy', name: 'Comedy', emoji: '😂' },
-      { id: 'mass', name: 'Mass', emoji: '😎' },
-      { id: 'emotional', name: 'Emotional', emoji: '😭' },
-      { id: 'angry', name: 'Angry', emoji: '😡' },
-      { id: 'reaction', name: 'Reactions', emoji: '🤦' },
-      { id: 'love', name: 'Love', emoji: '❤️' },
-      { id: 'celebration', name: 'Celebration', emoji: '🎉' }
-    ];
+  const STICKER_CATEGORIES = [
+    { id: 'trending', name: '🔥 Trending' },
+    { id: 'recent', name: '🕘 Recent' },
+    { id: 'favorites', name: '⭐ Favorites' },
+    { id: 'comedy', name: '😂 Comedy' },
+    { id: 'mass', name: '😎 Mass' },
+    { id: 'reaction', name: '🤦 Reactions' },
+    { id: 'emotional', name: '😭 Emotional' },
+    { id: 'love', name: '❤️ Love' },
+    { id: 'celebration', name: '🎉 Celebration' }
+  ];
 
-    if (categoriesBar) {
-      categoriesBar.innerHTML = '';
-      packs.forEach(p => {
-        const pill = document.createElement('button');
-        pill.type = 'button';
-        pill.className = `cat-pill ${selectedPackId === p.id ? 'active' : ''}`;
-        pill.textContent = `${p.emoji} ${p.name}`;
-        pill.addEventListener('click', () => {
-          renderStickerCategoriesAndGrid(p.id);
-        });
-        categoriesBar.appendChild(pill);
+  function renderCategoryPills() {
+    const bar = document.getElementById('stickerCategoryTabs');
+    if (!bar) return;
+    bar.innerHTML = '';
+    STICKER_CATEGORIES.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `cat-pill ${activeCategory === cat.id ? 'active' : ''}`;
+      btn.textContent = cat.name;
+      btn.addEventListener('click', () => {
+        activeCategory = cat.id;
+        activeActorPack = 'all';
+        renderCategoryPills();
+        renderActorSubnavPills();
+        renderStickersGrid();
       });
-    }
+      bar.appendChild(btn);
+    });
+  }
 
+  function renderActorSubnavPills() {
+    const subnav = document.getElementById('stickerPacksSubnav');
+    if (!subnav) return;
+    subnav.innerHTML = '';
+    TELUGU_ACTOR_PACKS.forEach(pack => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `pack-pill ${activeActorPack === pack.id ? 'active' : ''}`;
+      btn.textContent = `${pack.emoji} ${pack.name}`;
+      btn.addEventListener('click', () => {
+        activeActorPack = pack.id;
+        renderActorSubnavPills();
+        renderStickersGrid();
+      });
+      subnav.appendChild(btn);
+    });
+  }
+
+  function renderStickersGrid() {
+    if (!stickerGrid) return;
     stickerGrid.innerHTML = '';
 
-    // Classic movie caricatures
-    if (selectedPackId === 'all' || selectedPackId === 'telugu-comedy') {
-      TELUGU_MEME_STICKERS.forEach(sticker => {
-        const card = document.createElement('div');
-        card.className = 'sticker-card';
-        card.innerHTML = renderVectorMemeSticker(sticker);
-        card.addEventListener('click', () => {
-          socket.emit('send-message', { text: '', sticker });
-          if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
-        });
-        stickerGrid.appendChild(card);
+    const favs = getFavoriteStickers();
+    const recents = getRecentStickers();
+    const query = activeSearchQuery.trim().toLowerCase();
+
+    let list = [...TELUGU_MEME_STICKERS];
+
+    // Filter by Search Query
+    if (query) {
+      list = list.filter(stk => {
+        const textToSearch = `${stk.tag} ${stk.dialogue} ${stk.titleTe} ${(stk.keywords||[]).join(' ')} ${stk.pack} ${stk.category}`.toLowerCase();
+        return textToSearch.includes(query);
       });
+    } else {
+      // Filter by Category
+      if (activeCategory === 'recent') {
+        list = list.filter(stk => recents.includes(stk.id));
+        list.sort((a, b) => recents.indexOf(a.id) - recents.indexOf(b.id));
+      } else if (activeCategory === 'favorites') {
+        list = list.filter(stk => favs.includes(stk.id));
+      } else if (activeCategory !== 'trending') {
+        list = list.filter(stk => stk.category === activeCategory);
+      }
+
+      // Filter by Actor Pack
+      if (activeActorPack !== 'all') {
+        list = list.filter(stk => stk.pack === activeActorPack);
+      }
     }
 
-    // 80 Telugu Reaction Stickers
-    const filtered = selectedPackId === 'all'
-      ? TELUGU_REACTION_STICKERS
-      : TELUGU_REACTION_STICKERS.filter(s => s.pack === selectedPackId);
-
-    filtered.forEach(stk => {
-      const pEmoji = STICKER_PACK_EMOJIS[stk.pack] || '🎭';
-      const card = document.createElement('div');
-      card.className = 'telugu-reaction-sticker-card';
-      card.innerHTML = `
-        <span class="sticker-pack-emoji">${pEmoji}</span>
-        <span class="sticker-telugu-title">${stk.titleTe}</span>
-        <span class="sticker-english-title">${stk.title}</span>
+    if (list.length === 0) {
+      stickerGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 20px;">
+          No stickers found matching your search.
+        </div>
       `;
+      return;
+    }
+
+    list.forEach(stk => {
+      const isFav = favs.includes(stk.id);
+      const card = document.createElement('div');
+      card.className = 'sticker-card';
+      card.innerHTML = `
+        <button type="button" class="favorite-star-btn ${isFav ? 'is-favorite' : ''}" title="${isFav ? 'Remove Favorite' : 'Add Favorite'}">⭐</button>
+        ${renderVectorMemeSticker(stk)}
+      `;
+
+      const favBtn = card.querySelector('.favorite-star-btn');
+      favBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavoriteSticker(stk.id);
+        renderStickersGrid();
+      });
+
       card.addEventListener('click', () => {
-        socket.emit('send-message', {
-          text: '',
-          reactionSticker: {
-            title: stk.title,
-            titleTe: stk.titleTe,
-            emoji: pEmoji,
-            pack: stk.pack
-          }
-        });
+        addRecentSticker(stk.id);
+        socket.emit('send-message', { text: '', sticker: stk });
         if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
       });
+
       stickerGrid.appendChild(card);
     });
   }
 
   function initEmojiAndStickerPicker() {
-    if (!emojiGrid || !stickerGrid) return;
-
+    if (!emojiGrid) return;
     emojiGrid.innerHTML = '';
     EMOJI_LIST.forEach(emoji => {
       const item = document.createElement('div');
@@ -1268,40 +1241,103 @@ document.addEventListener('DOMContentLoaded', () => {
       emojiGrid.appendChild(item);
     });
 
-    renderStickerCategoriesAndGrid('all');
+    renderCategoryPills();
+    renderActorSubnavPills();
+    renderStickersGrid();
   }
 
   initEmojiAndStickerPicker();
 
-
-  if (btnEmojiPicker) {
-    btnEmojiPicker.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (emojiPickerPanel) emojiPickerPanel.classList.toggle('hidden');
+  // Search input listeners
+  if (stickerSearchInput) {
+    stickerSearchInput.addEventListener('input', () => {
+      activeSearchQuery = stickerSearchInput.value;
+      if (btnClearStickerSearch) {
+        if (activeSearchQuery) btnClearStickerSearch.classList.remove('hidden');
+        else btnClearStickerSearch.classList.add('hidden');
+      }
+      renderStickersGrid();
     });
   }
 
+  if (btnClearStickerSearch) {
+    btnClearStickerSearch.addEventListener('click', () => {
+      if (stickerSearchInput) stickerSearchInput.value = '';
+      activeSearchQuery = '';
+      btnClearStickerSearch.classList.add('hidden');
+      renderStickersGrid();
+    });
+  }
+
+  // Trigger buttons
+  if (btnEmojiPicker) {
+    btnEmojiPicker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPickerTab('emoji');
+    });
+  }
+
+  if (btnStickerPicker) {
+    btnStickerPicker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPickerTab('stickers');
+    });
+  }
+
+  if (btnClosePicker) {
+    btnClosePicker.addEventListener('click', () => {
+      if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
+    });
+  }
+
+  function openPickerTab(tabName) {
+    if (!emojiPickerPanel) return;
+    emojiPickerPanel.classList.remove('hidden');
+
+    if (tabName === 'emoji') {
+      tabEmojis.classList.add('active');
+      tabStickers.classList.remove('active');
+      tabGifs.classList.remove('active');
+      pickerContentEmojis.classList.remove('hidden');
+      pickerContentStickers.classList.add('hidden');
+      pickerContentGifs.classList.add('hidden');
+      if (pickerSearchContainer) pickerSearchContainer.classList.add('hidden');
+    } else if (tabName === 'stickers') {
+      tabStickers.classList.add('active');
+      tabEmojis.classList.remove('active');
+      tabGifs.classList.remove('active');
+      pickerContentStickers.classList.remove('hidden');
+      pickerContentEmojis.classList.add('hidden');
+      pickerContentGifs.classList.add('hidden');
+      if (pickerSearchContainer) pickerSearchContainer.classList.remove('hidden');
+      renderStickersGrid();
+    } else if (tabName === 'gifs') {
+      tabGifs.classList.add('active');
+      tabEmojis.classList.remove('active');
+      tabStickers.classList.remove('active');
+      pickerContentGifs.classList.remove('hidden');
+      pickerContentEmojis.classList.add('hidden');
+      pickerContentStickers.classList.add('hidden');
+      if (pickerSearchContainer) pickerSearchContainer.classList.add('hidden');
+    }
+  }
+
+  if (tabEmojis) tabEmojis.addEventListener('click', () => openPickerTab('emoji'));
+  if (tabStickers) tabStickers.addEventListener('click', () => openPickerTab('stickers'));
+  if (tabGifs) tabGifs.addEventListener('click', () => openPickerTab('gifs'));
+
+  // Outside click & ESC key dismiss
   document.addEventListener('click', (e) => {
-    if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker) {
+    if (emojiPickerPanel && !emojiPickerPanel.contains(e.target) && e.target !== btnEmojiPicker && e.target !== btnStickerPicker) {
       emojiPickerPanel.classList.add('hidden');
     }
   });
 
-  if (tabEmojis && tabStickers) {
-    tabEmojis.addEventListener('click', () => {
-      tabEmojis.classList.add('active');
-      tabStickers.classList.remove('active');
-      pickerContentEmojis.classList.remove('hidden');
-      pickerContentStickers.classList.add('hidden');
-    });
-
-    tabStickers.addEventListener('click', () => {
-      tabStickers.classList.add('active');
-      tabEmojis.classList.remove('active');
-      pickerContentStickers.classList.remove('hidden');
-      pickerContentEmojis.classList.add('hidden');
-    });
-  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && emojiPickerPanel && !emojiPickerPanel.classList.contains('hidden')) {
+      emojiPickerPanel.classList.add('hidden');
+    }
+  });
 
   // -------------------------------------------------------------
   // File Attachment & Voice Memo Handlers
