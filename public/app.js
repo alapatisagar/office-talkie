@@ -1119,24 +1119,45 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
-  // Giphy GIF Engine (Telugu Priority & Permanent Giphy CDN URLs)
-  // -------------------------------------------------------------
-  // -------------------------------------------------------------
-  // Giphy GIF Engine (Telugu Priority & Live Giphy API Search)
+  // Giphy GIF Engine (Instant Local Curated GIFs + API Search)
   // -------------------------------------------------------------
   const GIPHY_API_KEY = 'GlV942T6cu1ZaMYaZ9wJVFcms92FakNU';
 
-  const GIPHY_CATEGORY_QUERIES = {
-    'all': 'telugu comedy brahmanandam',
-    'telugu-comedy': 'brahmanandam comedy telugu',
-    'telugu-mass': 'pushpa allu arjun telugu mass',
-    'brahmanandam': 'brahmanandam telugu',
-    'pushpa-tillu': 'pushpa dj tillu telugu',
-    'telugu-reactions': 'telugu reaction ayyo',
-    'love': 'telugu romance heart',
-    'celebration': 'telugu mass dance party',
-    'english': 'funny trending reaction'
-  };
+  const FEATURED_GIFS = [
+    // --- TELUGU COMEDY & BRAHMANANDAM ---
+    { id: '9DosE8knCVPPy', title: 'Brahmanandam Shock', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'shock', 'comedy', 'funny', 'reaction', 'telugu'], url: 'https://media.giphy.com/media/9DosE8knCVPPy/giphy.gif' },
+    { id: 'NipFetnQOuKhW', title: 'Brahmi Mass Dance', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'dance', 'mass', 'funny', 'telugu'], url: 'https://media.giphy.com/media/NipFetnQOuKhW/giphy.gif' },
+    { id: '10Jhvt693jN20', title: 'Brahmanandam Ultra Laugh', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'laugh', 'ha', 'funny', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/10Jhvt693jN20/giphy.gif' },
+    { id: '3o7bu3XilJ5BOiSGic', title: 'Brahmi Confused Ayyo', category: 'telugu-reactions', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'confused', 'ayyo', 'what', 'telugu'], url: 'https://media.giphy.com/media/3o7bu3XilJ5BOiSGic/giphy.gif' },
+    { id: 'l1J3pT77GCuVLL0PA', title: 'Brahmanandam Running', category: 'telugu-comedy', subCategory: 'brahmanandam', lang: 'TE', keywords: ['brahmanandam', 'run', 'escape', 'funny', 'telugu'], url: 'https://media.giphy.com/media/l1J3pT77GCuVLL0PA/giphy.gif' },
+    { id: 'dZeXwS8X00m2L74W2d', title: 'Ali Funny Reaction', category: 'telugu-comedy', lang: 'TE', keywords: ['ali', 'comedy', 'funny', 'look', 'telugu'], url: 'https://media.giphy.com/media/dZeXwS8X00m2L74W2d/giphy.gif' },
+    { id: 'l0HlUxcWRsqROFY4g', title: 'Vennela Kishore Smile', category: 'telugu-comedy', lang: 'TE', keywords: ['vennela kishore', 'smile', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/l0HlUxcWRsqROFY4g/giphy.gif' },
+    { id: '3o7abKhOpu0NwenH3O', title: 'Sunil Comedy Dance', category: 'telugu-comedy', lang: 'TE', keywords: ['sunil', 'dance', 'comedy', 'telugu'], url: 'https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif' },
+
+    // --- TELUGU MASS (Pushpa, Tillu, Balayya, Pawan Kalyan, Allu Arjun) ---
+    { id: '3j2a3i4L2V7Kk', title: 'Pushpa Raj Thaggedhe Le', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['pushpa', 'allu arjun', 'thaggedhele', 'mass', 'swag', 'telugu'], url: 'https://media.giphy.com/media/3j2a3i4L2V7Kk/giphy.gif' },
+    { id: 'l41YkxvU8c7J7BbaE', title: 'DJ Tillu Mass Swag', category: 'pushpa-tillu', subCategory: 'telugu-mass', lang: 'TE', keywords: ['tillu', 'dj tillu', 'atlu untadi', 'mass', 'telugu', 'hero'], url: 'https://media.giphy.com/media/l41YkxvU8c7J7BbaE/giphy.gif' },
+    { id: '13n7XeeDY322yY', title: 'Balayya Mass Dialogue', category: 'telugu-mass', lang: 'TE', keywords: ['balakrishna', 'balayya', 'mass', 'roar', 'telugu'], url: 'https://media.giphy.com/media/13n7XeeDY322yY/giphy.gif' },
+    { id: 'l2SpR03mR14h8LqAU', title: 'Pawan Kalyan Gabbar Singh', category: 'telugu-mass', lang: 'TE', keywords: ['pawan kalyan', 'gabbar singh', 'mass', 'power star', 'telugu'], url: 'https://media.giphy.com/media/l2SpR03mR14h8LqAU/giphy.gif' },
+    { id: '5xaOcLGvzUv25f3wx3O', title: 'Allu Arjun Dance Swag', category: 'telugu-mass', lang: 'TE', keywords: ['allu arjun', 'dance', 'bunny', 'mass', 'telugu'], url: 'https://media.giphy.com/media/5xaOcLGvzUv25f3wx3O/giphy.gif' },
+
+    // --- TELUGU REACTIONS (Ayyo, Cheppa Kada, Abbo, Chii) ---
+    { id: '3o6Zt62PeJeFUDwBUI', title: 'Ayyo Rama Reaction', category: 'telugu-reactions', lang: 'TE', keywords: ['ayyo', 'reaction', 'facepalm', 'telugu', 'funny'], url: 'https://media.giphy.com/media/3o6Zt62PeJeFUDwBUI/giphy.gif' },
+    { id: 'd31w24psGYeekCZy', title: 'Telugu Super Clap', category: 'telugu-reactions', lang: 'TE', keywords: ['clap', 'super', 'praise', 'mass', 'telugu'], url: 'https://media.giphy.com/media/d31w24psGYeekCZy/giphy.gif' },
+    { id: '3o7bu0Z48xTzR6XyBG', title: 'Telugu Hero Style', category: 'telugu-reactions', lang: 'TE', keywords: ['wink', 'style', 'telugu', 'hero'], url: 'https://media.giphy.com/media/3o7bu0Z48xTzR6XyBG/giphy.gif' },
+
+    // --- LOVE & ROMANCE ---
+    { id: '26fldmIp6PeajdqFO', title: 'Telugu Romance Heart', category: 'love', lang: 'TE', keywords: ['love', 'heart', 'romance', 'cute', 'telugu'], url: 'https://media.giphy.com/media/26fldmIp6PeajdqFO/giphy.gif' },
+
+    // --- CELEBRATION & DANCE ---
+    { id: 'l3V0lsGcqU71nRiEg', title: 'Telugu Mass Dance Party', category: 'celebration', lang: 'TE', keywords: ['dance', 'party', 'celebration', 'mass', 'telugu'], url: 'https://media.giphy.com/media/l3V0lsGcqU71nRiEg/giphy.gif' },
+
+    // --- TRENDING ENGLISH GIFS ---
+    { id: 'JIX9t2j0ZTN9S', title: 'Funny Cat Dance', category: 'english', lang: 'EN', keywords: ['cat', 'dance', 'funny', 'english'], url: 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif' },
+    { id: 'pUeXcg80cO8I8', title: 'Eating Popcorn Reaction', category: 'english', lang: 'EN', keywords: ['popcorn', 'watching', 'english', 'reaction'], url: 'https://media.giphy.com/media/pUeXcg80cO8I8/giphy.gif' },
+    { id: '26ufdipQqU2lhNA4g', title: 'Mind Blown Reaction', category: 'english', lang: 'EN', keywords: ['mind blown', 'wow', 'english', 'reaction'], url: 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif' },
+    { id: '10uEX5kfeodYgo', title: 'Minions Applause', category: 'english', lang: 'EN', keywords: ['applause', 'clap', 'minions', 'english'], url: 'https://media.giphy.com/media/10uEX5kfeodYgo/giphy.gif' }
+  ];
 
   const GIF_CATEGORIES = [
     { id: 'all', name: '🔥 All GIFs', lang: 'TE' },
@@ -1196,36 +1217,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function fetchLiveGiphys(searchTerm) {
     try {
-      const url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(searchTerm)}&limit=30&rating=g`;
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(searchTerm)}&limit=20&rating=g`;
       const res = await fetch(url);
       if (!res.ok) return [];
       const data = await res.json();
-      if (data && data.data && Array.isArray(data.data)) {
+      if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
         return data.data.map(item => ({
           id: item.id,
           title: item.title || 'Telugu GIF',
-          url: item.images.fixed_height ? item.images.fixed_height.url : item.images.original.url,
+          url: item.images.fixed_height ? item.images.fixed_height.url : `https://media.giphy.com/media/${item.id}/giphy.gif`,
           lang: (searchTerm.toLowerCase().includes('english') ? 'EN' : 'TE')
         }));
       }
-    } catch(e) {
-      console.warn('Giphy API fetch error:', e);
-    }
+    } catch(e) {}
     return [];
   }
 
-  async function renderGifsGrid() {
+  function renderGifsGrid() {
     if (!gifGrid) return;
-    gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 30px; font-size: 13px;">⏳ Loading Telugu GIFs...</div>`;
+    gifGrid.innerHTML = '';
 
-    const query = activeGifSearchQuery.trim();
-    let searchTerm = query ? `${query} telugu` : (GIPHY_CATEGORY_QUERIES[activeGifCategory] || 'telugu comedy');
+    const query = activeGifSearchQuery.trim().toLowerCase();
+    let list = [...FEATURED_GIFS];
 
-    let list = await fetchLiveGiphys(searchTerm);
-
-    // Fallback search if query returned empty
-    if (list.length === 0 && query) {
-      list = await fetchLiveGiphys(query);
+    if (query) {
+      list = list.filter(gif => {
+        const textToSearch = `${gif.title} ${gif.category} ${gif.subCategory || ''} ${(gif.keywords || []).join(' ')} ${gif.lang}`.toLowerCase();
+        return textToSearch.includes(query);
+      });
+    } else if (activeGifCategory !== 'all') {
+      list = list.filter(gif => gif.category === activeGifCategory || gif.subCategory === activeGifCategory);
     }
 
     // MANDATORY SORT: Prioritize Telugu (lang === 'TE') GIFs FIRST
@@ -1235,25 +1256,39 @@ document.addEventListener('DOMContentLoaded', () => {
       return 0;
     });
 
-    gifGrid.innerHTML = '';
     if (list.length === 0) {
-      gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No GIFs found for "${escapeHTML(searchTerm)}". Try searching another actor or term!</div>`;
-      return;
+      // Background search attempt on Giphy API for custom queries
+      if (query) {
+        fetchLiveGiphys(query).then(apiResults => {
+          if (apiResults && apiResults.length > 0) {
+            renderGifListUI(apiResults);
+          } else {
+            gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No GIFs found for "${escapeHTML(query)}". Try Brahmi, Pushpa, or Tillu!</div>`;
+          }
+        });
+        return;
+      }
     }
 
-    list.forEach(gif => {
+    renderGifListUI(list);
+  }
+
+  function renderGifListUI(listToRender) {
+    if (!gifGrid) return;
+    gifGrid.innerHTML = '';
+    listToRender.forEach(gif => {
       const card = document.createElement('div');
       card.className = 'gif-card';
-      const gifUrl = gif.url || `https://media.giphy.com/media/${gif.id}/giphy.gif`;
+      const cleanUrl = gif.url || `https://media.giphy.com/media/${gif.id}/giphy.gif`;
       card.innerHTML = `
         <span class="gif-badge-lang">${gif.lang === 'TE' ? 'TELUGU' : 'GIF'}</span>
-        <img src="${gifUrl}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://media0.giphy.com/media/${gif.id}/200.gif';">
+        <img src="${cleanUrl}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://media.giphy.com/media/${gif.id}/giphy.gif';">
         <div class="gif-title-tag">${escapeHTML(gif.title)}</div>
       `;
 
       card.addEventListener('click', () => {
         socket.emit('send-message', {
-          gifUrl: gifUrl,
+          gifUrl: cleanUrl,
           gifTitle: gif.title
         });
         if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
