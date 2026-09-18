@@ -1,20 +1,19 @@
 {
-  "name": "OfficeTalk Voice & Walkie-Talkie",
+  "name": "OfficeTalk - Admin Conference & Voice Line",
   "short_name": "OfficeTalk",
-  "description": "Real-time voice communication & walkie-talkie web app for office employees",
+  "description": "Admin Conference & Walkie-Talkie Direct Line",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "orientation": "portrait-primary",
+  "background_color": "#180205",
+  "theme_color": "#ff1e27",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3059/3059518.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3059/3059518.png",
       "sizes": "512x512",
       "type": "image/png"
     }

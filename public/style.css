@@ -1960,6 +1960,97 @@ body.theme-midnight {
   margin-left: 6px;
 }
 
+/* Chat Message Highlight Jump */
+.chat-bubble.highlight-bubble {
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 16px var(--accent-gold) !important;
+  animation: pulseHighlight 2s ease-in-out;
+}
+
+@keyframes pulseHighlight {
+  0% { transform: scale(1); box-shadow: 0 0 20px var(--accent-gold); }
+  50% { transform: scale(1.03); box-shadow: 0 0 30px var(--accent-gold); }
+  100% { transform: scale(1); }
+}
+
+/* Rich Link Preview Cards */
+.link-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-blue);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 6px;
+  text-decoration: none;
+  color: var(--text-main);
+  transition: background 0.2s ease;
+}
+
+.link-preview-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.link-preview-icon {
+  font-size: 20px;
+}
+
+.link-preview-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.link-preview-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.link-preview-url {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Admin Card Actions (Mute & Kick) */
+.card-admin-actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.btn-card-admin {
+  flex: 1;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: var(--accent-red);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-card-admin:hover {
+  background: var(--accent-red);
+  color: #ffffff;
+}
+
+.btn-admin-action.recording-session {
+  background: var(--accent-red) !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  animation: pulseRecording 1.2s infinite alternate;
+}
+
+@keyframes pulseRecording {
+  from { opacity: 0.8; box-shadow: 0 0 5px var(--accent-red); }
+  to { opacity: 1; box-shadow: 0 0 20px var(--accent-red); }
+}
+
 
 
 

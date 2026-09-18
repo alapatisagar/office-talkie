@@ -6,21 +6,15 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>OfficeTalk - Admin Conference & Direct Voice Line</title>
+  <link rel="manifest" href="/manifest.json">
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) caches.delete(name);
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js?v=23').catch(err => console.warn('SW reg failed:', err));
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -44,6 +38,14 @@
     </div>
 
     <div class="header-actions">
+      <!-- Voice Channel Sub-Rooms -->
+      <select id="selectVoiceChannel" class="status-select" title="Voice Channel Sub-Room">
+        <option value="general">🌐 General Room</option>
+        <option value="tech">💻 Tech Team</option>
+        <option value="breakout">☕ Coffee Break</option>
+        <option value="urgent">🚨 Urgent Call</option>
+      </select>
+
       <!-- Chat Panel Toggle Button -->
       <button class="icon-btn btn-chat-toggle" id="btnToggleChatSidebar" title="Toggle Team Chat Panel">
         💬 Chat <span class="badge-unread hidden" id="chatUnreadBadge">0</span>
@@ -88,6 +90,7 @@
         <div class="admin-panel-actions">
           <button class="btn-admin-action" id="btnAdminBroadcast">📢 Broadcast to All</button>
           <button class="btn-admin-action" id="btnAdminSiren">🚨 Priority Siren</button>
+          <button class="btn-admin-action" id="btnAdminRecordSession">⏺️ Record Session</button>
           <button class="btn-admin-action btn-admin-danger" id="btnAdminMuteAll">🔇 Mute All Mics</button>
           <button class="btn-admin-action" id="btnAdminUnmuteAll">🔊 Unmute All Mics</button>
           <button class="btn-admin-action" id="btnAdminLockRoom">🔒 Lock Room</button>
@@ -358,7 +361,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=22"></script>
-  <script src="app.js?v=22"></script>
+  <script src="audio-fx.js?v=23"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>

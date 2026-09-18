@@ -73,7 +73,8 @@ io.on('connection', (socket) => {
       isDeafened: false,
       isTalking: false,
       talkMode: userData.talkMode || 'ptt',
-      presenceStatus: userData.presenceStatus || 'Available 🟢'
+      presenceStatus: userData.presenceStatus || 'Available 🟢',
+      channel: userData.channel || 'general'
     };
 
     users.set(socket.id, newUser);
@@ -83,6 +84,16 @@ io.on('connection', (socket) => {
     if (pinnedAnnouncement) socket.emit('pinned-message-updated', pinnedAnnouncement);
     socket.emit('room-lock-changed', { isRoomLocked });
     socket.broadcast.emit('user-joined', newUser);
+  });
+
+  socket.on('switch-channel', ({ channel }) => {
+    const user = users.get(socket.id);
+    if (!user) return;
+    user.channel = channel || 'general';
+    io.emit('user-state-changed', {
+      socketId: socket.id,
+      state: { channel: user.channel }
+    });
   });
 
   // WebRTC Signaling Relay

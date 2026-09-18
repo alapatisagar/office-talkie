@@ -1,32 +1,40 @@
-const CACHE_NAME = 'officetalk-v2-clean';
+// OfficeTalk Service Worker v23 - PWA Offline Shell & Caching
+const CACHE_NAME = 'officetalk-v23';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/style.css?v=23',
+  '/app.js?v=23',
+  '/audio-fx.js?v=23',
+  '/manifest.json'
+];
 
-self.addEventListener('install', (e) => {
+self.addEventListener('install', (evt) => {
+  evt.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE).catch(err => console.warn('Cache addAll warning:', err));
+    })
+  );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
+self.addEventListener('activate', (evt) => {
+  evt.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-  // Always fetch fresh network version first for HTML to avoid stale UI caching
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+self.addEventListener('fetch', (evt) => {
+  if (evt.request.mode === 'navigate') {
+    evt.respondWith(
+      fetch(evt.request).catch(() => caches.match('/index.html'))
     );
-    return;
   }
-  e.respondWith(
-    caches.match(e.request).then((res) => res || fetch(e.request))
-  );
 });

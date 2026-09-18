@@ -1213,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function renderGifsGrid() {
+  async function renderGifsGrid() {
     if (!gifGrid) return;
     gifGrid.innerHTML = '';
 
@@ -1236,8 +1236,37 @@ document.addEventListener('DOMContentLoaded', () => {
       return 0;
     });
 
+    if (list.length === 0 && query) {
+      try {
+        gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 10px; font-size: 12px;">Searching Giphy API for "${escapeHTML(query)}"...</div>`;
+        const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=GlV942T6cu1ZaMYaZ9wJVFcms92FakNU&q=${encodeURIComponent(query + ' telugu comedy')}&limit=20`);
+        const data = await res.json();
+        if (data && data.data && data.data.length > 0) {
+          gifGrid.innerHTML = '';
+          data.data.forEach(item => {
+            const gifUrl = item.images.fixed_height ? item.images.fixed_height.url : item.images.original.url;
+            const card = document.createElement('div');
+            card.className = 'gif-card';
+            card.innerHTML = `
+              <span class="gif-badge-lang">GIPHY</span>
+              <img src="${gifUrl}" class="gif-img" alt="${escapeHTML(item.title)}" loading="lazy" referrerpolicy="no-referrer">
+              <div class="gif-title-tag">${escapeHTML(item.title || 'GIF')}</div>
+            `;
+            card.addEventListener('click', () => {
+              socket.emit('send-message', { gifUrl: gifUrl, gifTitle: item.title });
+              if (emojiPickerPanel) emojiPickerPanel.classList.add('hidden');
+            });
+            gifGrid.appendChild(card);
+          });
+          return;
+        }
+      } catch(e) {
+        console.warn('Giphy API fetch fallback failed:', e);
+      }
+    }
+
     if (list.length === 0) {
-      gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No GIFs found for this search.</div>`;
+      gifGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: var(--text-muted); padding: 20px; font-size: 13px;">No GIFs found. Try typing another Telugu actor or keyword!</div>`;
       return;
     }
 
@@ -1246,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'gif-card';
       card.innerHTML = `
         <span class="gif-badge-lang">${gif.lang === 'TE' ? 'TELUGU' : 'ENGLISH'}</span>
-        <img src="${gif.url}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy" onerror="this.onerror=null; this.src='https://media.giphy.com/media/${gif.id}/200.gif';">
+        <img src="${gif.url}" class="gif-img" alt="${escapeHTML(gif.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://media.giphy.com/media/${gif.id}/giphy.gif';">
         <div class="gif-title-tag">${escapeHTML(gif.title)}</div>
       `;
 
@@ -1640,7 +1669,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
     } else {
-      contentHtml = `<div class="chat-text">${escapeHTML(msg.text)}</div>`;
+      const formattedText = parseTextWithLinks(msg.text);
+      contentHtml = `<div class="chat-text">${formattedText}</div>`;
     }
 
     const canPin = currentUser && currentUser.isAdmin;
@@ -1704,6 +1734,22 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
+  function parseTextWithLinks(str) {
+    if (!str) return '';
+    const escaped = escapeHTML(str);
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return escaped.replace(urlRegex, (url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); font-weight:700;">${url}</a>
+      <a href="${url}" target="_blank" rel="noopener noreferrer" class="link-preview-card">
+        <span class="link-preview-icon">🌐</span>
+        <div class="link-preview-details">
+          <span class="link-preview-title">Shared Web Link</span>
+          <span class="link-preview-url">${url}</span>
+        </div>
+      </a>`;
+    });
+  }
+
   // Chat Tabs (Everyone vs Private DM)
   if (chatTabEveryone && chatTabDM) {
     chatTabEveryone.addEventListener('click', () => {
@@ -1748,20 +1794,110 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Chat History Search
+  // Voice Sub-Room Channel Switcher
+  const selectVoiceChannel = document.getElementById('selectVoiceChannel');
+  if (selectVoiceChannel) {
+    selectVoiceChannel.addEventListener('change', () => {
+      const channel = selectVoiceChannel.value;
+      socket.emit('switch-channel', { channel });
+    });
+  }
+
+  // Admin Audio Session Recorder
+  const btnAdminRecordSession = document.getElementById('btnAdminRecordSession');
+  let sessionRecorder = null;
+  let recordedChunks = [];
+  let isRecordingSession = false;
+
+  if (btnAdminRecordSession) {
+    btnAdminRecordSession.addEventListener('click', () => {
+      if (!isRecordingSession) {
+        startSessionRecording();
+      } else {
+        stopSessionRecording();
+      }
+    });
+  }
+
+  function startSessionRecording() {
+    try {
+      if (!rxAudioContext) unlockAudioContexts();
+      const dest = rxAudioContext ? rxAudioContext.createMediaStreamDestination() : null;
+      if (!dest) {
+        alert('Audio context initializing. Try again in a moment.');
+        return;
+      }
+      recordedChunks = [];
+      sessionRecorder = new MediaRecorder(dest.stream);
+      sessionRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+      sessionRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `OfficeTalk_Audio_Session_${Date.now()}.webm`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+      sessionRecorder.start();
+      isRecordingSession = true;
+      btnAdminRecordSession.classList.add('recording-session');
+      btnAdminRecordSession.textContent = '⏹️ Stop Recording (Save .webm)';
+    } catch(err) {
+      console.warn('Session recording notice:', err);
+    }
+  }
+
+  function stopSessionRecording() {
+    if (sessionRecorder && sessionRecorder.state !== 'inactive') {
+      sessionRecorder.stop();
+    }
+    isRecordingSession = false;
+    btnAdminRecordSession.classList.remove('recording-session');
+    btnAdminRecordSession.textContent = '⏺️ Record Session';
+  }
+
+  // Chat History Search & Jump-to-Message
   if (chatSearchInput) {
     chatSearchInput.addEventListener('input', () => {
       const query = chatSearchInput.value.trim().toLowerCase();
+      let firstMatch = null;
+
       chatMessagesMap.forEach((el) => {
+        el.classList.remove('highlight-bubble');
         if (!query) {
           filterMessagesByTab();
         } else {
           const text = el.textContent.toLowerCase();
-          if (text.includes(query)) el.style.display = '';
-          else el.style.display = 'none';
+          if (text.includes(query)) {
+            el.style.display = '';
+            if (!firstMatch) firstMatch = el;
+          } else {
+            el.style.display = 'none';
+          }
         }
       });
+
+      if (firstMatch && query.length > 2) {
+        firstMatch.classList.add('highlight-bubble');
+        firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     });
+  }
+
+  // MediaSession API Integration (Background Mobile Control)
+  if ('mediaSession' in navigator) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'OfficeTalk Voice Conference',
+        artist: 'Admin Walkie-Talkie Line',
+        album: 'Live Audio Stream'
+      });
+      navigator.mediaSession.setActionHandler('play', () => { if (talkMode === 'open') toggleMute(); });
+      navigator.mediaSession.setActionHandler('pause', () => { if (talkMode === 'open') toggleMute(); });
+    } catch(e) {}
   }
 
   // Chat History Export
