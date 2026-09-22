@@ -173,13 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return name.trim().toLowerCase().includes('sagar');
   }
 
-  function createSafeAudioContext(preferredRate = 16000) {
+  function createSafeAudioContext() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return null;
     try {
-      return new AudioCtx({ sampleRate: preferredRate });
+      return new AudioCtx();
     } catch (e) {
-      try { return new AudioCtx(); } catch (e2) { return null; }
+      return null;
     }
   }
 
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('touchstart', unlockAudioContexts);
   document.addEventListener('keydown', unlockAudioContexts);
 
-  rxAudioContext = createSafeAudioContext(16000);
+  rxAudioContext = createSafeAudioContext();
 
   // -------------------------------------------------------------
   // Latency Ping Checker
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setupPcmAudioCapture(stream) {
     try {
-      if (!txAudioContext) txAudioContext = createSafeAudioContext(16000);
+      if (!txAudioContext) txAudioContext = createSafeAudioContext();
       if (!txAudioContext) return;
 
       analyser = txAudioContext.createAnalyser();
@@ -413,7 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const targetsPayload = selectedTargetIds.has('all') ? 'all' : Array.from(selectedTargetIds);
-        socket.emit('voice-pcm', { targetSocketIds: targetsPayload, pcmData: pcm16.buffer });
+        socket.emit('voice-pcm', {
+          targetSocketIds: targetsPayload,
+          pcmData: pcm16.buffer,
+          sampleRate: txAudioContext.sampleRate
+        });
       };
 
       lastNode.connect(scriptProcessor);
@@ -483,21 +487,28 @@ document.addEventListener('DOMContentLoaded', () => {
     return -0.8 + (index * step);
   }
 
-  socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData }) => {
+  const nextPlayTimeMap = new Map();
+  const talkingTimeouts = new Map();
+
+  socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData, sampleRate }) => {
     if (isDeafened) return;
+    if (!rxAudioContext) rxAudioContext = createSafeAudioContext();
+    if (!rxAudioContext) return;
     if (rxAudioContext.state === 'suspended') rxAudioContext.resume();
 
     updateUserCardTalking(fromSocketId, true);
-    setTimeout(() => updateUserCardTalking(fromSocketId, false), 250);
+    if (talkingTimeouts.has(fromSocketId)) clearTimeout(talkingTimeouts.get(fromSocketId));
+    talkingTimeouts.set(fromSocketId, setTimeout(() => updateUserCardTalking(fromSocketId, false), 350));
 
     try {
       const int16 = new Int16Array(pcmData);
       const float32 = new Float32Array(int16.length);
       for (let i = 0; i < int16.length; i++) {
-        float32[i] = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7FFF);
+        float32[i] = int16[i] / (int16[i] < 0 ? 32768 : 32767);
       }
 
-      const audioBuffer = rxAudioContext.createBuffer(1, float32.length, 16000);
+      const rate = sampleRate || rxAudioContext.sampleRate || 48000;
+      const audioBuffer = rxAudioContext.createBuffer(1, float32.length, rate);
       audioBuffer.getChannelData(0).set(float32);
 
       const source = rxAudioContext.createBufferSource();
@@ -514,7 +525,16 @@ document.addEventListener('DOMContentLoaded', () => {
         source.connect(rxAudioContext.destination);
       }
 
-      source.start();
+      // Schedule gapless, non-overlapping continuous playback
+      const currentTime = rxAudioContext.currentTime;
+      let nextPlayTime = nextPlayTimeMap.get(fromSocketId) || 0;
+
+      if (nextPlayTime < currentTime) {
+        nextPlayTime = currentTime + 0.015; // 15ms buffer margin to prevent click/pop
+      }
+
+      source.start(nextPlayTime);
+      nextPlayTimeMap.set(fromSocketId, nextPlayTime + audioBuffer.duration);
     } catch (err) {
       console.error('PCM playback error:', err);
     }

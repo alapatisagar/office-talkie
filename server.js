@@ -109,14 +109,15 @@ io.on('connection', (socket) => {
   });
 
   // Multi-Target & Broadcast Ultra-Low Latency PCM Voice Stream Relay
-  socket.on('voice-pcm', ({ targetSocketIds, pcmData }) => {
+  socket.on('voice-pcm', ({ targetSocketIds, pcmData, sampleRate }) => {
     const senderUser = users.get(socket.id);
     if (!senderUser || senderUser.isMuted) return;
 
     const payload = {
       fromSocketId: socket.id,
       senderName: senderUser.name,
-      pcmData
+      pcmData,
+      sampleRate
     };
 
     if (!targetSocketIds || targetSocketIds === 'all' || (Array.isArray(targetSocketIds) && targetSocketIds.includes('all'))) {
