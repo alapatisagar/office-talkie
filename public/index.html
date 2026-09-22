@@ -10,11 +10,11 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=28').catch(err => console.warn('SW reg failed:', err));
+        navigator.serviceWorker.register('/sw.js?v=29').catch(err => console.warn('SW reg failed:', err));
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=28">
+  <link rel="stylesheet" href="style.css?v=29">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -95,6 +95,7 @@
           <button class="btn-admin-action" id="btnAdminUnmuteAll">🔊 Unmute All Mics</button>
           <button class="btn-admin-action" id="btnAdminLockRoom">🔒 Lock Room</button>
           <button class="btn-admin-action" id="btnAdminUploadSticker">🎨 Upload Sticker Asset</button>
+          <button class="btn-admin-action" id="btnAdminUploadAvatar">📷 Upload Admin Photo</button>
         </div>
       </div>
 
@@ -248,6 +249,27 @@
           <input type="text" id="setupName" placeholder="Enter your name (e.g. Sagar Alapati)" required autofocus autocomplete="name">
         </div>
 
+        <!-- Cartoon Sticker Selection for Non-Admins -->
+        <div class="form-group" id="nonAdminStickerGroup">
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span>🎨 Choose Your Cartoon Character Sticker</span>
+            <span style="font-size:11px; color:var(--accent-gold); font-weight:800;" id="chosenCharacterLabel">🧒 Shinchan</span>
+          </label>
+          <div class="cartoon-character-grid" id="cartoonCharacterGrid"></div>
+        </div>
+
+        <!-- Custom Photo Upload for Admin -->
+        <div class="form-group hidden" id="adminPhotoUploadGroup">
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span>👑 Admin Custom Avatar Photo (Optional)</span>
+            <span style="font-size:11px; color:var(--accent-gold); font-weight:700;">Default: 👑 Crown</span>
+          </label>
+          <div class="admin-photo-uploader">
+            <input type="file" id="inputAdminAvatarPhoto" accept="image/*" style="font-size:12px;">
+            <div id="adminPhotoPreview" class="admin-photo-preview hidden"></div>
+          </div>
+        </div>
+
         <button type="submit" class="btn-primary-block" id="btnSubmitSetup">Connect & Talk 🚀</button>
       </form>
     </div>
@@ -361,7 +383,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=28"></script>
-  <script src="app.js?v=28"></script>
+  <script src="audio-fx.js?v=29"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>

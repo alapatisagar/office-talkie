@@ -47,6 +47,31 @@ function isSagarAlapati(name) {
   return clean.includes('sagar') || clean.includes('admin') || clean.includes('host') || clean.includes('lead') || clean.includes('boss') || clean.includes('master');
 }
 
+const CARTOON_AVATAR_STICKERS = [
+  { sticker: '🧒 Shinchan', avatar: '🧒' },
+  { sticker: '🐱 Tom (Tom & Jerry)', avatar: '🐱' },
+  { sticker: '🐭 Jerry (Tom & Jerry)', avatar: '🐭' },
+  { sticker: '⚡ Pikachu (Pokemon)', avatar: '⚡' },
+  { sticker: '🕷️ Spiderman', avatar: '🕷️' },
+  { sticker: '🦸‍♂️ Shaktimaan', avatar: '🦸‍♂️' },
+  { sticker: '🤖 Doraemon', avatar: '🤖' },
+  { sticker: '💥 Goku (Dragon Ball Z)', avatar: '💥' },
+  { sticker: '🤼 Chhota Bheem', avatar: '🤼' },
+  { sticker: '🦇 Batman', avatar: '🦇' },
+  { sticker: '🦾 Iron Man', avatar: '🦾' },
+  { sticker: '🛡️ Captain America', avatar: '🛡️' },
+  { sticker: '🍥 Naruto', avatar: '🍥' },
+  { sticker: '⌚ Ben 10', avatar: '⌚' },
+  { sticker: '🍌 Minion', avatar: '🍌' },
+  { sticker: '🍄 Super Mario', avatar: '🍄' },
+  { sticker: '🦔 Sonic', avatar: '🦔' },
+  { sticker: '🐼 Kung Fu Panda', avatar: '🐼' },
+  { sticker: '🐢 Ninja Turtle', avatar: '🐢' },
+  { sticker: '🚀 Buzz Lightyear', avatar: '🚀' },
+  { sticker: '🧽 SpongeBob', avatar: '🧽' },
+  { sticker: '🟢 Hulk', avatar: '🟢' }
+];
+
 function canPerformAdminAction(user) {
   if (!user) return false;
   return user.isAdmin || isSagarAlapati(user.name);
@@ -68,12 +93,28 @@ io.on('connection', (socket) => {
       return;
     }
 
+    let userAvatar = '👑';
+    let cartoonSticker = '👑 Admin';
+
+    if (!isAdmin) {
+      if (userData.cartoonSticker) {
+        cartoonSticker = userData.cartoonSticker;
+        userAvatar = userData.avatar || (userData.cartoonSticker.split(' ')[0] || '🧒');
+      } else {
+        const randomIndex = Math.floor(Math.random() * CARTOON_AVATAR_STICKERS.length);
+        const chosen = CARTOON_AVATAR_STICKERS[randomIndex];
+        userAvatar = chosen.avatar;
+        cartoonSticker = chosen.sticker;
+      }
+    }
+
     const newUser = {
       socketId: socket.id,
       name: rawName,
       isAdmin: isAdmin,
       color: isAdmin ? '#f59e0b' : (userData.color || '#3b82f6'),
-      avatar: isAdmin ? '👑' : (userData.avatar || '👤'),
+      avatar: userAvatar,
+      cartoonSticker: cartoonSticker,
       isMuted: false,
       isDeafened: false,
       isTalking: false,
@@ -145,6 +186,8 @@ io.on('connection', (socket) => {
     io.emit('user-state-changed', {
       socketId: socket.id,
       state: {
+        avatar: user.avatar,
+        cartoonSticker: user.cartoonSticker,
         isMuted: user.isMuted,
         isDeafened: user.isDeafened,
         isTalking: user.isTalking,
@@ -265,6 +308,8 @@ io.on('connection', (socket) => {
       senderName: user.name,
       senderColor: user.color,
       isAdmin: user.isAdmin,
+      avatar: user.avatar,
+      cartoonSticker: user.cartoonSticker || null,
       text: text ? text.trim() : '',
       sticker: sticker || null,
       gifUrl: gifUrl || null,

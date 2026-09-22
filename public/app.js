@@ -168,6 +168,31 @@ document.addEventListener('DOMContentLoaded', () => {
   let audioChunks = [];
   let isRecordingMemo = false;
 
+  const CARTOON_AVATAR_STICKERS = [
+    { sticker: '🧒 Shinchan', avatar: '🧒' },
+    { sticker: '🐱 Tom (Tom & Jerry)', avatar: '🐱' },
+    { sticker: '🐭 Jerry (Tom & Jerry)', avatar: '🐭' },
+    { sticker: '⚡ Pikachu (Pokemon)', avatar: '⚡' },
+    { sticker: '🕷️ Spiderman', avatar: '🕷️' },
+    { sticker: '🦸‍♂️ Shaktimaan', avatar: '🦸‍♂️' },
+    { sticker: '🤖 Doraemon', avatar: '🤖' },
+    { sticker: '💥 Goku (Dragon Ball Z)', avatar: '💥' },
+    { sticker: '🤼 Chhota Bheem', avatar: '🤼' },
+    { sticker: '🦇 Batman', avatar: '🦇' },
+    { sticker: '🦾 Iron Man', avatar: '🦾' },
+    { sticker: '🛡️ Captain America', avatar: '🛡️' },
+    { sticker: '🍥 Naruto', avatar: '🍥' },
+    { sticker: '⌚ Ben 10', avatar: '⌚' },
+    { sticker: '🍌 Minion', avatar: '🍌' },
+    { sticker: '🍄 Super Mario', avatar: '🍄' },
+    { sticker: '🦔 Sonic', avatar: '🦔' },
+    { sticker: '🐼 Kung Fu Panda', avatar: '🐼' },
+    { sticker: '🐢 Ninja Turtle', avatar: '🐢' },
+    { sticker: '🚀 Buzz Lightyear', avatar: '🚀' },
+    { sticker: '🧽 SpongeBob', avatar: '🧽' },
+    { sticker: '🟢 Hulk', avatar: '🟢' }
+  ];
+
   function checkIsAdmin(name) {
     if (!name) return false;
     const clean = name.trim().toLowerCase();
@@ -216,8 +241,86 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // -------------------------------------------------------------
-  // User Login & Setup Engine
+  // User Login, Cartoon Sticker Picker & Admin Photo Setup Engine
   // -------------------------------------------------------------
+  let selectedCartoonIndex = 0;
+  let customAdminAvatarPhoto = null;
+
+  function renderCartoonSetupGrid() {
+    const gridEl = document.getElementById('cartoonCharacterGrid');
+    const labelEl = document.getElementById('chosenCharacterLabel');
+    if (!gridEl) return;
+
+    gridEl.innerHTML = '';
+    CARTOON_AVATAR_STICKERS.forEach((char, idx) => {
+      const item = document.createElement('div');
+      item.className = `cartoon-character-item ${idx === selectedCartoonIndex ? 'active-character' : ''}`;
+      item.innerHTML = `
+        <span class="cartoon-char-avatar">${char.avatar}</span>
+        <span class="cartoon-char-name">${char.sticker.split(' ')[1] || char.sticker}</span>
+      `;
+      item.addEventListener('click', () => {
+        selectedCartoonIndex = idx;
+        document.querySelectorAll('.cartoon-character-item').forEach(el => el.classList.remove('active-character'));
+        item.classList.add('active-character');
+        if (labelEl) labelEl.textContent = char.sticker;
+      });
+      gridEl.appendChild(item);
+    });
+
+    if (labelEl && CARTOON_AVATAR_STICKERS[selectedCartoonIndex]) {
+      labelEl.textContent = CARTOON_AVATAR_STICKERS[selectedCartoonIndex].sticker;
+    }
+  }
+
+  function initSetupModalEvents() {
+    const setupNameInput = document.getElementById('setupName');
+    const nonAdminGroup = document.getElementById('nonAdminStickerGroup');
+    const adminGroup = document.getElementById('adminPhotoUploadGroup');
+    const inputPhoto = document.getElementById('inputAdminAvatarPhoto');
+    const photoPreview = document.getElementById('adminPhotoPreview');
+
+    renderCartoonSetupGrid();
+
+    if (setupNameInput) {
+      const updateRoleUI = () => {
+        const val = setupNameInput.value;
+        const isAdmin = checkIsAdmin(val);
+        if (isAdmin) {
+          if (adminGroup) adminGroup.classList.remove('hidden');
+          if (nonAdminGroup) nonAdminGroup.classList.add('hidden');
+        } else {
+          if (nonAdminGroup) nonAdminGroup.classList.remove('hidden');
+          if (adminGroup) adminGroup.classList.add('hidden');
+        }
+      };
+      setupNameInput.addEventListener('input', updateRoleUI);
+      updateRoleUI();
+    }
+
+    if (inputPhoto) {
+      inputPhoto.addEventListener('change', () => {
+        const file = inputPhoto.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Photo size must be under 5 MB.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          customAdminAvatarPhoto = e.target.result;
+          if (photoPreview) {
+            photoPreview.style.backgroundImage = `url('${customAdminAvatarPhoto}')`;
+            photoPreview.classList.remove('hidden');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
+  setTimeout(initSetupModalEvents, 100);
+
   function performUserConnect(inputName = null) {
     try {
       const nameEl = document.getElementById('setupName');
@@ -229,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modal) {
           modal.style.cssText = 'display: flex !important; opacity: 1 !important; pointer-events: auto !important; visibility: visible !important;';
           modal.classList.remove('hidden');
+          initSetupModalEvents();
         }
         return;
       }
@@ -236,14 +340,25 @@ document.addEventListener('DOMContentLoaded', () => {
       try { localStorage.setItem('officetalk_user_name', rawName); } catch (e) {}
 
       const isAdmin = checkIsAdmin(rawName);
-      const avatars = ['👤', '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️'];
-      const avatar = isAdmin ? '👑' : avatars[Math.floor(Math.random() * avatars.length)];
+      let avatar = '👑';
+      let cartoonSticker = '👑 Admin';
+
+      if (isAdmin) {
+        avatar = customAdminAvatarPhoto || '👑';
+        cartoonSticker = '👑 Admin';
+      } else {
+        const chosen = CARTOON_AVATAR_STICKERS[selectedCartoonIndex] || CARTOON_AVATAR_STICKERS[0];
+        avatar = chosen.avatar;
+        cartoonSticker = chosen.sticker;
+      }
+
       const presenceStatus = selectPresenceStatus ? selectPresenceStatus.value : 'Available 🟢';
 
       currentUser = {
         name: rawName,
         isAdmin,
         avatar,
+        cartoonSticker,
         color: isAdmin ? '#f59e0b' : getRandomColor(),
         talkMode,
         presenceStatus
@@ -571,6 +686,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  function renderAvatarContent(user) {
+    if (!user) return '🧒';
+    if (user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http') || user.avatar.startsWith('/'))) {
+      return `<img src="${user.avatar}" class="participant-avatar-img" alt="${escapeHTML(user.name || 'User')}">`;
+    }
+    return user.avatar || (user.isAdmin ? '👑' : '🧒');
+  }
+
   function updateHeaderProfile(user) {
     if (!user) return;
     const hName = document.getElementById('headerUserName');
@@ -579,7 +702,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminPanel = document.getElementById('adminControlPanel');
 
     if (hName) hName.textContent = user.name;
-    if (hAvatar) hAvatar.textContent = user.avatar || (user.isAdmin ? '👑' : '👤');
+    if (hAvatar) {
+      if (user.avatar && (user.avatar.startsWith('data:image/') || user.avatar.startsWith('http') || user.avatar.startsWith('/'))) {
+        hAvatar.innerHTML = `<img src="${user.avatar}" style="width:26px; height:26px; border-radius:50%; object-fit:cover;">`;
+      } else {
+        hAvatar.textContent = user.avatar || (user.isAdmin ? '👑' : '🧒');
+      }
+    }
     if (hAdminTag) {
       if (user.isAdmin) hAdminTag.classList.remove('hidden');
       else hAdminTag.classList.add('hidden');
@@ -681,6 +810,37 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnAdminUnmuteAll) {
     btnAdminUnmuteAll.addEventListener('click', () => {
       socket.emit('admin-mute-all', { muteState: false });
+    });
+  }
+
+  const btnAdminUploadAvatar = document.getElementById('btnAdminUploadAvatar');
+  if (btnAdminUploadAvatar) {
+    btnAdminUploadAvatar.addEventListener('click', () => {
+      const tempInput = document.createElement('input');
+      tempInput.type = 'file';
+      tempInput.accept = 'image/*';
+      tempInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Photo size must be under 5 MB.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const photoUrl = evt.target.result;
+          customAdminAvatarPhoto = photoUrl;
+          if (currentUser) {
+            currentUser.avatar = photoUrl;
+            updateHeaderProfile(currentUser);
+            socket.emit('update-state', { avatar: photoUrl });
+            updateUserCardState(socket.id, { avatar: photoUrl });
+            alert('📷 Admin Avatar Photo updated live across the room!');
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      tempInput.click();
     });
   }
 
@@ -954,12 +1114,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     card.innerHTML = `
       <div class="participant-avatar-wrapper">
-        <div class="participant-avatar" style="border-color: ${user.color || '#3b82f6'};">${user.avatar || '👤'}</div>
+        <div class="participant-avatar" style="border-color: ${user.color || '#3b82f6'};">${renderAvatarContent(user)}</div>
         <div class="talking-aura"></div>
       </div>
       <div class="participant-name-row">
         <span class="participant-name">${user.name} ${isSelf ? '(You)' : ''}</span>
-        ${user.isAdmin ? '<span class="admin-crown-tag">👑 Admin</span>' : ''}
+        ${user.isAdmin ? '<span class="admin-crown-tag">👑 Admin</span>' : `<span class="cartoon-sticker-badge">${user.cartoonSticker || '🧒 Shinchan'}</span>`}
       </div>
       <div class="status-badges">
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
@@ -1032,6 +1192,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateUserCardState(socketId, state) {
     const card = document.getElementById(`pcard-${socketId}`);
     if (!card) return;
+
+    if (state.avatar !== undefined || state.cartoonSticker !== undefined) {
+      const avatarContainer = card.querySelector('.participant-avatar');
+      const targetUser = onlineUsersMap.get(socketId);
+      if (avatarContainer && targetUser) {
+        avatarContainer.innerHTML = renderAvatarContent(targetUser);
+      }
+      const stickerBadge = card.querySelector('.cartoon-sticker-badge');
+      if (stickerBadge && state.cartoonSticker) {
+        stickerBadge.textContent = state.cartoonSticker;
+      }
+    }
 
     if (state.isMuted !== undefined) {
       const mutedTag = card.querySelector('.badge-tag.muted');

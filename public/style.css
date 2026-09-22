@@ -347,13 +347,34 @@ body.dark-theme {
 .participant-avatar {
   width: 76px;
   height: 76px;
+  overflow: hidden;
+}
+
+.participant-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-photo-uploader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 38px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  padding: 10px;
+  border-radius: 12px;
+  margin-top: 6px;
+}
+
+.admin-photo-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold);
+  background-size: cover;
+  background-position: center;
 }
 
 .talking-aura {
@@ -382,11 +403,97 @@ body.dark-theme {
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .participant-name {
   font-weight: 700;
   font-size: 15px;
+}
+
+.cartoon-sticker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(245, 158, 11, 0.25));
+  border: 1px dashed rgba(245, 158, 11, 0.7);
+  color: #fef08a;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.admin-crown-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(234, 88, 12, 0.35));
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+}
+
+.cartoon-character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  margin-top: 6px;
+}
+
+.cartoon-character-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.cartoon-character-item:hover {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+}
+
+.cartoon-character-item.active-character {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(245, 158, 11, 0.35)) !important;
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
+.cartoon-char-avatar {
+  font-size: 24px;
+  margin-bottom: 2px;
+}
+
+.cartoon-char-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .card-actions-wrapper {
