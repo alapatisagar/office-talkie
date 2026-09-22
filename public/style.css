@@ -485,6 +485,15 @@ body.dark-theme {
   margin-bottom: 2px;
 }
 
+.cartoon-char-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
 .cartoon-char-name {
   font-size: 10px;
   font-weight: 700;

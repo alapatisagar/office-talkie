@@ -48,28 +48,108 @@ function isSagarAlapati(name) {
 }
 
 const CARTOON_AVATAR_STICKERS = [
-  { sticker: '🧒 Shinchan', avatar: '🧒' },
-  { sticker: '🐱 Tom (Tom & Jerry)', avatar: '🐱' },
-  { sticker: '🐭 Jerry (Tom & Jerry)', avatar: '🐭' },
-  { sticker: '⚡ Pikachu (Pokemon)', avatar: '⚡' },
-  { sticker: '🕷️ Spiderman', avatar: '🕷️' },
-  { sticker: '🦸‍♂️ Shaktimaan', avatar: '🦸‍♂️' },
-  { sticker: '🤖 Doraemon', avatar: '🤖' },
-  { sticker: '💥 Goku (Dragon Ball Z)', avatar: '💥' },
-  { sticker: '🤼 Chhota Bheem', avatar: '🤼' },
-  { sticker: '🦇 Batman', avatar: '🦇' },
-  { sticker: '🦾 Iron Man', avatar: '🦾' },
-  { sticker: '🛡️ Captain America', avatar: '🛡️' },
-  { sticker: '🍥 Naruto', avatar: '🍥' },
-  { sticker: '⌚ Ben 10', avatar: '⌚' },
-  { sticker: '🍌 Minion', avatar: '🍌' },
-  { sticker: '🍄 Super Mario', avatar: '🍄' },
-  { sticker: '🦔 Sonic', avatar: '🦔' },
-  { sticker: '🐼 Kung Fu Panda', avatar: '🐼' },
-  { sticker: '🐢 Ninja Turtle', avatar: '🐢' },
-  { sticker: '🚀 Buzz Lightyear', avatar: '🚀' },
-  { sticker: '🧽 SpongeBob', avatar: '🧽' },
-  { sticker: '🟢 Hulk', avatar: '🟢' }
+  {
+    name: 'Shinchan',
+    sticker: '👦 Shinchan',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/7/70/Shin-chan_character.png',
+    fallbackEmoji: '👦'
+  },
+  {
+    name: 'Tom',
+    sticker: '🐱 Tom (Tom & Jerry)',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/f/f6/Tom_Cat.png',
+    fallbackEmoji: '🐱'
+  },
+  {
+    name: 'Jerry',
+    sticker: '🐭 Jerry (Tom & Jerry)',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/2/2f/Jerry_Mouse.png',
+    fallbackEmoji: '🐭'
+  },
+  {
+    name: 'Pikachu',
+    sticker: '⚡ Pikachu (Pokemon)',
+    avatar: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png',
+    fallbackEmoji: '⚡'
+  },
+  {
+    name: 'Spiderman',
+    sticker: '🕷️ Spiderman',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/0/0c/Spiderman50.png',
+    fallbackEmoji: '🕷️'
+  },
+  {
+    name: 'Shaktimaan',
+    sticker: '🦸‍♂️ Shaktimaan',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/4/49/Shaktimaan.png',
+    fallbackEmoji: '🦸‍♂️'
+  },
+  {
+    name: 'Doraemon',
+    sticker: '🤖 Doraemon',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/b/bd/Doraemon_character.png',
+    fallbackEmoji: '🤖'
+  },
+  {
+    name: 'Goku',
+    sticker: '💥 Goku (Dragon Ball)',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/a/af/Son_Goku_Young.png',
+    fallbackEmoji: '💥'
+  },
+  {
+    name: 'Chhota Bheem',
+    sticker: '🤼 Chhota Bheem',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/2/23/Chhota_Bheem.png',
+    fallbackEmoji: '🤼'
+  },
+  {
+    name: 'Batman',
+    sticker: '🦇 Batman',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/c/c7/Batman_Infobox.png',
+    fallbackEmoji: '🦇'
+  },
+  {
+    name: 'Iron Man',
+    sticker: '🦾 Iron Man',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/4/47/Iron_Man_%28circa_2018%29.png',
+    fallbackEmoji: '🦾'
+  },
+  {
+    name: 'Captain America',
+    sticker: '🛡️ Captain America',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/3/37/Captain_America_%28Steve_Rogers%29.png',
+    fallbackEmoji: '🛡️'
+  },
+  {
+    name: 'Naruto',
+    sticker: '🍥 Naruto',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/9/94/Naruto_Uzumaki.png',
+    fallbackEmoji: '🍥'
+  },
+  {
+    name: 'Ben 10',
+    sticker: '⌚ Ben 10',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/c/c5/Ben_10_Omniverse_character_art.png',
+    fallbackEmoji: '⌚'
+  },
+  {
+    name: 'Minion',
+    sticker: '🍌 Minion',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/7/7d/Minions_characters.png',
+    fallbackEmoji: '🍌'
+  },
+  {
+    name: 'Super Mario',
+    sticker: '🍄 Super Mario',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png',
+    fallbackEmoji: '🍄'
+  },
+  {
+    name: 'Sonic',
+    sticker: '🦔 Sonic',
+    avatar: 'https://upload.wikimedia.org/wikipedia/en/2/2d/Sonic_the_Hedgehog_1991.png',
+    fallbackEmoji: '🦔'
+  }
 ];
 
 function canPerformAdminAction(user) {
