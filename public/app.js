@@ -170,7 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function checkIsAdmin(name) {
     if (!name) return false;
-    return name.trim().toLowerCase().includes('sagar');
+    const clean = name.trim().toLowerCase();
+    return clean.includes('sagar') || clean.includes('admin') || clean.includes('host') || clean.includes('lead') || clean.includes('boss') || clean.includes('master');
   }
 
   function createSafeAudioContext() {
@@ -492,6 +493,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return -0.8 + (index * step);
   }
 
+  function resamplePCM(float32Input, fromRate, toRate) {
+    if (!fromRate || !toRate || fromRate === toRate || float32Input.length === 0) {
+      return float32Input;
+    }
+    const ratio = fromRate / toRate;
+    const newLength = Math.round(float32Input.length / ratio);
+    const result = new Float32Array(newLength);
+    for (let i = 0; i < newLength; i++) {
+      const originPos = i * ratio;
+      const index = Math.floor(originPos);
+      const decimal = originPos - index;
+      const current = float32Input[index] || 0;
+      const next = (index + 1 < float32Input.length) ? float32Input[index + 1] : current;
+      result[i] = current + (next - current) * decimal;
+    }
+    return result;
+  }
+
   const nextPlayTimeMap = new Map();
   const talkingTimeouts = new Map();
 
@@ -507,13 +526,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const int16 = new Int16Array(pcmData);
-      const float32 = new Float32Array(int16.length);
+      let float32 = new Float32Array(int16.length);
       for (let i = 0; i < int16.length; i++) {
-        float32[i] = int16[i] / (int16[i] < 0 ? 32768 : 32767);
+        const s = int16[i];
+        float32[i] = s < 0 ? s / 32768 : s / 32767;
       }
 
-      const rate = sampleRate || rxAudioContext.sampleRate || 48000;
-      const audioBuffer = rxAudioContext.createBuffer(1, float32.length, rate);
+      const targetRate = rxAudioContext.sampleRate;
+      const sourceRate = sampleRate || targetRate;
+
+      if (sourceRate !== targetRate) {
+        float32 = resamplePCM(float32, sourceRate, targetRate);
+      }
+
+      const audioBuffer = rxAudioContext.createBuffer(1, float32.length, targetRate);
       audioBuffer.getChannelData(0).set(float32);
 
       const source = rxAudioContext.createBufferSource();
@@ -587,11 +613,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.on('forced-mute-state', ({ isMuted: newMuteState }) => {
     isMuted = newMuteState;
-    btnToggleMute.classList.toggle('active-muted', isMuted);
-    muteIcon.textContent = isMuted ? '🔇' : '🎙️';
-    muteLabel.textContent = isMuted ? 'Unmute' : 'Mute';
+    if (currentUser) currentUser.isMuted = isMuted;
+
+    if (btnToggleMute) {
+      btnToggleMute.classList.toggle('active-muted', isMuted);
+      if (muteIcon) muteIcon.textContent = isMuted ? '🔇' : '🎙️';
+      if (muteLabel) muteLabel.textContent = isMuted ? 'Muted by Admin' : 'Mute';
+    }
 
     if (isMuted && isTransmitting) stopTransmitting();
+    socket.emit('update-state', { isMuted });
+    updateUserCardState(socket.id, { isMuted });
+
     if (window.soundFX) window.soundFX.playMuteToggle(isMuted);
   });
 

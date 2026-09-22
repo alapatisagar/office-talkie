@@ -44,7 +44,12 @@ let pinnedAnnouncement = null;
 function isSagarAlapati(name) {
   if (!name) return false;
   const clean = name.trim().toLowerCase();
-  return clean.includes('sagar');
+  return clean.includes('sagar') || clean.includes('admin') || clean.includes('host') || clean.includes('lead') || clean.includes('boss') || clean.includes('master');
+}
+
+function canPerformAdminAction(user) {
+  if (!user) return false;
+  return user.isAdmin || isSagarAlapati(user.name);
 }
 
 io.on('connection', (socket) => {
@@ -55,7 +60,7 @@ io.on('connection', (socket) => {
 
   socket.on('init-user', (userData) => {
     const rawName = (userData.name || 'Colleague').trim();
-    const isAdmin = isSagarAlapati(rawName);
+    const isAdmin = userData.isAdmin || isSagarAlapati(rawName);
 
     // Reject non-admin entry if room is locked
     if (isRoomLocked && !isAdmin) {
@@ -152,7 +157,7 @@ io.on('connection', (socket) => {
   // Admin Remote Mute Individual User
   socket.on('admin-mute-user', ({ targetSocketId, muteState }) => {
     const senderUser = users.get(socket.id);
-    if (!senderUser || !senderUser.isAdmin) return;
+    if (!senderUser || !canPerformAdminAction(senderUser)) return;
 
     const targetUser = users.get(targetSocketId);
     if (targetUser) {
@@ -168,7 +173,7 @@ io.on('connection', (socket) => {
   // Admin Remote Mute / Unmute All
   socket.on('admin-mute-all', ({ muteState }) => {
     const senderUser = users.get(socket.id);
-    if (!senderUser || !senderUser.isAdmin) return;
+    if (!senderUser || !canPerformAdminAction(senderUser)) return;
 
     users.forEach((u, sId) => {
       if (sId !== socket.id) {
@@ -185,7 +190,7 @@ io.on('connection', (socket) => {
   // Admin Kick User
   socket.on('admin-kick-user', ({ targetSocketId }) => {
     const senderUser = users.get(socket.id);
-    if (!senderUser || !senderUser.isAdmin) return;
+    if (!senderUser || !canPerformAdminAction(senderUser)) return;
 
     const targetUser = users.get(targetSocketId);
     if (targetUser) {
@@ -200,7 +205,7 @@ io.on('connection', (socket) => {
   // Admin Toggle Room Lock
   socket.on('admin-toggle-lock', () => {
     const senderUser = users.get(socket.id);
-    if (!senderUser || !senderUser.isAdmin) return;
+    if (!senderUser || !canPerformAdminAction(senderUser)) return;
 
     isRoomLocked = !isRoomLocked;
     io.emit('room-lock-changed', { isRoomLocked });
@@ -209,7 +214,7 @@ io.on('connection', (socket) => {
   // Admin Priority Broadcast Siren
   socket.on('admin-broadcast-siren', () => {
     const senderUser = users.get(socket.id);
-    if (!senderUser || !senderUser.isAdmin) return;
+    if (!senderUser || !canPerformAdminAction(senderUser)) return;
 
     socket.broadcast.emit('play-admin-siren', { senderName: senderUser.name });
   });
@@ -217,7 +222,7 @@ io.on('connection', (socket) => {
   // Admin Real Sticker Asset Upload Handler
   socket.on('admin-upload-sticker', ({ packId, name, nameTe, category, keywords, fileName, fileData }) => {
     const senderUser = users.get(socket.id);
-    if (!senderUser || !senderUser.isAdmin) return;
+    if (!senderUser || !canPerformAdminAction(senderUser)) return;
 
     try {
       const cleanPack = (packId || 'brahmanandam-classics').toLowerCase();
