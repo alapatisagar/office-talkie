@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <path d="M 12 35 C 20 10, 80 10, 88 35 Z" fill="#dc2626"/>
+    <rect x="8" y="32" width="84" height="10" rx="4" fill="#b91c1c"/>
+    <circle cx="50" cy="24" r="10" fill="#fff"/>
+    <text x="50" y="30" font-size="14" font-weight="900" text-anchor="middle" fill="#dc2626">M</text>
+    <ellipse cx="50" cy="58" rx="32" ry="26" fill="#fed7aa"/>
+    <ellipse cx="50" cy="54" rx="10" ry="8" fill="#f87171"/>
+    <path d="M 24 62 C 38 52, 62 52, 76 62 C 60 70, 40 70, 24 62 Z" fill="#451a03"/>
+  </svg>

@@ -172,103 +172,103 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       name: 'Shinchan',
       sticker: '👦 Shinchan',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/7/70/Shin-chan_character.png',
+      avatar: '/stickers/cartoons/shinchan.svg',
       fallbackEmoji: '👦'
     },
     {
       name: 'Tom',
       sticker: '🐱 Tom (Tom & Jerry)',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/f/f6/Tom_Cat.png',
+      avatar: '/stickers/cartoons/tom.svg',
       fallbackEmoji: '🐱'
     },
     {
       name: 'Jerry',
       sticker: '🐭 Jerry (Tom & Jerry)',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/2/2f/Jerry_Mouse.png',
+      avatar: '/stickers/cartoons/jerry.svg',
       fallbackEmoji: '🐭'
     },
     {
       name: 'Pikachu',
       sticker: '⚡ Pikachu (Pokemon)',
-      avatar: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png',
+      avatar: '/stickers/cartoons/pikachu.svg',
       fallbackEmoji: '⚡'
     },
     {
       name: 'Spiderman',
       sticker: '🕷️ Spiderman',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/0/0c/Spiderman50.png',
+      avatar: '/stickers/cartoons/spiderman.svg',
       fallbackEmoji: '🕷️'
     },
     {
       name: 'Shaktimaan',
       sticker: '🦸‍♂️ Shaktimaan',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/4/49/Shaktimaan.png',
+      avatar: '/stickers/cartoons/shaktimaan.svg',
       fallbackEmoji: '🦸‍♂️'
     },
     {
       name: 'Doraemon',
       sticker: '🤖 Doraemon',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/b/bd/Doraemon_character.png',
+      avatar: '/stickers/cartoons/doraemon.svg',
       fallbackEmoji: '🤖'
     },
     {
       name: 'Goku',
       sticker: '💥 Goku (Dragon Ball)',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/a/af/Son_Goku_Young.png',
+      avatar: '/stickers/cartoons/goku.svg',
       fallbackEmoji: '💥'
     },
     {
       name: 'Chhota Bheem',
       sticker: '🤼 Chhota Bheem',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/2/23/Chhota_Bheem.png',
+      avatar: '/stickers/cartoons/bheem.svg',
       fallbackEmoji: '🤼'
     },
     {
       name: 'Batman',
       sticker: '🦇 Batman',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/c/c7/Batman_Infobox.png',
+      avatar: '/stickers/cartoons/batman.svg',
       fallbackEmoji: '🦇'
     },
     {
       name: 'Iron Man',
       sticker: '🦾 Iron Man',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/4/47/Iron_Man_%28circa_2018%29.png',
+      avatar: '/stickers/cartoons/ironman.svg',
       fallbackEmoji: '🦾'
     },
     {
       name: 'Captain America',
       sticker: '🛡️ Captain America',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/3/37/Captain_America_%28Steve_Rogers%29.png',
+      avatar: '/stickers/cartoons/captain-america.svg',
       fallbackEmoji: '🛡️'
     },
     {
       name: 'Naruto',
       sticker: '🍥 Naruto',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/9/94/Naruto_Uzumaki.png',
+      avatar: '/stickers/cartoons/naruto.svg',
       fallbackEmoji: '🍥'
     },
     {
       name: 'Ben 10',
       sticker: '⌚ Ben 10',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/c/c5/Ben_10_Omniverse_character_art.png',
+      avatar: '/stickers/cartoons/ben10.svg',
       fallbackEmoji: '⌚'
     },
     {
       name: 'Minion',
       sticker: '🍌 Minion',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/7/7d/Minions_characters.png',
+      avatar: '/stickers/cartoons/minion.svg',
       fallbackEmoji: '🍌'
     },
     {
       name: 'Super Mario',
       sticker: '🍄 Super Mario',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/a/a9/MarioNSMBUDeluxe.png',
+      avatar: '/stickers/cartoons/mario.svg',
       fallbackEmoji: '🍄'
     },
     {
       name: 'Sonic',
       sticker: '🦔 Sonic',
-      avatar: 'https://upload.wikimedia.org/wikipedia/en/2/2d/Sonic_the_Hedgehog_1991.png',
+      avatar: '/stickers/cartoons/sonic.svg',
       fallbackEmoji: '🦔'
     }
   ];

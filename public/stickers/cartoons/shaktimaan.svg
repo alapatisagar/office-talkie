@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="48" fill="#991b1b"/>
+    <polygon points="50,10 62,38 92,38 68,56 78,86 50,68 22,86 32,56 8,38 38,38" fill="#facc15"/>
+    <circle cx="50" cy="50" r="18" fill="#b91c1c"/>
+    <circle cx="50" cy="50" r="12" fill="#fef08a"/>
+    <text x="50" y="56" font-size="16" font-weight="900" text-anchor="middle" fill="#991b1b">S</text>
+  </svg>
