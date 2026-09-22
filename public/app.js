@@ -352,7 +352,12 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       if (deviceId) audioOptions.deviceId = { exact: deviceId };
 
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: audioOptions });
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: audioOptions });
+      } catch (err) {
+        console.warn('[Microphone Constraint Fallback Triggered]', err);
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
       setupPcmAudioCapture(localStream);
       populateAudioDevices();
     } catch (err) {
@@ -822,8 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPTT.addEventListener('mouseup', stopTransmitting);
     btnPTT.addEventListener('mouseleave', stopTransmitting);
 
-    btnPTT.addEventListener('touchstart', (e) => { e.preventDefault(); startTransmitting(); });
-    btnPTT.addEventListener('touchend', (e) => { e.preventDefault(); stopTransmitting(); });
+    btnPTT.addEventListener('touchstart', (e) => { e.preventDefault(); startTransmitting(); }, { passive: false });
+    btnPTT.addEventListener('touchend', (e) => { e.preventDefault(); stopTransmitting(); }, { passive: false });
+    btnPTT.addEventListener('touchcancel', (e) => { e.preventDefault(); stopTransmitting(); }, { passive: false });
   }
 
   window.addEventListener('keydown', (e) => {
@@ -1489,6 +1495,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function getSupportedMediaRecorderMimeType() {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/aac',
+      'audio/ogg'
+    ];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    }
+    return '';
+  }
+
   // Voice Memo Recorder (up to 5s)
   if (btnRecordVoiceMemo) {
     let memoTimer = null;
@@ -1497,8 +1520,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btnRecordVoiceMemo.addEventListener('mouseup', stopVoiceMemoRecord);
     btnRecordVoiceMemo.addEventListener('mouseleave', stopVoiceMemoRecord);
 
-    btnRecordVoiceMemo.addEventListener('touchstart', (e) => { e.preventDefault(); startVoiceMemoRecord(); });
-    btnRecordVoiceMemo.addEventListener('touchend', (e) => { e.preventDefault(); stopVoiceMemoRecord(); });
+    btnRecordVoiceMemo.addEventListener('touchstart', (e) => { e.preventDefault(); startVoiceMemoRecord(); }, { passive: false });
+    btnRecordVoiceMemo.addEventListener('touchend', (e) => { e.preventDefault(); stopVoiceMemoRecord(); }, { passive: false });
+    btnRecordVoiceMemo.addEventListener('touchcancel', (e) => { e.preventDefault(); stopVoiceMemoRecord(); }, { passive: false });
 
     async function startVoiceMemoRecord() {
       if (isRecordingMemo) return;
@@ -1509,13 +1533,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        const mimeType = getSupportedMediaRecorderMimeType();
+        const options = mimeType ? { mimeType } : undefined;
+        mediaRecorder = new MediaRecorder(stream, options);
         mediaRecorder.ondataavailable = (e) => {
           if (e.data.size > 0) audioChunks.push(e.data);
         };
         mediaRecorder.onstop = () => {
           stream.getTracks().forEach(t => t.stop());
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const blobType = (mediaRecorder && mediaRecorder.mimeType) || mimeType || 'audio/mp4';
+          const blob = new Blob(audioChunks, { type: blobType });
           const reader = new FileReader();
           reader.onload = () => {
             socket.emit('send-message', {
@@ -1680,7 +1707,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="voice-memo-player">
           <button class="btn-play-memo" type="button">▶</button>
           <span class="memo-dur-badge">🎙️ Voice Memo (5s)</span>
-          <audio src="${msg.voiceMemo.dataUrl}" style="display:none;"></audio>
+          <audio src="${msg.voiceMemo.dataUrl}" playsinline webkit-playsinline preload="auto" style="display:none;"></audio>
         </div>
       `;
     } else if (msg.fileData) {
@@ -1724,7 +1751,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const audioEl = bubble.querySelector('audio');
       btnPlayMemo.addEventListener('click', () => {
         if (audioEl) {
-          audioEl.play();
+          unlockAudioContexts();
+          audioEl.play().catch(e => console.warn('Voice memo playback warning:', e));
           btnPlayMemo.textContent = '🔊';
           audioEl.onended = () => { btnPlayMemo.textContent = '▶'; };
         }
