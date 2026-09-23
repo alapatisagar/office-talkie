@@ -1,11 +1,11 @@
-// OfficeTalk Service Worker v31 - PWA Offline Shell & Caching
-const CACHE_NAME = 'officetalk-v31';
+// OfficeTalk Service Worker v32 - PWA Offline Shell & Caching
+const CACHE_NAME = 'officetalk-v32';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/style.css?v=31',
-  '/app.js?v=31',
-  '/audio-fx.js?v=31',
+  '/style.css?v=32',
+  '/app.js?v=32',
+  '/audio-fx.js?v=32',
   '/manifest.json'
 ];
 

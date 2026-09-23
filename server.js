@@ -48,23 +48,23 @@ function isSagarAlapati(name) {
 }
 
 const CARTOON_AVATAR_STICKERS = [
-  { name: 'Shinchan', sticker: '👦 Shinchan', avatar: '/stickers/cartoons/shinchan.svg' },
-  { name: 'Tom', sticker: '🐱 Tom (Tom & Jerry)', avatar: '/stickers/cartoons/tom.svg' },
-  { name: 'Jerry', sticker: '🐭 Jerry (Tom & Jerry)', avatar: '/stickers/cartoons/jerry.svg' },
-  { name: 'Pikachu', sticker: '⚡ Pikachu (Pokemon)', avatar: '/stickers/cartoons/pikachu.svg' },
-  { name: 'Spiderman', sticker: '🕷️ Spiderman', avatar: '/stickers/cartoons/spiderman.svg' },
-  { name: 'Shaktimaan', sticker: '🦸‍♂️ Shaktimaan', avatar: '/stickers/cartoons/shaktimaan.svg' },
-  { name: 'Doraemon', sticker: '🤖 Doraemon', avatar: '/stickers/cartoons/doraemon.svg' },
-  { name: 'Goku', sticker: '💥 Goku (Dragon Ball)', avatar: '/stickers/cartoons/goku.svg' },
-  { name: 'Chhota Bheem', sticker: '🤼 Chhota Bheem', avatar: '/stickers/cartoons/bheem.svg' },
-  { name: 'Batman', sticker: '🦇 Batman', avatar: '/stickers/cartoons/batman.svg' },
-  { name: 'Iron Man', sticker: '🦾 Iron Man', avatar: '/stickers/cartoons/ironman.svg' },
-  { name: 'Captain America', sticker: '🛡️ Captain America', avatar: '/stickers/cartoons/captain-america.svg' },
-  { name: 'Naruto', sticker: '🍥 Naruto', avatar: '/stickers/cartoons/naruto.svg' },
-  { name: 'Ben 10', sticker: '⌚ Ben 10', avatar: '/stickers/cartoons/ben10.svg' },
-  { name: 'Minion', sticker: '🍌 Minion', avatar: '/stickers/cartoons/minion.svg' },
-  { name: 'Super Mario', sticker: '🍄 Super Mario', avatar: '/stickers/cartoons/mario.svg' },
-  { name: 'Sonic', sticker: '🦔 Sonic', avatar: '/stickers/cartoons/sonic.svg' }
+  { name: 'Shinchan', sticker: '👦 Shinchan', avatar: '/stickers/cartoons/shinchan.jpg' },
+  { name: 'Tom', sticker: '🐱 Tom (Tom & Jerry)', avatar: '/stickers/cartoons/tom.jpg' },
+  { name: 'Jerry', sticker: '🐭 Jerry (Tom & Jerry)', avatar: '/stickers/cartoons/jerry.jpg' },
+  { name: 'Pikachu', sticker: '⚡ Pikachu (Pokemon)', avatar: '/stickers/cartoons/pikachu.jpg' },
+  { name: 'Spiderman', sticker: '🕷️ Spiderman', avatar: '/stickers/cartoons/spiderman.png' },
+  { name: 'Shaktimaan', sticker: '🦸‍♂️ Shaktimaan', avatar: '/stickers/cartoons/shaktimaan.jpg' },
+  { name: 'Doraemon', sticker: '🤖 Doraemon', avatar: '/stickers/cartoons/doraemon.jpg' },
+  { name: 'Goku', sticker: '💥 Goku (Dragon Ball)', avatar: '/stickers/cartoons/goku.jpg' },
+  { name: 'Chhota Bheem', sticker: '🤼 Chhota Bheem', avatar: '/stickers/cartoons/bheem.jpg' },
+  { name: 'Batman', sticker: '🦇 Batman', avatar: '/stickers/cartoons/batman.jpg' },
+  { name: 'Iron Man', sticker: '🦾 Iron Man', avatar: '/stickers/cartoons/ironman.png' },
+  { name: 'Captain America', sticker: '🛡️ Captain America', avatar: '/stickers/cartoons/captain-america.jpg' },
+  { name: 'Naruto', sticker: '🍥 Naruto', avatar: '/stickers/cartoons/naruto.jpg' },
+  { name: 'Ben 10', sticker: '⌚ Ben 10', avatar: '/stickers/cartoons/ben10.png' },
+  { name: 'Minion', sticker: '🍌 Minion', avatar: '/stickers/cartoons/minion.jpg' },
+  { name: 'Super Mario', sticker: '🍄 Super Mario', avatar: '/stickers/cartoons/mario.png' },
+  { name: 'Sonic', sticker: '🦔 Sonic', avatar: '/stickers/cartoons/sonic.png' }
 ];
 
 function canPerformAdminAction(user) {

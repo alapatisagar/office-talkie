@@ -172,103 +172,103 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       name: 'Shinchan',
       sticker: '👦 Shinchan',
-      avatar: '/stickers/cartoons/shinchan.svg',
+      avatar: '/stickers/cartoons/shinchan.jpg',
       fallbackEmoji: '👦'
     },
     {
       name: 'Tom',
       sticker: '🐱 Tom (Tom & Jerry)',
-      avatar: '/stickers/cartoons/tom.svg',
+      avatar: '/stickers/cartoons/tom.jpg',
       fallbackEmoji: '🐱'
     },
     {
       name: 'Jerry',
       sticker: '🐭 Jerry (Tom & Jerry)',
-      avatar: '/stickers/cartoons/jerry.svg',
+      avatar: '/stickers/cartoons/jerry.jpg',
       fallbackEmoji: '🐭'
     },
     {
       name: 'Pikachu',
       sticker: '⚡ Pikachu (Pokemon)',
-      avatar: '/stickers/cartoons/pikachu.svg',
+      avatar: '/stickers/cartoons/pikachu.jpg',
       fallbackEmoji: '⚡'
     },
     {
       name: 'Spiderman',
       sticker: '🕷️ Spiderman',
-      avatar: '/stickers/cartoons/spiderman.svg',
+      avatar: '/stickers/cartoons/spiderman.png',
       fallbackEmoji: '🕷️'
     },
     {
       name: 'Shaktimaan',
       sticker: '🦸‍♂️ Shaktimaan',
-      avatar: '/stickers/cartoons/shaktimaan.svg',
+      avatar: '/stickers/cartoons/shaktimaan.jpg',
       fallbackEmoji: '🦸‍♂️'
     },
     {
       name: 'Doraemon',
       sticker: '🤖 Doraemon',
-      avatar: '/stickers/cartoons/doraemon.svg',
+      avatar: '/stickers/cartoons/doraemon.jpg',
       fallbackEmoji: '🤖'
     },
     {
       name: 'Goku',
       sticker: '💥 Goku (Dragon Ball)',
-      avatar: '/stickers/cartoons/goku.svg',
+      avatar: '/stickers/cartoons/goku.jpg',
       fallbackEmoji: '💥'
     },
     {
       name: 'Chhota Bheem',
       sticker: '🤼 Chhota Bheem',
-      avatar: '/stickers/cartoons/bheem.svg',
+      avatar: '/stickers/cartoons/bheem.jpg',
       fallbackEmoji: '🤼'
     },
     {
       name: 'Batman',
       sticker: '🦇 Batman',
-      avatar: '/stickers/cartoons/batman.svg',
+      avatar: '/stickers/cartoons/batman.jpg',
       fallbackEmoji: '🦇'
     },
     {
       name: 'Iron Man',
       sticker: '🦾 Iron Man',
-      avatar: '/stickers/cartoons/ironman.svg',
+      avatar: '/stickers/cartoons/ironman.png',
       fallbackEmoji: '🦾'
     },
     {
       name: 'Captain America',
       sticker: '🛡️ Captain America',
-      avatar: '/stickers/cartoons/captain-america.svg',
+      avatar: '/stickers/cartoons/captain-america.jpg',
       fallbackEmoji: '🛡️'
     },
     {
       name: 'Naruto',
       sticker: '🍥 Naruto',
-      avatar: '/stickers/cartoons/naruto.svg',
+      avatar: '/stickers/cartoons/naruto.jpg',
       fallbackEmoji: '🍥'
     },
     {
       name: 'Ben 10',
       sticker: '⌚ Ben 10',
-      avatar: '/stickers/cartoons/ben10.svg',
+      avatar: '/stickers/cartoons/ben10.png',
       fallbackEmoji: '⌚'
     },
     {
       name: 'Minion',
       sticker: '🍌 Minion',
-      avatar: '/stickers/cartoons/minion.svg',
+      avatar: '/stickers/cartoons/minion.jpg',
       fallbackEmoji: '🍌'
     },
     {
       name: 'Super Mario',
       sticker: '🍄 Super Mario',
-      avatar: '/stickers/cartoons/mario.svg',
+      avatar: '/stickers/cartoons/mario.png',
       fallbackEmoji: '🍄'
     },
     {
       name: 'Sonic',
       sticker: '🦔 Sonic',
-      avatar: '/stickers/cartoons/sonic.svg',
+      avatar: '/stickers/cartoons/sonic.png',
       fallbackEmoji: '🦔'
     }
   ];
