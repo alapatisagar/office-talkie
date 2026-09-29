@@ -7,14 +7,30 @@ const os = require('os');
 const fs = require('fs');
 const selfsigned = require('selfsigned');
 
+const compression = require('compression');
+
 const app = express();
+
+// Enable Gzip/Brotli compression for HTML, CSS, JS, JSON & SVGs
+app.use(compression({
+  threshold: 256
+}));
+
+// Health check / Keep-alive route for Render and Uptime monitors
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
+app.get('/ping-health', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));
+
+// High-performance static file serving with browser caching
 app.use(express.static(path.join(__dirname, 'public'), {
-  etag: false,
-  lastModified: false,
-  setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+  etag: true,
+  lastModified: true,
+  maxAge: '1d',
+  setHeaders: (res, filepath) => {
+    if (filepath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (filepath.match(/\.(js|css|jpg|jpeg|png|gif|svg|webp|woff2?|mp3|wav)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    }
   }
 }));
 

@@ -8,8 +8,12 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "compression": "^1.8.2",
     "express": "^4.19.2",
     "selfsigned": "^5.5.0",
     "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "jimp": "^1.6.1"
   }
 }

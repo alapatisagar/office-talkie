@@ -1,11 +1,11 @@
-// OfficeTalk Service Worker v32 - PWA Offline Shell & Caching
-const CACHE_NAME = 'officetalk-v32';
+// OfficeTalk Service Worker v33 - High-Performance PWA Caching
+const CACHE_NAME = 'officetalk-v33';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/style.css?v=32',
-  '/app.js?v=32',
-  '/audio-fx.js?v=32',
+  '/style.css?v=33',
+  '/app.js?v=33',
+  '/audio-fx.js?v=33',
   '/manifest.json'
 ];
 
@@ -32,9 +32,27 @@ self.addEventListener('activate', (evt) => {
 });
 
 self.addEventListener('fetch', (evt) => {
+  // Navigation requests: Network first with Cache fallback
   if (evt.request.mode === 'navigate') {
     evt.respondWith(
       fetch(evt.request).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Static Assets (CSS, JS, Images, Audio, Fonts): Cache first, fallback to network
+  if (evt.request.method === 'GET') {
+    evt.respondWith(
+      caches.match(evt.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(evt.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(evt.request, responseToCache));
+          }
+          return networkResponse;
+        });
+      })
     );
   }
 });
