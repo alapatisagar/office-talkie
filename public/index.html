@@ -14,7 +14,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=37">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -467,7 +467,7 @@
         </div>
         <div class="notes-modal-right-actions">
           <button type="button" class="btn-action btn-share-phone" id="btnSharePhoneNotes" title="Save directly to phone Notes / Files">📲 Save / Share to Phone</button>
-          <button type="button" class="btn-primary" id="btnDownloadNotes" title="Download note file to your device">📥 Download Note (.txt)</button>
+          <a class="btn-primary" id="btnDownloadNotes" download="OfficeTalk_Meeting_Notes.txt" href="#" target="_blank" title="Download note file to your device" style="display:inline-flex; align-items:center; text-decoration:none;">📥 Download Note (.txt)</a>
           <button type="button" class="btn-action" id="btnCloseMeetingNotes">Close</button>
         </div>
       </div>
@@ -540,6 +540,6 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="audio-fx.js?v=35"></script>
-  <script src="app.js?v=36"></script>
+  <script src="app.js?v=37"></script>
 </body>
 </html>

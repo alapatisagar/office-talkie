@@ -121,10 +121,10 @@ app.post('/api/translate-batch', async (req, res) => {
   }
 });
 
-// Guaranteed Direct Attachment File Download Endpoint (Phone & PC)
-app.post('/api/download-notes', (req, res) => {
-  const content = req.body.content || '';
-  const rawFilename = req.body.filename || `OfficeTalk_Meeting_Notes_${Date.now()}.txt`;
+// Guaranteed Direct Attachment File Download Endpoint (Phone & PC) - Supports both POST and GET
+app.all('/api/download-notes', (req, res) => {
+  const content = req.body?.content || req.query?.content || '';
+  const rawFilename = req.body?.filename || req.query?.filename || `OfficeTalk_Meeting_Notes_${Date.now()}.txt`;
   const filename = rawFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
 
   // Prepend UTF-8 BOM so Notepad & Mobile viewers render Telugu and Hindi correctly
