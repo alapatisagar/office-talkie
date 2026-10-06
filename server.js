@@ -129,6 +129,7 @@ io.on('connection', (socket) => {
       isMuted: false,
       isDeafened: false,
       isTalking: false,
+      isHandRaised: false,
       talkMode: userData.talkMode || 'ptt',
       presenceStatus: userData.presenceStatus || 'Available 🟢',
       channel: userData.channel || 'general'
@@ -381,7 +382,71 @@ io.on('connection', (socket) => {
     io.emit('pinned-message-updated', pinnedAnnouncement);
   });
 
+  // Raise Hand & Lower Hand Meeting Queue
+  socket.on('raise-hand', () => {
+    const user = users.get(socket.id);
+    if (!user) return;
+    user.isHandRaised = true;
+    user.handRaisedAt = Date.now();
+    io.emit('hand-status-changed', {
+      socketId: socket.id,
+      isHandRaised: true,
+      userName: user.name,
+      handRaisedAt: user.handRaisedAt
+    });
+  });
+
+  socket.on('lower-hand', ({ targetSocketId } = {}) => {
+    const sender = users.get(socket.id);
+    if (!sender) return;
+    const targetId = (sender.isAdmin && targetSocketId) ? targetSocketId : socket.id;
+    const targetUser = users.get(targetId);
+    if (targetUser) {
+      targetUser.isHandRaised = false;
+      io.emit('hand-status-changed', {
+        socketId: targetId,
+        isHandRaised: false,
+        userName: targetUser.name
+      });
+    }
+  });
+
+  // Screen Sharing Signaling
+  socket.on('screen-share-started', () => {
+    const user = users.get(socket.id);
+    if (!user) return;
+    socket.broadcast.emit('screen-share-started', {
+      socketId: socket.id,
+      userName: user.name,
+      userAvatar: user.avatar
+    });
+  });
+
+  socket.on('screen-share-stopped', () => {
+    socket.broadcast.emit('screen-share-stopped', {
+      socketId: socket.id
+    });
+  });
+
+  socket.on('screen-signal', ({ targetSocketId, signalData }) => {
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('screen-signal', {
+        fromSocketId: socket.id,
+        signalData
+      });
+    }
+  });
+
   socket.on('disconnect', () => {
+    const user = users.get(socket.id);
+    if (user && user.isHandRaised) {
+      io.emit('hand-status-changed', {
+        socketId: socket.id,
+        isHandRaised: false,
+        userName: user.name
+      });
+    }
+    io.emit('screen-share-stopped', { socketId: socket.id });
     users.delete(socket.id);
     io.emit('user-left', { socketId: socket.id });
   });
@@ -413,4 +478,20 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(` 📱 Mobile / Network: ${protocol}://${ip}:${PORT}`);
   });
   console.log(`====================================================`);
+
+  // Render 24/7 Keep-Alive Self-Pinger (prevents 15-minute free tier container sleep)
+  const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL || process.env.KEEP_ALIVE_URL;
+  if (RENDER_EXTERNAL_URL) {
+    console.log(`[Keep-Alive] 🚀 Active self-ping scheduled for ${RENDER_EXTERNAL_URL}/healthz every 12 minutes`);
+    const pingLib = RENDER_EXTERNAL_URL.startsWith('https') ? https : http;
+    setInterval(() => {
+      try {
+        pingLib.get(`${RENDER_EXTERNAL_URL}/healthz`, (res) => {
+          // Connection refreshed
+        }).on('error', (err) => {
+          console.warn('[Keep-Alive Warning]', err.message);
+        });
+      } catch (e) {}
+    }, 12 * 60 * 1000);
+  }
 });

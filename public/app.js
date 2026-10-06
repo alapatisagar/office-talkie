@@ -82,10 +82,50 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAdminUnmuteAll = document.getElementById('btnAdminUnmuteAll');
   const btnAdminLockRoom = document.getElementById('btnAdminLockRoom');
 
+  // Meeting Enhancements Elements (Raise Hand, Screen Share, Recording, VAD)
+  const btnRaiseHand = document.getElementById('btnRaiseHand');
+  const btnDockRaiseHand = document.getElementById('btnDockRaiseHand');
+  const dockHandIcon = document.getElementById('dockHandIcon');
+  const dockHandLabel = document.getElementById('dockHandLabel');
+  const btnShareScreen = document.getElementById('btnShareScreen');
+  const btnRecordMeeting = document.getElementById('btnRecordMeeting');
+
+  const screenShareOverlay = document.getElementById('screenShareOverlay');
+  const screenShareVideo = document.getElementById('screenShareVideo');
+  const screenShareTitle = document.getElementById('screenShareTitle');
+  const btnFullscreenScreenShare = document.getElementById('btnFullscreenScreenShare');
+  const btnCloseScreenShare = document.getElementById('btnCloseScreenShare');
+
+  const toggleNoiseGate = document.getElementById('toggleNoiseGate');
+  const toggleHighPassFilter = document.getElementById('toggleHighPassFilter');
+  const inputVadThreshold = document.getElementById('inputVadThreshold');
+  const vadThresholdValue = document.getElementById('vadThresholdValue');
+  const btnConfigPttKey = document.getElementById('btnConfigPttKey');
+  const pttKeyDisplay = document.getElementById('pttKeyDisplay');
+  const btnResetPttKey = document.getElementById('btnResetPttKey');
+
   // --- State Variables ---
   const socket = io();
   let currentUser = null;
   const selectedTargetIds = new Set(['all']);
+
+  let isHandRaised = false;
+  let isSharingScreen = false;
+  let localScreenStream = null;
+  let screenPeerConnections = new Map();
+  let activeScreenSharer = null;
+
+  let isMeetingRecording = false;
+  let meetingRecordTimer = null;
+  let meetingRecordSeconds = 0;
+  let meetingMediaRecorder = null;
+  let meetingRecordedChunks = [];
+  let recordingMixerDest = null;
+  let localMicSourceForRecord = null;
+
+  let vadSensitivityThreshold = parseInt(localStorage.getItem('officetalk_vad_threshold') || '6', 10);
+  let customPttKeyCode = localStorage.getItem('officetalk_ptt_key') || 'Space';
+  let isListeningForPttKey = false;
 
   let activeChatTab = 'everyone';
   let selectedDmSocketId = null;
@@ -572,8 +612,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const source = txAudioContext.createMediaStreamSource(stream);
       source.connect(analyser);
 
-      // Voice Filter Node Chain
+      // High-Pass Filter (85Hz) to cut background AC hum & desk rumbles
       let lastNode = source;
+      try {
+        if (!toggleHighPassFilter || toggleHighPassFilter.checked) {
+          const hpFilter = txAudioContext.createBiquadFilter();
+          hpFilter.type = 'highpass';
+          hpFilter.frequency.setValueAtTime(85, txAudioContext.currentTime);
+          source.connect(hpFilter);
+          lastNode = hpFilter;
+        }
+
+        // Dynamics Compressor to balance loud & quiet speech
+        const compressor = txAudioContext.createDynamicsCompressor();
+        compressor.threshold.setValueAtTime(-24, txAudioContext.currentTime);
+        compressor.knee.setValueAtTime(30, txAudioContext.currentTime);
+        compressor.ratio.setValueAtTime(12, txAudioContext.currentTime);
+        compressor.attack.setValueAtTime(0.003, txAudioContext.currentTime);
+        compressor.release.setValueAtTime(0.25, txAudioContext.currentTime);
+        lastNode.connect(compressor);
+        lastNode = compressor;
+      } catch (e) {
+        lastNode = source;
+      }
+
+      // Voice Filter Node Chain
       if (activeVoiceFilter === 'robot') {
         const filter = txAudioContext.createBiquadFilter();
         filter.type = 'bandpass';
@@ -607,6 +670,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!shouldTransmit) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
+
+        // Smart Noise Gate: suppress background clicks & breathing in open call
+        if (talkMode === 'open' && (!toggleNoiseGate || toggleNoiseGate.checked)) {
+          let sumSq = 0;
+          for (let i = 0; i < inputData.length; i++) sumSq += inputData[i] * inputData[i];
+          const rms = Math.sqrt(sumSq / inputData.length);
+          const gateLimit = (vadSensitivityThreshold || 6) * 0.0012;
+          if (rms < gateLimit) return; // Drop silence
+        }
+
         const pcm16 = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
           const s = Math.max(-1, Math.min(1, inputData[i]));
@@ -642,10 +715,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const average = sum / dataArray.length;
       const percent = Math.min(100, Math.round((average / 128) * 100));
 
-      if (vuBarFill) vuBarFill.style.width = percent + '%';
+      if (vuBarFill) {
+        vuBarFill.style.width = percent + '%';
+        if (percent > 60) {
+          vuBarFill.style.background = 'linear-gradient(90deg, #10b981 0%, #f59e0b 60%, #ef4444 95%)';
+        } else if (percent > 20) {
+          vuBarFill.style.background = 'linear-gradient(90deg, #10b981 0%, #f59e0b 90%)';
+        } else {
+          vuBarFill.style.background = '#10b981';
+        }
+      }
       if (settingsVuFill) settingsVuFill.style.width = percent + '%';
 
-      const currentlySpeaking = percent > 6 && (talkMode === 'open' ? !isMuted : isTransmitting);
+      const activeThreshold = vadSensitivityThreshold || 6;
+      const currentlySpeaking = percent > activeThreshold && (talkMode === 'open' ? !isMuted : isTransmitting);
       if (currentlySpeaking !== isSpeakingState) {
         isSpeakingState = currentlySpeaking;
         updateUserCardTalking(socket.id, currentlySpeaking);
@@ -747,8 +830,14 @@ document.addEventListener('DOMContentLoaded', () => {
         panner.pan.value = panValue;
         source.connect(panner);
         panner.connect(rxAudioContext.destination);
+        if (recordingMixerDest) {
+          try { panner.connect(recordingMixerDest); } catch(e) {}
+        }
       } else {
         source.connect(rxAudioContext.destination);
+        if (recordingMixerDest) {
+          try { source.connect(recordingMixerDest); } catch(e) {}
+        }
       }
 
       // Schedule gapless, non-overlapping continuous playback
@@ -939,6 +1028,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderParticipantCard(user.socketId, user);
     updateOnlineCount();
 
+    if (isSharingScreen && localScreenStream) {
+      initScreenPeerConnection(user.socketId, true);
+    }
+
     appendChatMessage({
       senderName: 'System',
       senderColor: '#3b82f6',
@@ -948,6 +1041,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   socket.on('user-left', ({ socketId }) => {
+    if (screenPeerConnections.has(socketId)) {
+      try { screenPeerConnections.get(socketId).close(); } catch (e) {}
+      screenPeerConnections.delete(socketId);
+    }
+    if (activeScreenSharer === socketId) {
+      activeScreenSharer = null;
+      if (!isSharingScreen) {
+        if (screenShareOverlay) screenShareOverlay.classList.add('hidden');
+        if (screenShareVideo) screenShareVideo.srcObject = null;
+      }
+    }
+
     const user = onlineUsersMap.get(socketId);
     if (user) {
       appendChatMessage({
@@ -1106,9 +1211,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('keydown', (e) => {
+    if (isListeningForPttKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      customPttKeyCode = e.code;
+      try { localStorage.setItem('officetalk_ptt_key', customPttKeyCode); } catch (err) {}
+      if (pttKeyDisplay) pttKeyDisplay.textContent = customPttKeyCode;
+      if (btnConfigPttKey) {
+        btnConfigPttKey.classList.remove('listening-key');
+        btnConfigPttKey.innerHTML = `Key: <strong id="pttKeyDisplay">${customPttKeyCode}</strong> (Click to change)`;
+      }
+      isListeningForPttKey = false;
+      return;
+    }
+
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
-    if (e.code === 'Space' && talkMode === 'ptt' && !pttKeyPressed) {
+    if (e.code === customPttKeyCode && talkMode === 'ptt' && !pttKeyPressed) {
       e.preventDefault();
       pttKeyPressed = true;
       startTransmitting();
@@ -1116,11 +1235,13 @@ document.addEventListener('DOMContentLoaded', () => {
       toggleMute();
     } else if (e.code === 'KeyD') {
       toggleDeafen();
+    } else if (e.code === 'KeyH') {
+      toggleRaiseHand();
     }
   });
 
   window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space' && talkMode === 'ptt') {
+    if (e.code === customPttKeyCode && talkMode === 'ptt') {
       e.preventDefault();
       pttKeyPressed = false;
       stopTransmitting();
@@ -1174,6 +1295,392 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
+  // Toast Helper Notification
+  // -------------------------------------------------------------
+  function showToast(message) {
+    let toast = document.getElementById('officeToastNotification');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'officeToastNotification';
+      toast.className = 'office-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3200);
+  }
+
+  // -------------------------------------------------------------
+  // ✋ Raise Hand Queue & Speaker Request System
+  // -------------------------------------------------------------
+  if (btnRaiseHand) btnRaiseHand.addEventListener('click', toggleRaiseHand);
+  if (btnDockRaiseHand) btnDockRaiseHand.addEventListener('click', toggleRaiseHand);
+
+  function toggleRaiseHand() {
+    isHandRaised = !isHandRaised;
+
+    if (btnRaiseHand) {
+      btnRaiseHand.classList.toggle('active', isHandRaised);
+      btnRaiseHand.innerHTML = isHandRaised ? '✋ Lower Hand' : '✋ Hand';
+    }
+    if (btnDockRaiseHand) {
+      btnDockRaiseHand.classList.toggle('active', isHandRaised);
+    }
+    if (dockHandLabel) {
+      dockHandLabel.textContent = isHandRaised ? 'Lower Hand' : 'Hand';
+    }
+
+    if (isHandRaised) {
+      socket.emit('raise-hand');
+      if (window.soundFX) window.soundFX.playHandRaiseSound();
+      showToast('You raised your hand ✋');
+    } else {
+      socket.emit('lower-hand');
+      showToast('You lowered your hand');
+    }
+
+    updateUserCardState(socket.id, { isHandRaised });
+  }
+
+  socket.on('hand-status-changed', ({ socketId, isHandRaised: raised, userName }) => {
+    const user = onlineUsersMap.get(socketId);
+    if (user) user.isHandRaised = raised;
+
+    if (socketId === socket.id) {
+      isHandRaised = raised;
+      if (btnRaiseHand) {
+        btnRaiseHand.classList.toggle('active', raised);
+        btnRaiseHand.innerHTML = raised ? '✋ Lower Hand' : '✋ Hand';
+      }
+      if (btnDockRaiseHand) btnDockRaiseHand.classList.toggle('active', raised);
+      if (dockHandLabel) dockHandLabel.textContent = raised ? 'Lower Hand' : 'Hand';
+    }
+
+    updateUserCardState(socketId, { isHandRaised: raised });
+
+    if (raised && socketId !== socket.id) {
+      if (window.soundFX) window.soundFX.playHandRaiseSound();
+      showToast(`${userName || 'A colleague'} raised their hand ✋`);
+    }
+  });
+
+  // -------------------------------------------------------------
+  // 🖥️ Live Screen Sharing (WebRTC Mesh Signaling)
+  // -------------------------------------------------------------
+  const rtcConfig = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  };
+
+  async function initScreenPeerConnection(peerSocketId, isInitiator) {
+    if (screenPeerConnections.has(peerSocketId)) {
+      try { screenPeerConnections.get(peerSocketId).close(); } catch(e) {}
+      screenPeerConnections.delete(peerSocketId);
+    }
+
+    const pc = new RTCPeerConnection(rtcConfig);
+    screenPeerConnections.set(peerSocketId, pc);
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('screen-signal', {
+          targetSocketId: peerSocketId,
+          signalData: { type: 'candidate', candidate: event.candidate }
+        });
+      }
+    };
+
+    if (isInitiator && localScreenStream) {
+      localScreenStream.getTracks().forEach(track => pc.addTrack(track, localScreenStream));
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('screen-signal', {
+          targetSocketId: peerSocketId,
+          signalData: { type: 'offer', offer: pc.localDescription }
+        });
+      } catch (err) {
+        console.error('Error creating screen offer:', err);
+      }
+    } else {
+      pc.ontrack = (event) => {
+        if (screenShareVideo && event.streams && event.streams[0]) {
+          screenShareVideo.srcObject = event.streams[0];
+          screenShareOverlay.classList.remove('hidden');
+        }
+      };
+    }
+    return pc;
+  }
+
+  async function startScreenSharing() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      alert('Screen sharing is not supported by your current browser.');
+      return;
+    }
+
+    try {
+      localScreenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { cursor: 'always' },
+        audio: false
+      });
+
+      isSharingScreen = true;
+      if (btnShareScreen) {
+        btnShareScreen.classList.add('active');
+        btnShareScreen.textContent = '⏹️ Stop Share';
+      }
+
+      if (screenShareTitle) screenShareTitle.textContent = '🖥️ Sharing Your Screen (Live)';
+      if (screenShareVideo) screenShareVideo.srcObject = localScreenStream;
+      if (screenShareOverlay) screenShareOverlay.classList.remove('hidden');
+
+      // Native browser "Stop sharing" bar listener
+      const videoTrack = localScreenStream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.onended = () => stopScreenSharing();
+      }
+
+      socket.emit('screen-share-started');
+      showToast('Screen sharing started 🖥️');
+
+      // Initiate connection to all online peers
+      onlineUsersMap.forEach((u, peerSocketId) => {
+        if (peerSocketId !== socket.id) {
+          initScreenPeerConnection(peerSocketId, true);
+        }
+      });
+    } catch (err) {
+      console.warn('Screen share cancelled or failed:', err);
+    }
+  }
+
+  function stopScreenSharing() {
+    if (!isSharingScreen && !localScreenStream) return;
+
+    if (localScreenStream) {
+      localScreenStream.getTracks().forEach(track => track.stop());
+      localScreenStream = null;
+    }
+
+    isSharingScreen = false;
+    screenPeerConnections.forEach(pc => {
+      try { pc.close(); } catch(e) {}
+    });
+    screenPeerConnections.clear();
+
+    if (btnShareScreen) {
+      btnShareScreen.classList.remove('active');
+      btnShareScreen.textContent = '🖥️ Screen';
+    }
+
+    if (screenShareOverlay) screenShareOverlay.classList.add('hidden');
+    if (screenShareVideo) screenShareVideo.srcObject = null;
+
+    socket.emit('screen-share-stopped');
+    showToast('Screen sharing ended');
+  }
+
+  if (btnShareScreen) {
+    btnShareScreen.addEventListener('click', () => {
+      if (isSharingScreen) stopScreenSharing();
+      else startScreenSharing();
+    });
+  }
+
+  if (btnCloseScreenShare) {
+    btnCloseScreenShare.addEventListener('click', () => {
+      if (screenShareOverlay) screenShareOverlay.classList.add('hidden');
+    });
+  }
+
+  if (btnFullscreenScreenShare) {
+    btnFullscreenScreenShare.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        if (screenShareOverlay) screenShareOverlay.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+  }
+
+  socket.on('screen-share-started', ({ socketId, userName }) => {
+    activeScreenSharer = socketId;
+    if (screenShareTitle) screenShareTitle.textContent = `🖥️ ${userName || 'Colleague'}'s Live Screen`;
+    showToast(`${userName || 'A colleague'} started sharing their screen 🖥️`);
+  });
+
+  socket.on('screen-share-stopped', ({ socketId }) => {
+    if (activeScreenSharer === socketId || !socketId) {
+      activeScreenSharer = null;
+      if (!isSharingScreen) {
+        if (screenShareOverlay) screenShareOverlay.classList.add('hidden');
+        if (screenShareVideo) screenShareVideo.srcObject = null;
+      }
+    }
+    if (screenPeerConnections.has(socketId)) {
+      try { screenPeerConnections.get(socketId).close(); } catch(e) {}
+      screenPeerConnections.delete(socketId);
+    }
+  });
+
+  socket.on('screen-signal', async ({ fromSocketId, signalData }) => {
+    if (!signalData) return;
+    try {
+      let pc = screenPeerConnections.get(fromSocketId);
+      if (signalData.type === 'offer') {
+        pc = await initScreenPeerConnection(fromSocketId, false);
+        await pc.setRemoteDescription(new RTCSessionDescription(signalData.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('screen-signal', {
+          targetSocketId: fromSocketId,
+          signalData: { type: 'answer', answer: pc.localDescription }
+        });
+      } else if (signalData.type === 'answer') {
+        if (pc) {
+          await pc.setRemoteDescription(new RTCSessionDescription(signalData.answer));
+        }
+      } else if (signalData.type === 'candidate') {
+        if (pc && signalData.candidate) {
+          await pc.addIceCandidate(new RTCIceCandidate(signalData.candidate));
+        }
+      }
+    } catch (err) {
+      console.warn('Screen signal error:', err);
+    }
+  });
+
+  // -------------------------------------------------------------
+  // ⏺️ Meeting Audio Recording Engine (Local Mic + Remote Voice Mix)
+  // -------------------------------------------------------------
+  function toggleMeetingRecording() {
+    if (!isMeetingRecording) {
+      startMeetingRecording();
+    } else {
+      stopMeetingRecording();
+    }
+  }
+
+  function startMeetingRecording() {
+    try {
+      if (!rxAudioContext) unlockAudioContexts();
+      if (rxAudioContext && rxAudioContext.state === 'suspended') rxAudioContext.resume();
+
+      if (!recordingMixerDest && rxAudioContext && rxAudioContext.createMediaStreamDestination) {
+        recordingMixerDest = rxAudioContext.createMediaStreamDestination();
+      }
+
+      // Attach local microphone into recording mixer
+      if (localStream && rxAudioContext && recordingMixerDest) {
+        try {
+          if (localMicSourceForRecord) {
+            localMicSourceForRecord.disconnect();
+          }
+          localMicSourceForRecord = rxAudioContext.createMediaStreamSource(localStream);
+          localMicSourceForRecord.connect(recordingMixerDest);
+        } catch (e) {
+          console.warn('Could not connect local mic to recorder mixer:', e);
+        }
+      }
+
+      const streamToRecord = (recordingMixerDest && recordingMixerDest.stream) ? recordingMixerDest.stream : localStream;
+      if (!streamToRecord) {
+        alert('Audio stream not available for recording yet. Please make sure microphone is connected.');
+        return;
+      }
+
+      meetingRecordedChunks = [];
+      const mimeOptions = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? { mimeType: 'audio/webm;codecs=opus' }
+        : (MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {});
+
+      meetingMediaRecorder = new MediaRecorder(streamToRecord, mimeOptions);
+      meetingMediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) meetingRecordedChunks.push(e.data);
+      };
+
+      meetingMediaRecorder.onstop = () => {
+        const mime = meetingMediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(meetingRecordedChunks, { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = `OfficeTalk_Meeting_${timestamp}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 6000);
+        showToast('Meeting recording saved and downloaded! 💾');
+      };
+
+      meetingMediaRecorder.start(1000);
+      isMeetingRecording = true;
+
+      if (window.soundFX) window.soundFX.playRecordAlert(true);
+      if (btnRecordMeeting) {
+        btnRecordMeeting.classList.add('recording');
+        btnRecordMeeting.textContent = '⏹️ 00:00';
+      }
+      if (btnAdminRecordSession) {
+        btnAdminRecordSession.classList.add('recording-session');
+        btnAdminRecordSession.textContent = '⏹️ Stop Recording (Save .webm)';
+      }
+
+      meetingRecordSeconds = 0;
+      clearInterval(meetingRecordTimer);
+      meetingRecordTimer = setInterval(() => {
+        meetingRecordSeconds++;
+        const mins = String(Math.floor(meetingRecordSeconds / 60)).padStart(2, '0');
+        const secs = String(meetingRecordSeconds % 60).padStart(2, '0');
+        if (btnRecordMeeting) btnRecordMeeting.textContent = `⏹️ ${mins}:${secs}`;
+      }, 1000);
+
+      showToast('Meeting recording started ⏺️');
+    } catch (err) {
+      console.error('Failed to start meeting recording:', err);
+      alert('Could not start recording: ' + err.message);
+    }
+  }
+
+  function stopMeetingRecording() {
+    if (!isMeetingRecording) return;
+    isMeetingRecording = false;
+
+    clearInterval(meetingRecordTimer);
+
+    if (btnRecordMeeting) {
+      btnRecordMeeting.classList.remove('recording');
+      btnRecordMeeting.textContent = '⏺️ Record';
+    }
+    if (btnAdminRecordSession) {
+      btnAdminRecordSession.classList.remove('recording-session');
+      btnAdminRecordSession.textContent = '⏺️ Record Session';
+    }
+
+    if (meetingMediaRecorder && meetingMediaRecorder.state !== 'inactive') {
+      meetingMediaRecorder.stop();
+    }
+
+    if (localMicSourceForRecord) {
+      try { localMicSourceForRecord.disconnect(); } catch (e) {}
+      localMicSourceForRecord = null;
+    }
+
+    if (window.soundFX) window.soundFX.playRecordAlert(false);
+  }
+
+  if (btnRecordMeeting) {
+    btnRecordMeeting.addEventListener('click', toggleMeetingRecording);
+  }
+
+  // -------------------------------------------------------------
   // Participant Card Rendering
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
@@ -1187,9 +1694,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const isSelf = socketId === socket.id;
     const isSelected = selectedTargetIds.has(socketId);
     const amIAdmin = currentUser && currentUser.isAdmin;
+    const isUserHandRaised = !!user.isHandRaised;
 
     const card = document.createElement('div');
-    card.className = `participant-card ${isSelected ? 'selected-target' : ''}`;
+    card.className = `participant-card ${isSelected ? 'selected-target' : ''} ${isUserHandRaised ? 'hand-raised' : ''}`;
     card.id = `pcard-${socketId}`;
 
     card.innerHTML = `
@@ -1205,11 +1713,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
         <span class="badge-tag muted ${user.isMuted ? '' : 'hidden'}">MUTED</span>
         <span class="presence-badge-tag">${user.presenceStatus || 'Available 🟢'}</span>
+        <span class="hand-raised-badge ${isUserHandRaised ? '' : 'hidden'}">✋ Hand Raised</span>
       </div>
       ${!isSelf ? `
         <div class="card-actions-wrapper">
           <button class="btn-select-talk">${isSelected ? '✓ Selected' : '+ Select to Talk'}</button>
           ${amIAdmin ? `
+            <button class="btn-admin-lower-hand ${isUserHandRaised ? '' : 'hidden'}">✋ Lower Hand</button>
             <button class="btn-admin-mute-user ${user.isMuted ? 'unmute' : ''}">
               ${user.isMuted ? '🔊 Remote Unmute' : '🔇 Remote Mute'}
             </button>
@@ -1225,6 +1735,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSelect.addEventListener('click', (e) => {
           e.stopPropagation();
           toggleTargetPerson(socketId);
+        });
+      }
+
+      const btnAdminLowerHand = card.querySelector('.btn-admin-lower-hand');
+      if (btnAdminLowerHand) {
+        btnAdminLowerHand.addEventListener('click', (e) => {
+          e.stopPropagation();
+          socket.emit('lower-hand', { targetSocketId: socketId });
         });
       }
 
@@ -1272,6 +1790,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateUserCardState(socketId, state) {
     const card = document.getElementById(`pcard-${socketId}`);
     if (!card) return;
+
+    if (state.isHandRaised !== undefined) {
+      card.classList.toggle('hand-raised', !!state.isHandRaised);
+      const handBadge = card.querySelector('.hand-raised-badge');
+      if (handBadge) {
+        if (state.isHandRaised) handBadge.classList.remove('hidden');
+        else handBadge.classList.add('hidden');
+      }
+      const adminLowerBtn = card.querySelector('.btn-admin-lower-hand');
+      if (adminLowerBtn) {
+        if (state.isHandRaised) adminLowerBtn.classList.remove('hidden');
+        else adminLowerBtn.classList.add('hidden');
+      }
+    }
 
     if (state.avatar !== undefined || state.cartoonSticker !== undefined) {
       const avatarContainer = card.querySelector('.participant-avatar');
@@ -2145,58 +2677,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Admin Audio Session Recorder
   const btnAdminRecordSession = document.getElementById('btnAdminRecordSession');
-  let sessionRecorder = null;
-  let recordedChunks = [];
-  let isRecordingSession = false;
-
   if (btnAdminRecordSession) {
     btnAdminRecordSession.addEventListener('click', () => {
-      if (!isRecordingSession) {
-        startSessionRecording();
-      } else {
-        stopSessionRecording();
-      }
+      toggleMeetingRecording();
     });
-  }
-
-  function startSessionRecording() {
-    try {
-      if (!rxAudioContext) unlockAudioContexts();
-      const dest = rxAudioContext ? rxAudioContext.createMediaStreamDestination() : null;
-      if (!dest) {
-        alert('Audio context initializing. Try again in a moment.');
-        return;
-      }
-      recordedChunks = [];
-      sessionRecorder = new MediaRecorder(dest.stream);
-      sessionRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordedChunks.push(e.data);
-      };
-      sessionRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `OfficeTalk_Audio_Session_${Date.now()}.webm`;
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-      sessionRecorder.start();
-      isRecordingSession = true;
-      btnAdminRecordSession.classList.add('recording-session');
-      btnAdminRecordSession.textContent = '⏹️ Stop Recording (Save .webm)';
-    } catch(err) {
-      console.warn('Session recording notice:', err);
-    }
-  }
-
-  function stopSessionRecording() {
-    if (sessionRecorder && sessionRecorder.state !== 'inactive') {
-      sessionRecorder.stop();
-    }
-    isRecordingSession = false;
-    btnAdminRecordSession.classList.remove('recording-session');
-    btnAdminRecordSession.textContent = '⏺️ Record Session';
   }
 
   // Chat History Search & Jump-to-Message
@@ -2324,6 +2808,47 @@ document.addEventListener('DOMContentLoaded', () => {
         window.soundFX.enabled = !window.soundFX.enabled;
         btnToggleSoundFX.textContent = `🔊 Sound: ${window.soundFX.enabled ? 'ON' : 'OFF'}`;
       }
+    });
+  }
+
+  // -------------------------------------------------------------
+  // Hands-Free VAD Sensitivity & Custom PTT Hotkey Configuration
+  // -------------------------------------------------------------
+  if (toggleHighPassFilter) {
+    toggleHighPassFilter.addEventListener('change', () => {
+      if (localStream) setupPcmAudioCapture(localStream);
+    });
+  }
+
+  if (inputVadThreshold) {
+    inputVadThreshold.value = vadSensitivityThreshold;
+    if (vadThresholdValue) vadThresholdValue.textContent = `${vadSensitivityThreshold}%`;
+    inputVadThreshold.addEventListener('input', () => {
+      vadSensitivityThreshold = parseInt(inputVadThreshold.value, 10);
+      if (vadThresholdValue) vadThresholdValue.textContent = `${vadSensitivityThreshold}%`;
+      try { localStorage.setItem('officetalk_vad_threshold', vadSensitivityThreshold); } catch(e) {}
+    });
+  }
+
+  if (btnConfigPttKey) {
+    if (pttKeyDisplay) pttKeyDisplay.textContent = customPttKeyCode;
+    btnConfigPttKey.addEventListener('click', () => {
+      isListeningForPttKey = true;
+      btnConfigPttKey.classList.add('listening-key');
+      btnConfigPttKey.textContent = '⌨️ Press ANY key now...';
+    });
+  }
+
+  if (btnResetPttKey) {
+    btnResetPttKey.addEventListener('click', () => {
+      customPttKeyCode = 'Space';
+      try { localStorage.setItem('officetalk_ptt_key', 'Space'); } catch(e) {}
+      if (pttKeyDisplay) pttKeyDisplay.textContent = 'Space';
+      if (btnConfigPttKey) {
+        btnConfigPttKey.classList.remove('listening-key');
+        btnConfigPttKey.innerHTML = `Key: <strong id="pttKeyDisplay">Space</strong> (Click to change)`;
+      }
+      isListeningForPttKey = false;
     });
   }
 
