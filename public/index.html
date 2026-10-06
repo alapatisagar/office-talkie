@@ -14,7 +14,7 @@
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -423,14 +423,35 @@
         </div>
       </div>
 
+      <!-- Quick Note & Chat Discussion Options -->
+      <div class="notes-options-bar">
+        <label class="notes-checkbox-label">
+          <input type="checkbox" id="chkIncludeChatMessages" checked>
+          <span>💬 Include chat messages & room discussions in meeting notes</span>
+        </label>
+        <div class="quick-note-input-row">
+          <input type="text" id="inputManualNote" placeholder="✍️ Type an agenda point, action item, or note...">
+          <button type="button" class="btn-action" id="btnAddManualNote">➕ Add</button>
+        </div>
+      </div>
+
       <!-- Transcript Items List -->
       <div class="transcript-items-wrapper" id="transcriptItemsWrapper">
         <div class="transcript-empty-placeholder" id="transcriptEmptyPlaceholder">
           <span style="font-size:32px;">🎙️</span>
           <p>No spoken transcript recorded yet.</p>
-          <small>Speak using Walkie-Talkie or Open Call to generate live transcription.</small>
+          <small>Speak using Walkie-Talkie or Open Call to generate live transcription, or add notes/chat above.</small>
         </div>
         <div class="transcript-list" id="transcriptList"></div>
+      </div>
+
+      <!-- Live Formatted Note Preview Box -->
+      <div class="notes-preview-container">
+        <div class="notes-preview-header">
+          <span>📄 Formatted Note Preview (Auto-updated in chosen language)</span>
+          <button type="button" class="btn-text-action" id="btnRefreshNotePreview">🔄 Refresh Preview</button>
+        </div>
+        <textarea id="notesPreviewText" class="notes-preview-textarea" placeholder="Your meeting notes preview in English, Telugu (తెలుగు), or Hindi (हिंदी) will show here..." rows="5"></textarea>
       </div>
 
       <div class="translation-status-banner hidden" id="translationStatusBanner">
@@ -439,14 +460,15 @@
       </div>
 
       <!-- Modal Action Buttons -->
-      <div class="modal-buttons" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <div style="display:flex; gap:8px;">
+      <div class="modal-buttons notes-modal-actions">
+        <div class="notes-modal-left-actions">
           <button type="button" class="btn-action" id="btnClearTranscript" title="Clear All Transcript Entries">🗑️ Clear</button>
           <button type="button" class="btn-action" id="btnCopyNotes" title="Copy Notes to Clipboard">📋 Copy Notes</button>
         </div>
-        <div style="display:flex; gap:8px;">
+        <div class="notes-modal-right-actions">
+          <button type="button" class="btn-action btn-share-phone" id="btnSharePhoneNotes" title="Save directly to phone Notes / Files">📲 Save / Share to Phone</button>
+          <button type="button" class="btn-primary" id="btnDownloadNotes" title="Download note file to your device">📥 Download Note (.txt)</button>
           <button type="button" class="btn-action" id="btnCloseMeetingNotes">Close</button>
-          <button type="button" class="btn-primary" id="btnDownloadNotes">📥 Download Notes (.txt)</button>
         </div>
       </div>
     </div>
@@ -518,6 +540,6 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="audio-fx.js?v=35"></script>
-  <script src="app.js?v=35"></script>
+  <script src="app.js?v=36"></script>
 </body>
 </html>

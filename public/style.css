@@ -2656,6 +2656,143 @@ body.theme-midnight {
   text-transform: uppercase;
 }
 
+/* Enhanced Notes Options, Quick Note Bar & Preview */
+.notes-options-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.notes-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.notes-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent-gold);
+}
+
+.quick-note-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.quick-note-input-row input {
+  flex: 1;
+  background: #0b1120;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.quick-note-input-row input:focus {
+  border-color: var(--accent-gold);
+}
+
+.quick-note-input-row button {
+  padding: 7px 14px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.notes-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.notes-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.btn-text-action {
+  background: none;
+  border: none;
+  color: var(--accent-gold, #f59e0b);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-text-action:hover {
+  background: rgba(245, 158, 11, 0.15);
+  text-decoration: underline;
+}
+
+.notes-preview-textarea {
+  width: 100%;
+  background: #090e1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Telugu", "Noto Sans Devanagari", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+  scrollbar-width: thin;
+}
+
+.notes-preview-textarea:focus {
+  border-color: var(--accent-gold);
+}
+
+.notes-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.notes-modal-left-actions,
+.notes-modal-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-share-phone {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #059669 !important;
+  font-weight: 700 !important;
+}
+
+.btn-share-phone:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
 
 
 

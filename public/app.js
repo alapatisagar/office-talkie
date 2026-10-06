@@ -128,11 +128,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearTranscript = document.getElementById('btnClearTranscript');
   const btnCopyNotes = document.getElementById('btnCopyNotes');
   const btnDownloadNotes = document.getElementById('btnDownloadNotes');
+  const chkIncludeChatMessages = document.getElementById('chkIncludeChatMessages');
+  const inputManualNote = document.getElementById('inputManualNote');
+  const btnAddManualNote = document.getElementById('btnAddManualNote');
+  const notesPreviewText = document.getElementById('notesPreviewText');
+  const btnRefreshNotePreview = document.getElementById('btnRefreshNotePreview');
+  const btnSharePhoneNotes = document.getElementById('btnSharePhoneNotes');
 
   const btnAdminRecallAll = document.getElementById('btnAdminRecallAll');
   const toggleDataSaver = document.getElementById('toggleDataSaver');
 
   // --- State Variables ---
+  const chatMessagesHistory = [];
   const socket = io();
   let currentUser = null;
   const selectedTargetIds = new Set(['all']);
@@ -1229,9 +1236,8 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('update-state', { isTalking: true });
     updateUserCardTalking(socket.id, true);
 
-    if (isCaptionsEnabled) {
-      startSpeechRecognition();
-    }
+    // Always start speech recognition while transmitting to transcribe meeting notes
+    startSpeechRecognition();
   }
 
   function stopTransmitting() {
@@ -1246,11 +1252,11 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('update-state', { isTalking: false });
     updateUserCardTalking(socket.id, false);
 
-    if (isCaptionsEnabled) {
-      setTimeout(() => {
-        if (!isTransmitting && talkMode !== 'open') stopSpeechRecognition();
-      }, 700);
-    }
+    // Flush any pending spoken audio words before stopping speech recognition
+    flushPendingLocalTranscription();
+    setTimeout(() => {
+      if (!isTransmitting && talkMode !== 'open') stopSpeechRecognition();
+    }, 700);
   }
 
   if (btnPTT) {
@@ -1319,9 +1325,10 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('update-state', { talkMode });
     updateUserCardState(socket.id, { talkMode });
 
-    if (mode === 'open' && isCaptionsEnabled && !isMuted) {
+    if (mode === 'open' && !isMuted) {
       startSpeechRecognition();
     } else if (mode === 'ptt') {
+      flushPendingLocalTranscription();
       stopSpeechRecognition();
     }
   }
@@ -1338,8 +1345,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMuted && isTransmitting) stopTransmitting();
 
     if (talkMode === 'open') {
-      if (isMuted) stopSpeechRecognition();
-      else if (isCaptionsEnabled) startSpeechRecognition();
+      if (isMuted) {
+        flushPendingLocalTranscription();
+        stopSpeechRecognition();
+      } else {
+        startSpeechRecognition();
+      }
     }
 
     socket.emit('update-state', { isMuted });
@@ -1747,6 +1758,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // 💬 Live Voice Speech-to-Text Transcription & Multilingual Notes
   // -------------------------------------------------------------
+  let pendingLocalSpeechText = '';
+  const speakerInterimTimers = new Map();
+  const speakerLastCommittedText = new Map();
+
   function initSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -1767,6 +1782,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const transcript = res[0].transcript.trim();
           if (!transcript) continue;
           const isFinal = res.isFinal;
+          pendingLocalSpeechText = transcript;
           socket.emit('live-transcription', {
             text: transcript,
             language: mySpokenLanguage,
@@ -1783,7 +1799,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       speechRecognition.onend = () => {
         isSpeechRecognitionActive = false;
-        if (isCaptionsEnabled && (talkMode === 'open' ? (!isMuted) : isTransmitting)) {
+        flushPendingLocalTranscription();
+        if (talkMode === 'open' ? (!isMuted) : isTransmitting) {
           try {
             speechRecognition.start();
             isSpeechRecognitionActive = true;
@@ -1792,6 +1809,18 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     } catch (e) {
       console.warn('Speech recognition init error:', e);
+    }
+  }
+
+  function flushPendingLocalTranscription() {
+    if (pendingLocalSpeechText && pendingLocalSpeechText.trim()) {
+      const textToFlush = pendingLocalSpeechText.trim();
+      pendingLocalSpeechText = '';
+      socket.emit('live-transcription', {
+        text: textToFlush,
+        language: mySpokenLanguage,
+        isFinal: true
+      });
     }
   }
 
@@ -1806,6 +1835,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function stopSpeechRecognition() {
+    flushPendingLocalTranscription();
     if (speechRecognition && isSpeechRecognitionActive) {
       try {
         speechRecognition.stop();
@@ -1826,16 +1856,29 @@ document.addEventListener('DOMContentLoaded', () => {
       btnToggleCaptions.textContent = isCaptionsEnabled ? '💬 CC: ON' : '💬 CC: OFF';
 
       if (!isCaptionsEnabled) {
-        stopSpeechRecognition();
         if (liveCaptionOverlay) liveCaptionOverlay.classList.add('hidden');
-        showToast('Live Closed Captions turned OFF');
+        showToast('Live Closed Captions subtitle bubble OFF (Notes continue recording)');
       } else {
-        if (isTransmitting || (talkMode === 'open' && !isMuted)) {
-          startSpeechRecognition();
-        }
-        showToast('Live Closed Captions turned ON 💬');
+        showToast('Live Closed Captions subtitle bubble ON 💬');
       }
     });
+  }
+
+  // Helper to commit transcript items safely with deduplication
+  function commitTranscriptItem(entry) {
+    if (!entry || !entry.text) return;
+    const cleanText = entry.text.trim();
+    if (!cleanText) return;
+
+    const speakerKey = entry.socketId || entry.senderName;
+    const lastText = speakerLastCommittedText.get(speakerKey);
+    if (lastText === cleanText) return; // avoid duplicate
+    speakerLastCommittedText.set(speakerKey, cleanText);
+
+    meetingTranscriptLog.push(entry);
+    updateNotesCountBadge();
+    appendTranscriptCard(entry);
+    triggerAutoPreviewUpdate();
   }
 
   // Socket listener for Live Transcription
@@ -1856,11 +1899,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 4000);
     }
 
-    // 2. Append final spoken lines into chronological Meeting Notes Log
+    const speakerKey = data.socketId || data.senderName;
+
+    // 2. Commit to meeting notes log
     if (data.isFinal) {
-      meetingTranscriptLog.push(data);
-      updateNotesCountBadge();
-      appendTranscriptCard(data);
+      if (speakerInterimTimers.has(speakerKey)) {
+        clearTimeout(speakerInterimTimers.get(speakerKey));
+        speakerInterimTimers.delete(speakerKey);
+      }
+      commitTranscriptItem(data);
+    } else {
+      // Streamed interim text: if speaker pauses or ends speech without isFinal:true,
+      // debounce for 1300ms then auto-finalize into meeting notes
+      if (speakerInterimTimers.has(speakerKey)) {
+        clearTimeout(speakerInterimTimers.get(speakerKey));
+      }
+      const timer = setTimeout(() => {
+        speakerInterimTimers.delete(speakerKey);
+        commitTranscriptItem({ ...data, isFinal: true });
+      }, 1300);
+      speakerInterimTimers.set(speakerKey, timer);
     }
   });
 
@@ -1884,8 +1942,8 @@ document.addEventListener('DOMContentLoaded', () => {
     card.className = 'transcript-entry-card';
     card.innerHTML = `
       <div class="transcript-entry-meta">
-        <span class="transcript-entry-speaker">${escapeHTML(entry.senderName)} ${entry.isAdmin ? '👑' : ''}</span>
-        <span class="transcript-entry-time">${entry.timestamp} • ${(entry.language || 'en').slice(0, 2).toUpperCase()}</span>
+        <span class="transcript-entry-speaker">${escapeHTML(entry.senderName)} ${entry.isAdmin ? '👑' : ''} ${entry.isManual ? '✍️' : (entry.isChat ? '💬' : '')}</span>
+        <span class="transcript-entry-time">${entry.timestamp || ''} • ${(entry.language || 'en').slice(0, 2).toUpperCase()}</span>
       </div>
       <p class="transcript-entry-text">${escapeHTML(entry.text)}</p>
     `;
@@ -1895,10 +1953,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Quick Manual Note Input
+  function addManualNote() {
+    if (!inputManualNote) return;
+    const text = inputManualNote.value.trim();
+    if (!text) return;
+
+    const manualEntry = {
+      senderName: currentUser ? currentUser.name : 'Note',
+      isAdmin: currentUser ? currentUser.isAdmin : false,
+      text: text,
+      language: mySpokenLanguage || 'en-IN',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isFinal: true,
+      isManual: true
+    };
+
+    meetingTranscriptLog.push(manualEntry);
+    updateNotesCountBadge();
+    appendTranscriptCard(manualEntry);
+    inputManualNote.value = '';
+    triggerAutoPreviewUpdate();
+    showToast('Note added to meeting record! ✍️');
+  }
+
+  if (btnAddManualNote) {
+    btnAddManualNote.addEventListener('click', addManualNote);
+  }
+  if (inputManualNote) {
+    inputManualNote.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addManualNote();
+      }
+    });
+  }
+
   // Meeting Notes Modal UI Listeners
   if (btnMeetingNotes) {
     btnMeetingNotes.addEventListener('click', () => {
-      if (modalMeetingNotes) modalMeetingNotes.classList.remove('hidden');
+      if (modalMeetingNotes) {
+        modalMeetingNotes.classList.remove('hidden');
+        renderNotesPreview();
+      }
     });
   }
 
@@ -1920,6 +2017,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (selectNotesLanguage) {
+    selectNotesLanguage.addEventListener('change', () => {
+      renderNotesPreview(true);
+    });
+  }
+
+  if (selectNotesFormat) {
+    selectNotesFormat.addEventListener('change', () => {
+      renderNotesPreview(false);
+    });
+  }
+
+  if (chkIncludeChatMessages) {
+    chkIncludeChatMessages.addEventListener('change', () => {
+      renderNotesPreview(false);
+    });
+  }
+
+  if (btnRefreshNotePreview) {
+    btnRefreshNotePreview.addEventListener('click', () => {
+      renderNotesPreview(true);
+    });
+  }
+
+  let autoPreviewTimeout = null;
+  function triggerAutoPreviewUpdate() {
+    if (!modalMeetingNotes || modalMeetingNotes.classList.contains('hidden')) return;
+    clearTimeout(autoPreviewTimeout);
+    autoPreviewTimeout = setTimeout(() => {
+      renderNotesPreview(false);
+    }, 1000);
+  }
+
   if (btnClearTranscript) {
     btnClearTranscript.addEventListener('click', () => {
       if (meetingTranscriptLog.length === 0) return;
@@ -1928,56 +2058,62 @@ document.addEventListener('DOMContentLoaded', () => {
         updateNotesCountBadge();
         if (transcriptList) transcriptList.innerHTML = '';
         if (transcriptEmptyPlaceholder) transcriptEmptyPlaceholder.style.display = 'flex';
+        if (notesPreviewText) notesPreviewText.value = '';
         showToast('Transcript log cleared');
       }
     });
   }
 
-  if (btnCopyNotes) {
-    btnCopyNotes.addEventListener('click', () => {
-      if (meetingTranscriptLog.length === 0) {
-        alert('No notes recorded yet.');
-        return;
-      }
-      let copyText = `--- OfficeTalk Meeting Notes (${new Date().toLocaleString()}) ---\n\n`;
-      meetingTranscriptLog.forEach(t => {
-        copyText += `[${t.timestamp}] ${t.senderName}: ${t.text}\n`;
-      });
-      navigator.clipboard.writeText(copyText).then(() => {
-        showToast('Meeting notes copied to clipboard! 📋');
-      }).catch(() => {
-        alert('Could not copy to clipboard.');
-      });
-    });
-  }
-
-  if (btnDownloadNotes) {
-    btnDownloadNotes.addEventListener('click', downloadMeetingNotes);
-  }
-
-  async function downloadMeetingNotes() {
-    if (meetingTranscriptLog.length === 0) {
-      alert('No transcript available to download yet. Speak in the meeting to generate notes.');
-      return;
-    }
-
+  // Generate Notes String Content with Optional Multilingual Translation
+  async function generateNotesContent(doTranslate = true) {
     const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
     const noteFormat = selectNotesFormat ? selectNotesFormat.value : 'structured';
 
     const langNames = {
-      'original': 'Original Spoken',
+      'original': 'Original (As Spoken)',
       'en': 'English',
       'te': 'Telugu (తెలుగు)',
       'hi': 'Hindi (हिंदी)'
     };
     const targetName = langNames[targetLang] || 'English';
 
+    // 1. Gather all items to export
     let itemsToExport = meetingTranscriptLog.map(item => ({ ...item }));
 
-    // Accurate Multilingual Translation (English, Telugu, Hindi)
-    if (targetLang !== 'original') {
+    // 2. Include chat messages if checked
+    if (chkIncludeChatMessages && chkIncludeChatMessages.checked && chatMessagesHistory.length > 0) {
+      chatMessagesHistory.forEach(msg => {
+        if (msg.text && msg.text.trim()) {
+          itemsToExport.push({
+            senderName: msg.senderName || 'Team Member',
+            isAdmin: !!msg.isAdmin,
+            text: `[Chat] ${msg.text.trim()}`,
+            language: 'en',
+            timestamp: msg.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isChat: true
+          });
+        }
+      });
+    }
+
+    // 3. Fallback if empty: user input or default agenda template
+    if (itemsToExport.length === 0) {
+      if (notesPreviewText && notesPreviewText.value.trim()) {
+        return notesPreviewText.value.trim();
+      }
+      itemsToExport.push({
+        senderName: currentUser ? currentUser.name : 'Facilitator',
+        isAdmin: currentUser ? currentUser.isAdmin : false,
+        text: 'Session opened. Meeting discussion items and action items recorded.',
+        language: 'en',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    // 4. Accurate Multilingual Translation (English, Telugu, Hindi)
+    if (doTranslate && targetLang !== 'original') {
       if (translationStatusBanner) translationStatusBanner.classList.remove('hidden');
-      if (translationStatusText) translationStatusText.textContent = `Translating transcript accurately to ${targetName}...`;
+      if (translationStatusText) translationStatusText.textContent = `Translating notes accurately to ${targetName}...`;
 
       try {
         const res = await fetch('/api/translate-batch', {
@@ -1986,7 +2122,7 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({
             items: itemsToExport.map(it => ({
               text: it.text,
-              language: it.language
+              language: it.language || 'en'
             })),
             targetLang: targetLang
           })
@@ -2006,7 +2142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const attendees = Array.from(new Set(meetingTranscriptLog.map(t => t.senderName))).join(', ') || (currentUser ? currentUser.name : 'Team');
+    const attendees = Array.from(new Set(itemsToExport.map(t => t.senderName))).join(', ') || (currentUser ? currentUser.name : 'Team');
     const now = new Date();
     const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2024,7 +2160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `📋 EXECUTIVE SUMMARY & KEY POINTS\n` +
         `======================================================================\n` +
         `• Team synchronization session conducted via OfficeTalk Voice Conference.\n` +
-        `• Full chronological discussion record with speaker timeline below.\n` +
+        `• Chronological record of spoken voice discussions and team notes below.\n` +
         `\n======================================================================\n` +
         `🗣️ DISCUSSION TIMELINE / MINUTES OF MEETING\n` +
         `======================================================================\n\n`;
@@ -2037,23 +2173,209 @@ document.addEventListener('DOMContentLoaded', () => {
         `End of Meeting Notes • Generated by OfficeTalk Multi-Target Engine v35\n` +
         `======================================================================\n`;
     } else {
-      fileContent = `--- OfficeTalk Transcript Log (${targetName} • ${dateStr}) ---\n\n`;
+      fileContent = `--- OfficeTalk Transcript Log (${targetName} • ${dateStr} at ${timeStr}) ---\n\n`;
       itemsToExport.forEach((item) => {
         fileContent += `[${item.timestamp}] ${item.senderName}: ${item.text}\n`;
       });
     }
 
-    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const langSlug = targetLang === 'te' ? 'Telugu' : (targetLang === 'hi' ? 'Hindi' : (targetLang === 'en' ? 'English' : 'Original'));
-    a.download = `OfficeTalk_Meeting_Notes_${langSlug}_${now.toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return fileContent;
+  }
 
-    showToast(`Meeting notes downloaded in ${targetName}! 📝`);
+  // Render Note Preview in the Modal Box
+  async function renderNotesPreview(doTranslate = true) {
+    if (!notesPreviewText) return;
+    const content = await generateNotesContent(doTranslate);
+    if (content) {
+      notesPreviewText.value = content;
+    }
+  }
+
+  // Copy Notes to Clipboard
+  if (btnCopyNotes) {
+    btnCopyNotes.addEventListener('click', async () => {
+      let copyText = notesPreviewText ? notesPreviewText.value.trim() : '';
+      if (!copyText) {
+        copyText = await generateNotesContent(true);
+      }
+      if (!copyText) {
+        alert('No notes available to copy.');
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(copyText).then(() => {
+          showToast('Meeting notes copied to clipboard! 📋');
+        }).catch(() => {
+          fallbackClipboardCopy(copyText);
+        });
+      } else {
+        fallbackClipboardCopy(copyText);
+      }
+    });
+  }
+
+  function fallbackClipboardCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('Meeting notes copied to clipboard! 📋');
+    } catch (e) {
+      alert('Could not copy to clipboard.');
+    }
+    document.body.removeChild(ta);
+  }
+
+  // Server Form POST Trigger (Guarantees unblocked native file download on Phone & PC)
+  function triggerServerDownload(content, filename) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/download-notes';
+    form.style.display = 'none';
+
+    const inputContent = document.createElement('input');
+    inputContent.type = 'hidden';
+    inputContent.name = 'content';
+    inputContent.value = content;
+    form.appendChild(inputContent);
+
+    const inputFilename = document.createElement('input');
+    inputFilename.type = 'hidden';
+    inputFilename.name = 'filename';
+    inputFilename.value = filename;
+    form.appendChild(inputFilename);
+
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(() => {
+      if (form.parentNode) form.parentNode.removeChild(form);
+    }, 2500);
+  }
+
+  // Fallback Client Blob Download
+  function triggerBlobDownload(content, filename) {
+    try {
+      const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (a.parentNode) a.parentNode.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 4000);
+    } catch (e) {
+      console.warn('Blob fallback notice:', e);
+    }
+  }
+
+  // Download Notes Button Handler
+  if (btnDownloadNotes) {
+    btnDownloadNotes.addEventListener('click', downloadMeetingNotes);
+  }
+
+  async function downloadMeetingNotes() {
+    const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+    const langNames = {
+      'original': 'Original',
+      'en': 'English',
+      'te': 'Telugu',
+      'hi': 'Hindi'
+    };
+    const targetName = langNames[targetLang] || 'English';
+    const now = new Date();
+    const filename = `OfficeTalk_Meeting_Notes_${targetName}_${now.toISOString().slice(0, 10)}.txt`;
+
+    let fileContent = '';
+    if (notesPreviewText && notesPreviewText.value.trim()) {
+      fileContent = notesPreviewText.value.trim();
+    } else {
+      fileContent = await generateNotesContent(true);
+    }
+
+    if (!fileContent) {
+      alert('No meeting notes available to download.');
+      return;
+    }
+
+    // 1. Direct Server Attachment Download (Works on all mobile and desktop browsers)
+    triggerServerDownload(fileContent, filename);
+
+    // 2. Blob fallback trigger for browsers supporting direct blob downloads
+    triggerBlobDownload(fileContent, filename);
+
+    showToast(`Meeting notes downloaded in ${targetName}! 📥`);
+  }
+
+  // Save / Share Directly to Phone (Apple Notes, Samsung Notes, Files, WhatsApp, etc.)
+  if (btnSharePhoneNotes) {
+    btnSharePhoneNotes.addEventListener('click', sharePhoneNotes);
+  }
+
+  async function sharePhoneNotes() {
+    const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+    const langNames = {
+      'original': 'Original',
+      'en': 'English',
+      'te': 'Telugu',
+      'hi': 'Hindi'
+    };
+    const targetName = langNames[targetLang] || 'English';
+    const now = new Date();
+    const filename = `OfficeTalk_Meeting_Notes_${targetName}_${now.toISOString().slice(0, 10)}.txt`;
+
+    let fileContent = '';
+    if (notesPreviewText && notesPreviewText.value.trim()) {
+      fileContent = notesPreviewText.value.trim();
+    } else {
+      fileContent = await generateNotesContent(true);
+    }
+
+    if (!fileContent) {
+      alert('No meeting notes available to share.');
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        const file = new File(['\uFEFF' + fileContent], filename, { type: 'text/plain;charset=utf-8' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: 'OfficeTalk Meeting Notes',
+            text: `OfficeTalk Meeting Notes (${targetName})`,
+            files: [file]
+          });
+          showToast('Notes saved / shared to phone! 📲');
+          return;
+        } else {
+          await navigator.share({
+            title: 'OfficeTalk Meeting Notes',
+            text: fileContent
+          });
+          showToast('Notes saved / shared to phone! 📲');
+          return;
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('Share error:', err);
+        } else {
+          return; // user dismissed share sheet
+        }
+      }
+    }
+
+    // If navigator.share is not supported on this device/browser:
+    triggerServerDownload(fileContent, filename);
+    fallbackClipboardCopy(fileContent);
+    showToast('Notes downloaded & copied to clipboard! 📋');
   }
 
   // Admin Breakout Rooms Management: Recall All to General

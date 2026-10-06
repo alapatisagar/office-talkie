@@ -17,6 +17,7 @@ app.use(compression({
 }));
 
 app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Health check / Keep-alive route for Render and Uptime monitors
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
@@ -24,6 +25,18 @@ app.get('/ping-health', (req, res) => res.status(200).json({ status: 'ok', uptim
 
 // Multilingual Translation Cache & Endpoints for Meeting Notes (Telugu, Hindi, English)
 const translationCache = new Map();
+
+function decodeHtmlEntities(str) {
+  if (!str || typeof str !== 'string') return str;
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+}
 
 app.post('/api/translate', async (req, res) => {
   try {
@@ -51,6 +64,7 @@ app.post('/api/translate', async (req, res) => {
     const data = await response.json();
     let translatedText = data?.responseData?.translatedText;
     if (translatedText && !translatedText.includes('MYMEMORY WARNING')) {
+      translatedText = decodeHtmlEntities(translatedText);
       translationCache.set(cacheKey, translatedText);
     } else {
       translatedText = text;
@@ -90,6 +104,7 @@ app.post('/api/translate-batch', async (req, res) => {
         const data = await response.json();
         let translatedText = data?.responseData?.translatedText;
         if (translatedText && !translatedText.includes('MYMEMORY WARNING')) {
+          translatedText = decodeHtmlEntities(translatedText);
           translationCache.set(cacheKey, translatedText);
         } else {
           translatedText = rawText;
@@ -104,6 +119,23 @@ app.post('/api/translate-batch', async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: 'Translation batch failed', details: err.message });
   }
+});
+
+// Guaranteed Direct Attachment File Download Endpoint (Phone & PC)
+app.post('/api/download-notes', (req, res) => {
+  const content = req.body.content || '';
+  const rawFilename = req.body.filename || `OfficeTalk_Meeting_Notes_${Date.now()}.txt`;
+  const filename = rawFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+  // Prepend UTF-8 BOM so Notepad & Mobile viewers render Telugu and Hindi correctly
+  const bom = '\uFEFF';
+  const fileBuffer = Buffer.from(bom + content, 'utf8');
+
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+  res.setHeader('Content-Length', fileBuffer.length);
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.send(fileBuffer);
 });
 
 // High-performance static file serving with browser caching
