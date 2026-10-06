@@ -10,11 +10,11 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=34').catch(err => console.warn('SW reg failed:', err));
+        navigator.serviceWorker.register('/sw.js?v=35').catch(err => console.warn('SW reg failed:', err));
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -42,6 +42,7 @@
       <select id="selectVoiceChannel" class="status-select" title="Voice Channel Sub-Room">
         <option value="general">🌐 General Room</option>
         <option value="tech">💻 Tech Team</option>
+        <option value="design">🎨 Design & Product</option>
         <option value="breakout">☕ Coffee Break</option>
         <option value="urgent">🚨 Urgent Call</option>
       </select>
@@ -68,10 +69,12 @@
         <option value="Do Not Disturb ⛔">Do Not Disturb ⛔</option>
       </select>
 
-      <!-- Meeting Tools: Raise Hand, Screen Share, Record -->
+      <!-- Meeting Tools: Raise Hand, Screen Share, Record, Live Captions, Notes -->
       <button class="icon-btn btn-raise-hand" id="btnRaiseHand" title="Raise Hand to Speak">✋ Hand</button>
       <button class="icon-btn btn-screen-share" id="btnShareScreen" title="Share Screen">🖥️ Screen</button>
       <button class="icon-btn btn-record" id="btnRecordMeeting" title="Record Meeting Audio">⏺️ Record</button>
+      <button class="icon-btn btn-captions active" id="btnToggleCaptions" title="Live Voice Transcription & Closed Captions">💬 CC: ON</button>
+      <button class="icon-btn btn-notes" id="btnMeetingNotes" title="Meeting Notes & Multilingual Transcription">📝 Notes <span class="badge-unread hidden" id="notesCountBadge">0</span></button>
 
       <button class="icon-btn" id="btnAudioSettings" title="Audio Settings">⚙️ Settings</button>
       <button class="icon-btn" id="btnToggleSoundFX" title="Toggle Sound">🔊 Sound: ON</button>
@@ -98,6 +101,7 @@
           <button class="btn-admin-action" id="btnAdminRecordSession">⏺️ Record Session</button>
           <button class="btn-admin-action btn-admin-danger" id="btnAdminMuteAll">🔇 Mute All Mics</button>
           <button class="btn-admin-action" id="btnAdminUnmuteAll">🔊 Unmute All Mics</button>
+          <button class="btn-admin-action" id="btnAdminRecallAll">🔔 Recall All to General</button>
           <button class="btn-admin-action" id="btnAdminLockRoom">🔒 Lock Room</button>
           <button class="btn-admin-action" id="btnAdminUploadSticker">🎨 Upload Sticker Asset</button>
           <button class="btn-admin-action" id="btnAdminUploadAvatar">📷 Upload Admin Photo</button>
@@ -180,6 +184,18 @@
           <div class="screen-share-video-wrapper">
             <video id="screenShareVideo" autoplay playsinline></video>
           </div>
+        </div>
+      </div>
+
+      <!-- Live Closed Captions Floating Overlay -->
+      <div class="live-caption-overlay hidden" id="liveCaptionOverlay">
+        <div class="caption-card" id="captionCard">
+          <div class="caption-header">
+            <span class="caption-avatar" id="captionAvatar">🎙️</span>
+            <span class="caption-speaker" id="captionSpeaker">Speaker</span>
+            <span class="caption-lang-badge" id="captionLangBadge">EN</span>
+          </div>
+          <p class="caption-text" id="captionText">Listening...</p>
         </div>
       </div>
     </main>
@@ -337,6 +353,7 @@
           <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleAutoGain" checked> 🎚️ Auto Gain Control</label>
           <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleNoiseGate" checked> 🚪 Smart Noise Gate (Cuts background office clicks & hum)</label>
           <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleHighPassFilter" checked> 🌪️ 85Hz Low-Rumble Cut Filter</label>
+          <label style="font-weight:600; font-size:12px; cursor:pointer;"><input type="checkbox" id="toggleDataSaver"> 📶 Low-Bandwidth Mode (Data Saver for 2G/3G mobile networks)</label>
         </div>
       </div>
       <div class="form-group">
@@ -364,6 +381,73 @@
       </div>
       <div class="modal-buttons">
         <button type="button" class="btn-primary" id="btnCloseAudioSettings">Done & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meeting Notes & Multilingual Voice Transcription Modal -->
+  <div class="modal-backdrop hidden" id="modalMeetingNotes">
+    <div class="modal-card modal-notes-card">
+      <div class="modal-header">
+        <h2>📝 Meeting Notes & Voice Transcription</h2>
+        <p>Live AI speech-to-text transcript with instant accurate translation to English, Telugu, or Hindi note format.</p>
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="notes-controls-bar">
+        <div class="notes-control-item">
+          <label for="selectMySpokenLanguage">🗣️ My Speaking Language</label>
+          <select id="selectMySpokenLanguage">
+            <option value="en-IN" selected>🇬🇧 English (India / Global)</option>
+            <option value="te-IN">🇮🇳 Telugu (తెలుగు)</option>
+            <option value="hi-IN">🇮🇳 Hindi (हिंदी)</option>
+          </select>
+        </div>
+
+        <div class="notes-control-item">
+          <label for="selectNotesLanguage">🌐 Download Language</label>
+          <select id="selectNotesLanguage">
+            <option value="original" selected>🌐 Original (As Spoken)</option>
+            <option value="en">🇬🇧 English (English Note)</option>
+            <option value="te">🇮🇳 Telugu (తెలుగు నోట్స్)</option>
+            <option value="hi">🇮🇳 Hindi (हिंदी नोट्स)</option>
+          </select>
+        </div>
+
+        <div class="notes-control-item">
+          <label for="selectNotesFormat">📋 Note Format</label>
+          <select id="selectNotesFormat">
+            <option value="structured" selected>📋 Structured Minutes (Notes)</option>
+            <option value="raw">📄 Chronological Transcript</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Transcript Items List -->
+      <div class="transcript-items-wrapper" id="transcriptItemsWrapper">
+        <div class="transcript-empty-placeholder" id="transcriptEmptyPlaceholder">
+          <span style="font-size:32px;">🎙️</span>
+          <p>No spoken transcript recorded yet.</p>
+          <small>Speak using Walkie-Talkie or Open Call to generate live transcription.</small>
+        </div>
+        <div class="transcript-list" id="transcriptList"></div>
+      </div>
+
+      <div class="translation-status-banner hidden" id="translationStatusBanner">
+        <span class="translation-spinner">⏳</span>
+        <span id="translationStatusText">Translating transcript accurately to chosen language...</span>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="modal-buttons" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-action" id="btnClearTranscript" title="Clear All Transcript Entries">🗑️ Clear</button>
+          <button type="button" class="btn-action" id="btnCopyNotes" title="Copy Notes to Clipboard">📋 Copy Notes</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-action" id="btnCloseMeetingNotes">Close</button>
+          <button type="button" class="btn-primary" id="btnDownloadNotes">📥 Download Notes (.txt)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -433,7 +517,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=34"></script>
-  <script src="app.js?v=34"></script>
+  <script src="audio-fx.js?v=35"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

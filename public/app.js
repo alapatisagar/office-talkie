@@ -104,6 +104,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const pttKeyDisplay = document.getElementById('pttKeyDisplay');
   const btnResetPttKey = document.getElementById('btnResetPttKey');
 
+  // Live Voice Transcription, Closed Captions & Multilingual Notes Elements
+  const btnToggleCaptions = document.getElementById('btnToggleCaptions');
+  const btnMeetingNotes = document.getElementById('btnMeetingNotes');
+  const notesCountBadge = document.getElementById('notesCountBadge');
+
+  const liveCaptionOverlay = document.getElementById('liveCaptionOverlay');
+  const captionSpeaker = document.getElementById('captionSpeaker');
+  const captionText = document.getElementById('captionText');
+  const captionAvatar = document.getElementById('captionAvatar');
+  const captionLangBadge = document.getElementById('captionLangBadge');
+
+  const modalMeetingNotes = document.getElementById('modalMeetingNotes');
+  const btnCloseMeetingNotes = document.getElementById('btnCloseMeetingNotes');
+  const selectMySpokenLanguage = document.getElementById('selectMySpokenLanguage');
+  const selectNotesLanguage = document.getElementById('selectNotesLanguage');
+  const selectNotesFormat = document.getElementById('selectNotesFormat');
+  const transcriptItemsWrapper = document.getElementById('transcriptItemsWrapper');
+  const transcriptEmptyPlaceholder = document.getElementById('transcriptEmptyPlaceholder');
+  const transcriptList = document.getElementById('transcriptList');
+  const translationStatusBanner = document.getElementById('translationStatusBanner');
+  const translationStatusText = document.getElementById('translationStatusText');
+  const btnClearTranscript = document.getElementById('btnClearTranscript');
+  const btnCopyNotes = document.getElementById('btnCopyNotes');
+  const btnDownloadNotes = document.getElementById('btnDownloadNotes');
+
+  const btnAdminRecallAll = document.getElementById('btnAdminRecallAll');
+  const toggleDataSaver = document.getElementById('toggleDataSaver');
+
   // --- State Variables ---
   const socket = io();
   let currentUser = null;
@@ -122,6 +150,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let meetingRecordedChunks = [];
   let recordingMixerDest = null;
   let localMicSourceForRecord = null;
+
+  let isCaptionsEnabled = localStorage.getItem('officetalk_captions') !== 'false';
+  let mySpokenLanguage = localStorage.getItem('officetalk_spoken_lang') || 'en-IN';
+  let meetingTranscriptLog = [];
+  let speechRecognition = null;
+  let isSpeechRecognitionActive = false;
+  let captionFadeTimeout = null;
+  let isLowBandwidthMode = localStorage.getItem('officetalk_data_saver') === 'true';
+  let dataSaverFrameCounter = 0;
 
   let vadSensitivityThreshold = parseInt(localStorage.getItem('officetalk_vad_threshold') || '6', 10);
   let customPttKeyCode = localStorage.getItem('officetalk_ptt_key') || 'Space';
@@ -669,6 +706,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const shouldTransmit = (talkMode === 'open' || isTransmitting);
         if (!shouldTransmit) return;
 
+        // Low-Bandwidth Mode / Data Saver: skip alternate audio frames to cut bandwidth by 50%
+        if (isLowBandwidthMode) {
+          dataSaverFrameCounter++;
+          if (dataSaverFrameCounter % 2 !== 0) return;
+        }
+
         const inputData = e.inputBuffer.getChannelData(0);
 
         // Smart Noise Gate: suppress background clicks & breathing in open call
@@ -1185,6 +1228,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.emit('update-state', { isTalking: true });
     updateUserCardTalking(socket.id, true);
+
+    if (isCaptionsEnabled) {
+      startSpeechRecognition();
+    }
   }
 
   function stopTransmitting() {
@@ -1198,6 +1245,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.emit('update-state', { isTalking: false });
     updateUserCardTalking(socket.id, false);
+
+    if (isCaptionsEnabled) {
+      setTimeout(() => {
+        if (!isTransmitting && talkMode !== 'open') stopSpeechRecognition();
+      }, 700);
+    }
   }
 
   if (btnPTT) {
@@ -1265,6 +1318,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     socket.emit('update-state', { talkMode });
     updateUserCardState(socket.id, { talkMode });
+
+    if (mode === 'open' && isCaptionsEnabled && !isMuted) {
+      startSpeechRecognition();
+    } else if (mode === 'ptt') {
+      stopSpeechRecognition();
+    }
   }
 
   if (btnToggleMute) btnToggleMute.addEventListener('click', toggleMute);
@@ -1277,6 +1336,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (window.soundFX) window.soundFX.playMuteToggle(isMuted);
     if (isMuted && isTransmitting) stopTransmitting();
+
+    if (talkMode === 'open') {
+      if (isMuted) stopSpeechRecognition();
+      else if (isCaptionsEnabled) startSpeechRecognition();
+    }
 
     socket.emit('update-state', { isMuted });
     updateUserCardState(socket.id, { isMuted });
@@ -1681,6 +1745,344 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------
+  // 💬 Live Voice Speech-to-Text Transcription & Multilingual Notes
+  // -------------------------------------------------------------
+  function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('SpeechRecognition API not supported in this browser.');
+      return;
+    }
+
+    try {
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.continuous = true;
+      speechRecognition.interimResults = true;
+      speechRecognition.maxAlternatives = 1;
+      speechRecognition.lang = mySpokenLanguage || 'en-IN';
+
+      speechRecognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const res = event.results[i];
+          const transcript = res[0].transcript.trim();
+          if (!transcript) continue;
+          const isFinal = res.isFinal;
+          socket.emit('live-transcription', {
+            text: transcript,
+            language: mySpokenLanguage,
+            isFinal: isFinal
+          });
+        }
+      };
+
+      speechRecognition.onerror = (err) => {
+        if (err.error !== 'no-speech' && err.error !== 'aborted') {
+          console.warn('Speech recognition notice:', err.error);
+        }
+      };
+
+      speechRecognition.onend = () => {
+        isSpeechRecognitionActive = false;
+        if (isCaptionsEnabled && (talkMode === 'open' ? (!isMuted) : isTransmitting)) {
+          try {
+            speechRecognition.start();
+            isSpeechRecognitionActive = true;
+          } catch (e) {}
+        }
+      };
+    } catch (e) {
+      console.warn('Speech recognition init error:', e);
+    }
+  }
+
+  function startSpeechRecognition() {
+    if (!speechRecognition) initSpeechRecognition();
+    if (!speechRecognition || isSpeechRecognitionActive) return;
+    try {
+      speechRecognition.lang = mySpokenLanguage || 'en-IN';
+      speechRecognition.start();
+      isSpeechRecognitionActive = true;
+    } catch (e) {}
+  }
+
+  function stopSpeechRecognition() {
+    if (speechRecognition && isSpeechRecognitionActive) {
+      try {
+        speechRecognition.stop();
+      } catch (e) {}
+      isSpeechRecognitionActive = false;
+    }
+  }
+
+  // Toggle Live Closed Captions Overlay
+  if (btnToggleCaptions) {
+    btnToggleCaptions.classList.toggle('active', isCaptionsEnabled);
+    btnToggleCaptions.textContent = isCaptionsEnabled ? '💬 CC: ON' : '💬 CC: OFF';
+
+    btnToggleCaptions.addEventListener('click', () => {
+      isCaptionsEnabled = !isCaptionsEnabled;
+      try { localStorage.setItem('officetalk_captions', isCaptionsEnabled ? 'true' : 'false'); } catch (e) {}
+      btnToggleCaptions.classList.toggle('active', isCaptionsEnabled);
+      btnToggleCaptions.textContent = isCaptionsEnabled ? '💬 CC: ON' : '💬 CC: OFF';
+
+      if (!isCaptionsEnabled) {
+        stopSpeechRecognition();
+        if (liveCaptionOverlay) liveCaptionOverlay.classList.add('hidden');
+        showToast('Live Closed Captions turned OFF');
+      } else {
+        if (isTransmitting || (talkMode === 'open' && !isMuted)) {
+          startSpeechRecognition();
+        }
+        showToast('Live Closed Captions turned ON 💬');
+      }
+    });
+  }
+
+  // Socket listener for Live Transcription
+  socket.on('live-transcription', (data) => {
+    if (!data || !data.text) return;
+
+    // 1. Render Floating Subtitle Caption Bubble
+    if (isCaptionsEnabled && liveCaptionOverlay) {
+      liveCaptionOverlay.classList.remove('hidden');
+      if (captionSpeaker) captionSpeaker.textContent = data.senderName + (data.isAdmin ? ' 👑' : '');
+      if (captionAvatar) captionAvatar.textContent = data.cartoonSticker ? data.cartoonSticker.split(' ')[0] : (data.isAdmin ? '👑' : '🎙️');
+      if (captionLangBadge) captionLangBadge.textContent = (data.language || 'en').slice(0, 2).toUpperCase();
+      if (captionText) captionText.textContent = data.text;
+
+      clearTimeout(captionFadeTimeout);
+      captionFadeTimeout = setTimeout(() => {
+        liveCaptionOverlay.classList.add('hidden');
+      }, 4000);
+    }
+
+    // 2. Append final spoken lines into chronological Meeting Notes Log
+    if (data.isFinal) {
+      meetingTranscriptLog.push(data);
+      updateNotesCountBadge();
+      appendTranscriptCard(data);
+    }
+  });
+
+  function updateNotesCountBadge() {
+    if (!notesCountBadge) return;
+    const count = meetingTranscriptLog.length;
+    if (count > 0) {
+      notesCountBadge.textContent = count;
+      notesCountBadge.classList.remove('hidden');
+    } else {
+      notesCountBadge.textContent = '0';
+      notesCountBadge.classList.add('hidden');
+    }
+  }
+
+  function appendTranscriptCard(entry) {
+    if (!transcriptList) return;
+    if (transcriptEmptyPlaceholder) transcriptEmptyPlaceholder.style.display = 'none';
+
+    const card = document.createElement('div');
+    card.className = 'transcript-entry-card';
+    card.innerHTML = `
+      <div class="transcript-entry-meta">
+        <span class="transcript-entry-speaker">${escapeHTML(entry.senderName)} ${entry.isAdmin ? '👑' : ''}</span>
+        <span class="transcript-entry-time">${entry.timestamp} • ${(entry.language || 'en').slice(0, 2).toUpperCase()}</span>
+      </div>
+      <p class="transcript-entry-text">${escapeHTML(entry.text)}</p>
+    `;
+    transcriptList.appendChild(card);
+    if (transcriptItemsWrapper) {
+      transcriptItemsWrapper.scrollTop = transcriptItemsWrapper.scrollHeight;
+    }
+  }
+
+  // Meeting Notes Modal UI Listeners
+  if (btnMeetingNotes) {
+    btnMeetingNotes.addEventListener('click', () => {
+      if (modalMeetingNotes) modalMeetingNotes.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseMeetingNotes) {
+    btnCloseMeetingNotes.addEventListener('click', () => {
+      if (modalMeetingNotes) modalMeetingNotes.classList.add('hidden');
+    });
+  }
+
+  if (selectMySpokenLanguage) {
+    selectMySpokenLanguage.value = mySpokenLanguage;
+    selectMySpokenLanguage.addEventListener('change', () => {
+      mySpokenLanguage = selectMySpokenLanguage.value;
+      try { localStorage.setItem('officetalk_spoken_lang', mySpokenLanguage); } catch (e) {}
+      if (speechRecognition) {
+        speechRecognition.lang = mySpokenLanguage;
+      }
+      showToast(`Speaking Language set to: ${selectMySpokenLanguage.selectedOptions[0].text}`);
+    });
+  }
+
+  if (btnClearTranscript) {
+    btnClearTranscript.addEventListener('click', () => {
+      if (meetingTranscriptLog.length === 0) return;
+      if (confirm('Clear all recorded meeting transcript notes?')) {
+        meetingTranscriptLog = [];
+        updateNotesCountBadge();
+        if (transcriptList) transcriptList.innerHTML = '';
+        if (transcriptEmptyPlaceholder) transcriptEmptyPlaceholder.style.display = 'flex';
+        showToast('Transcript log cleared');
+      }
+    });
+  }
+
+  if (btnCopyNotes) {
+    btnCopyNotes.addEventListener('click', () => {
+      if (meetingTranscriptLog.length === 0) {
+        alert('No notes recorded yet.');
+        return;
+      }
+      let copyText = `--- OfficeTalk Meeting Notes (${new Date().toLocaleString()}) ---\n\n`;
+      meetingTranscriptLog.forEach(t => {
+        copyText += `[${t.timestamp}] ${t.senderName}: ${t.text}\n`;
+      });
+      navigator.clipboard.writeText(copyText).then(() => {
+        showToast('Meeting notes copied to clipboard! 📋');
+      }).catch(() => {
+        alert('Could not copy to clipboard.');
+      });
+    });
+  }
+
+  if (btnDownloadNotes) {
+    btnDownloadNotes.addEventListener('click', downloadMeetingNotes);
+  }
+
+  async function downloadMeetingNotes() {
+    if (meetingTranscriptLog.length === 0) {
+      alert('No transcript available to download yet. Speak in the meeting to generate notes.');
+      return;
+    }
+
+    const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+    const noteFormat = selectNotesFormat ? selectNotesFormat.value : 'structured';
+
+    const langNames = {
+      'original': 'Original Spoken',
+      'en': 'English',
+      'te': 'Telugu (తెలుగు)',
+      'hi': 'Hindi (हिंदी)'
+    };
+    const targetName = langNames[targetLang] || 'English';
+
+    let itemsToExport = meetingTranscriptLog.map(item => ({ ...item }));
+
+    // Accurate Multilingual Translation (English, Telugu, Hindi)
+    if (targetLang !== 'original') {
+      if (translationStatusBanner) translationStatusBanner.classList.remove('hidden');
+      if (translationStatusText) translationStatusText.textContent = `Translating transcript accurately to ${targetName}...`;
+
+      try {
+        const res = await fetch('/api/translate-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: itemsToExport.map(it => ({
+              text: it.text,
+              language: it.language
+            })),
+            targetLang: targetLang
+          })
+        });
+
+        const data = await res.json();
+        if (data && Array.isArray(data.items)) {
+          itemsToExport = itemsToExport.map((orig, idx) => ({
+            ...orig,
+            text: data.items[idx]?.translatedText || orig.text
+          }));
+        }
+      } catch (err) {
+        console.warn('Batch translation warning:', err);
+      } finally {
+        if (translationStatusBanner) translationStatusBanner.classList.add('hidden');
+      }
+    }
+
+    const attendees = Array.from(new Set(meetingTranscriptLog.map(t => t.senderName))).join(', ') || (currentUser ? currentUser.name : 'Team');
+    const now = new Date();
+    const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    let fileContent = '';
+    if (noteFormat === 'structured') {
+      fileContent = `======================================================================\n` +
+        `                    OFFICETALK MEETING NOTES\n` +
+        `======================================================================\n\n` +
+        `📅 Date & Time:     ${dateStr} at ${timeStr}\n` +
+        `🌐 Output Language: ${targetName}\n` +
+        `👥 Attendees:       ${attendees}\n` +
+        `⏱️ Total Points:    ${itemsToExport.length} Discussion Items\n` +
+        `\n======================================================================\n` +
+        `📋 EXECUTIVE SUMMARY & KEY POINTS\n` +
+        `======================================================================\n` +
+        `• Team synchronization session conducted via OfficeTalk Voice Conference.\n` +
+        `• Full chronological discussion record with speaker timeline below.\n` +
+        `\n======================================================================\n` +
+        `🗣️ DISCUSSION TIMELINE / MINUTES OF MEETING\n` +
+        `======================================================================\n\n`;
+
+      itemsToExport.forEach((item) => {
+        fileContent += `[${item.timestamp}] ${item.senderName}${item.isAdmin ? ' (Admin)' : ''}:\n  ${item.text}\n\n`;
+      });
+
+      fileContent += `======================================================================\n` +
+        `End of Meeting Notes • Generated by OfficeTalk Multi-Target Engine v35\n` +
+        `======================================================================\n`;
+    } else {
+      fileContent = `--- OfficeTalk Transcript Log (${targetName} • ${dateStr}) ---\n\n`;
+      itemsToExport.forEach((item) => {
+        fileContent += `[${item.timestamp}] ${item.senderName}: ${item.text}\n`;
+      });
+    }
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const langSlug = targetLang === 'te' ? 'Telugu' : (targetLang === 'hi' ? 'Hindi' : (targetLang === 'en' ? 'English' : 'Original'));
+    a.download = `OfficeTalk_Meeting_Notes_${langSlug}_${now.toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    showToast(`Meeting notes downloaded in ${targetName}! 📝`);
+  }
+
+  // Admin Breakout Rooms Management: Recall All to General
+  if (btnAdminRecallAll) {
+    btnAdminRecallAll.addEventListener('click', () => {
+      if (confirm('Recall all participants back to General Room?')) {
+        socket.emit('admin-recall-to-general');
+      }
+    });
+  }
+
+  socket.on('room-recalled-to-general', ({ by }) => {
+    if (selectVoiceChannel) selectVoiceChannel.value = 'general';
+    if (currentUser) currentUser.channel = 'general';
+    if (window.soundFX) window.soundFX.playNotification();
+    showToast(`🔔 Admin ${by} recalled all participants to General Room!`);
+  });
+
+  // Low-Bandwidth Mode (Data Saver) Checkbox Listener
+  if (toggleDataSaver) {
+    toggleDataSaver.checked = isLowBandwidthMode;
+    toggleDataSaver.addEventListener('change', () => {
+      isLowBandwidthMode = toggleDataSaver.checked;
+      try { localStorage.setItem('officetalk_data_saver', isLowBandwidthMode ? 'true' : 'false'); } catch (e) {}
+      showToast(`Data Saver Mode: ${isLowBandwidthMode ? 'ON (Saving 50% data)' : 'OFF'}`);
+    });
+  }
+
+  // -------------------------------------------------------------
   // Participant Card Rendering
   // -------------------------------------------------------------
   function renderParticipantCard(socketId, user) {
@@ -1711,6 +2113,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="status-badges">
         <span class="badge-tag ${user.talkMode || 'ptt'}">${(user.talkMode || 'ptt').toUpperCase()}</span>
+        <span class="badge-tag channel-tag">${getChannelLabel(user.channel || 'general')}</span>
         <span class="badge-tag muted ${user.isMuted ? '' : 'hidden'}">MUTED</span>
         <span class="presence-badge-tag">${user.presenceStatus || 'Available 🟢'}</span>
         <span class="hand-raised-badge ${isUserHandRaised ? '' : 'hidden'}">✋ Hand Raised</span>
@@ -1843,6 +2246,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const presenceTag = card.querySelector('.presence-badge-tag');
       if (presenceTag) presenceTag.textContent = state.presenceStatus;
     }
+
+    if (state.channel !== undefined) {
+      const channelTag = card.querySelector('.badge-tag.channel-tag');
+      if (channelTag) channelTag.textContent = getChannelLabel(state.channel);
+    }
+  }
+
+  function getChannelLabel(channel) {
+    const map = {
+      'general': '🌐 General',
+      'tech': '💻 Tech',
+      'design': '🎨 Design',
+      'breakout': '☕ Coffee',
+      'urgent': '🚨 Urgent'
+    };
+    return map[channel] || (channel ? 'Room: ' + channel : '🌐 General');
   }
 
   function updateOnlineCount() {

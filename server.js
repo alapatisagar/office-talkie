@@ -16,9 +16,95 @@ app.use(compression({
   threshold: 256
 }));
 
+app.use(express.json({ limit: '5mb' }));
+
 // Health check / Keep-alive route for Render and Uptime monitors
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 app.get('/ping-health', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));
+
+// Multilingual Translation Cache & Endpoints for Meeting Notes (Telugu, Hindi, English)
+const translationCache = new Map();
+
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, targetLang, sourceLang } = req.body;
+    if (!text || !targetLang) return res.status(400).json({ error: 'Missing text or targetLang' });
+
+    if (targetLang === 'original' || targetLang === sourceLang) {
+      return res.json({ translatedText: text });
+    }
+
+    const sl = (sourceLang && sourceLang.startsWith('te')) ? 'te' : ((sourceLang && sourceLang.startsWith('hi')) ? 'hi' : 'en');
+    const tl = targetLang.startsWith('te') ? 'te' : (targetLang.startsWith('hi') ? 'hi' : 'en');
+
+    if (sl === tl) {
+      return res.json({ translatedText: text });
+    }
+
+    const cacheKey = `${sl}|${tl}|${text.trim().toLowerCase()}`;
+    if (translationCache.has(cacheKey)) {
+      return res.json({ translatedText: translationCache.get(cacheKey) });
+    }
+
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 500))}&langpair=${encodeURIComponent(sl + '|' + tl)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    let translatedText = data?.responseData?.translatedText;
+    if (translatedText && !translatedText.includes('MYMEMORY WARNING')) {
+      translationCache.set(cacheKey, translatedText);
+    } else {
+      translatedText = text;
+    }
+    return res.json({ translatedText });
+  } catch (err) {
+    return res.json({ translatedText: req.body.text || '' });
+  }
+});
+
+app.post('/api/translate-batch', async (req, res) => {
+  try {
+    const { items, targetLang } = req.body;
+    if (!items || !Array.isArray(items) || !targetLang || targetLang === 'original') {
+      return res.json({ items: items || [] });
+    }
+
+    const tl = targetLang.startsWith('te') ? 'te' : (targetLang.startsWith('hi') ? 'hi' : 'en');
+
+    const translatedItems = await Promise.all(items.map(async (item) => {
+      const rawText = item.text || '';
+      if (!rawText.trim()) return item;
+
+      const sl = (item.language && item.language.startsWith('te')) ? 'te' : ((item.language && item.language.startsWith('hi')) ? 'hi' : 'en');
+      if (sl === tl) {
+        return { ...item, translatedText: rawText };
+      }
+
+      const cacheKey = `${sl}|${tl}|${rawText.trim().toLowerCase()}`;
+      if (translationCache.has(cacheKey)) {
+        return { ...item, translatedText: translationCache.get(cacheKey) };
+      }
+
+      try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(rawText.slice(0, 500))}&langpair=${encodeURIComponent(sl + '|' + tl)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        let translatedText = data?.responseData?.translatedText;
+        if (translatedText && !translatedText.includes('MYMEMORY WARNING')) {
+          translationCache.set(cacheKey, translatedText);
+        } else {
+          translatedText = rawText;
+        }
+        return { ...item, translatedText: translatedText || rawText };
+      } catch (e) {
+        return { ...item, translatedText: rawText };
+      }
+    }));
+
+    return res.json({ items: translatedItems });
+  } catch (err) {
+    return res.status(500).json({ error: 'Translation batch failed', details: err.message });
+  }
+});
 
 // High-performance static file serving with browser caching
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -179,7 +265,16 @@ io.on('connection', (socket) => {
     };
 
     if (!targetSocketIds || targetSocketIds === 'all' || (Array.isArray(targetSocketIds) && targetSocketIds.includes('all'))) {
-      socket.broadcast.emit('voice-pcm', payload);
+      if (senderUser.isBroadcastingAll) {
+        socket.broadcast.emit('voice-pcm', payload);
+      } else {
+        const senderChannel = senderUser.channel || 'general';
+        users.forEach((targetUser, targetSocketId) => {
+          if (targetSocketId !== socket.id && (targetUser.channel || 'general') === senderChannel) {
+            io.to(targetSocketId).emit('voice-pcm', payload);
+          }
+        });
+      }
     } else if (Array.isArray(targetSocketIds)) {
       targetSocketIds.forEach(targetId => {
         io.to(targetId).emit('voice-pcm', payload);
@@ -435,6 +530,34 @@ io.on('connection', (socket) => {
         signalData
       });
     }
+  });
+
+  // Live Voice Speech-to-Text Transcription & Closed Captions Relay
+  socket.on('live-transcription', ({ text, language, isFinal }) => {
+    const user = users.get(socket.id);
+    if (!user || !text || !text.trim()) return;
+    const payload = {
+      socketId: socket.id,
+      senderName: user.name,
+      senderAvatar: user.avatar,
+      cartoonSticker: user.cartoonSticker || null,
+      isAdmin: user.isAdmin,
+      text: text.trim(),
+      language: language || 'en-IN',
+      isFinal: !!isFinal,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    io.emit('live-transcription', payload);
+  });
+
+  // Admin Breakout Rooms Management: Recall All to General Room
+  socket.on('admin-recall-to-general', () => {
+    const sender = users.get(socket.id);
+    if (!sender || !sender.isAdmin) return;
+    users.forEach((u) => {
+      u.channel = 'general';
+    });
+    io.emit('room-recalled-to-general', { by: sender.name });
   });
 
   socket.on('disconnect', () => {

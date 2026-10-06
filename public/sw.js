@@ -1,11 +1,11 @@
-// OfficeTalk Service Worker v34 - High-Performance PWA Caching
-const CACHE_NAME = 'officetalk-v34';
+// OfficeTalk Service Worker v35 - High-Performance PWA Caching
+const CACHE_NAME = 'officetalk-v35';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/style.css?v=34',
-  '/app.js?v=34',
-  '/audio-fx.js?v=34',
+  '/style.css?v=35',
+  '/app.js?v=35',
+  '/audio-fx.js?v=35',
   '/manifest.json'
 ];
 
