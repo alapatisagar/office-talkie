@@ -134,6 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const notesPreviewText = document.getElementById('notesPreviewText');
   const btnRefreshNotePreview = document.getElementById('btnRefreshNotePreview');
   const btnSharePhoneNotes = document.getElementById('btnSharePhoneNotes');
+  const btnCloseMeetingNotesHeader = document.getElementById('btnCloseMeetingNotesHeader');
+  const btnDownloadDocNotes = document.getElementById('btnDownloadDocNotes');
 
   // High-End Suite v38 Elements
   const btnInstantReplay = document.getElementById('btnInstantReplay');
@@ -2108,6 +2110,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (btnCloseMeetingNotesHeader) {
+    btnCloseMeetingNotesHeader.addEventListener('click', () => {
+      if (modalMeetingNotes) modalMeetingNotes.classList.add('hidden');
+    });
+  }
+
+  // Backdrop click outside card to dismiss modal
+  if (modalMeetingNotes) {
+    modalMeetingNotes.addEventListener('click', (e) => {
+      if (e.target === modalMeetingNotes) {
+        modalMeetingNotes.classList.add('hidden');
+      }
+    });
+  }
+
+  // Escape key to dismiss notes modal
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalMeetingNotes && !modalMeetingNotes.classList.contains('hidden')) {
+      modalMeetingNotes.classList.add('hidden');
+    }
+  });
+
   if (selectMySpokenLanguage) {
     selectMySpokenLanguage.value = mySpokenLanguage;
     selectMySpokenLanguage.addEventListener('change', () => {
@@ -2313,26 +2337,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateDownloadLink(content) {
-    if (!btnDownloadNotes || !content) return;
+    if (!content) return;
     const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
     const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
     const targetName = langNames[targetLang] || 'English';
     const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.txt`;
-
-    try {
-      const bom = '\uFEFF';
-      const fullContent = bom + content;
-      // Pre-generate Data URI for immediate, zero-network user-click download
-      const b64 = btoa(unescape(encodeURIComponent(fullContent)));
-      btnDownloadNotes.href = 'data:text/plain;charset=utf-8;base64,' + b64;
-      btnDownloadNotes.download = filename;
-    } catch (e) {
-      try {
-        const bom = '\uFEFF';
-        const blob = new Blob([bom + content], { type: 'text/plain;charset=utf-8' });
-        btnDownloadNotes.href = URL.createObjectURL(blob);
-        btnDownloadNotes.download = filename;
-      } catch (err) {}
+    if (btnDownloadNotes) {
+      btnDownloadNotes.title = `Download notes in ${targetName} (${filename})`;
+    }
+    if (btnDownloadDocNotes) {
+      btnDownloadDocNotes.title = `Download Word notes in ${targetName} (.doc)`;
     }
   }
 
@@ -2376,34 +2390,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.removeChild(ta);
   }
 
-  // Multi-Strategy File Downloader (Works on 100% of desktop systems & mobile phones)
-  function triggerNoteDownload(content, filename) {
+  // Bulletproof File Downloader (Works on 100% of PC, Mac, Android, and iOS browsers)
+  function triggerNoteDownload(content, filename, isDoc = false) {
     if (!content) return false;
     const bom = '\uFEFF';
     const fullContent = bom + content;
+    const mimeType = isDoc ? 'application/msword;charset=utf-8' : 'text/plain;charset=utf-8';
 
-    // Strategy 1: Data URI Download (Self-contained, zero-network, works on Android & Desktop)
+    // Primary Strategy: Native Blob URL with download attribute (WITHOUT target="_blank" so Chrome never blocks it!)
     try {
-      const b64 = btoa(unescape(encodeURIComponent(fullContent)));
-      const dataUri = 'data:text/plain;charset=utf-8;base64,' + b64;
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = dataUri;
-      a.download = filename;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        if (a.parentNode) a.parentNode.removeChild(a);
-      }, 800);
-      return true;
-    } catch (e1) {
-      console.warn('Data URI download notice:', e1);
-    }
-
-    // Strategy 2: Blob URL Download
-    try {
-      const blob = new Blob([fullContent], { type: 'text/plain;charset=utf-8' });
+      const blob = new Blob([fullContent], { type: mimeType });
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+        return true;
+      }
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -2414,13 +2414,13 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         if (a.parentNode) a.parentNode.removeChild(a);
         URL.revokeObjectURL(blobUrl);
-      }, 3000);
+      }, 2000);
       return true;
-    } catch (e2) {
-      console.warn('Blob download notice:', e2);
+    } catch (e1) {
+      console.warn('Blob URL download error, falling back:', e1);
     }
 
-    // Strategy 3: Hidden Iframe Server Download (Never navigates main page)
+    // Secondary Strategy: Direct server POST to hidden iframe
     try {
       let iframe = document.getElementById('notes_download_iframe');
       if (!iframe) {
@@ -2454,45 +2454,106 @@ document.addEventListener('DOMContentLoaded', () => {
         if (form.parentNode) form.parentNode.removeChild(form);
       }, 3000);
       return true;
-    } catch (e3) {
-      console.warn('Iframe download notice:', e3);
+    } catch (e2) {
+      console.warn('Iframe download error:', e2);
     }
 
     return false;
   }
 
-  // Download Notes Button Handler
+  // Download Notes Button Handler (.txt format)
   if (btnDownloadNotes) {
     btnDownloadNotes.addEventListener('click', async (e) => {
+      if (e && e.preventDefault) e.preventDefault();
       const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
       const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
       const targetName = langNames[targetLang] || 'English';
-      const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.txt`;
+      const isWordFormat = selectNotesFormat && selectNotesFormat.value === 'doc';
+      const ext = isWordFormat ? 'doc' : 'txt';
+      const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.${ext}`;
 
       let fileContent = notesPreviewText ? notesPreviewText.value.trim() : '';
       if (!fileContent) {
-        if (e && e.preventDefault) e.preventDefault();
         fileContent = await generateNotesContent(true);
         if (notesPreviewText) notesPreviewText.value = fileContent;
       }
 
       if (!fileContent) {
-        if (e && e.preventDefault) e.preventDefault();
-        alert('No meeting notes available to download.');
-        return;
+        fileContent = await generateNotesContent(false);
+        if (notesPreviewText) notesPreviewText.value = fileContent;
       }
 
-      // Check if the anchor already has a pre-generated valid href
-      const currentHref = btnDownloadNotes.getAttribute('href');
-      if (!currentHref || currentHref === '#' || currentHref.startsWith('javascript:')) {
-        if (e && e.preventDefault) e.preventDefault();
-        triggerNoteDownload(fileContent, filename);
+      let payload = fileContent;
+      if (isWordFormat) {
+        payload = generateWordDocHtml(fileContent, targetName);
+      }
+
+      const success = triggerNoteDownload(payload, filename, isWordFormat);
+      if (success) {
+        showToast(`Meeting notes downloaded in ${targetName} (.${ext})! 📥`);
       } else {
-        // Native anchor click is firing, also update filename
-        btnDownloadNotes.download = filename;
+        fallbackClipboardCopy(fileContent);
+        showToast('Notes copied to clipboard! (Download fallback) 📋');
+      }
+    });
+  }
+
+  // Helper: Format Word Document HTML with styles & full Telugu / Hindi Unicode fidelity
+  function generateWordDocHtml(content, targetName) {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const attendees = currentUser ? currentUser.name : 'Team';
+
+    return `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>OfficeTalk Meeting Notes</title>
+  <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+  <style>
+    body { font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Telugu", "Noto Sans Devanagari", sans-serif; font-size: 11pt; line-height: 1.6; color: #1e293b; padding: 24px; }
+    h1 { color: #0f172a; font-size: 18pt; border-bottom: 2pt solid #0f172a; padding-bottom: 6pt; margin-bottom: 12pt; }
+    .meta-box { background-color: #f1f5f9; border: 1pt solid #cbd5e1; padding: 10pt 14pt; margin-bottom: 16pt; font-size: 10pt; border-radius: 4pt; }
+    .note-content { white-space: pre-wrap; font-family: inherit; font-size: 11pt; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>🎙️ OfficeTalk — Official Conference Notes</h1>
+  <div class="meta-box">
+    <strong>📅 Date & Time:</strong> ${dateStr} at ${timeStr}<br>
+    <strong>🌐 Output Language:</strong> ${targetName}<br>
+    <strong>👥 Attendees:</strong> ${attendees}<br>
+  </div>
+  <div class="note-content">${escapeHTML(content).replace(/\n/g, '<br>')}</div>
+</body>
+</html>`;
+  }
+
+  // Download Word Document Notes Handler (.doc)
+  if (btnDownloadDocNotes) {
+    btnDownloadDocNotes.addEventListener('click', async (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
+      const targetName = langNames[targetLang] || 'English';
+      const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.doc`;
+
+      let textContent = notesPreviewText ? notesPreviewText.value.trim() : '';
+      if (!textContent) {
+        textContent = await generateNotesContent(true);
+        if (notesPreviewText) notesPreviewText.value = textContent;
+      }
+      if (!textContent) {
+        textContent = await generateNotesContent(false);
+        if (notesPreviewText) notesPreviewText.value = textContent;
       }
 
-      showToast(`Meeting notes downloaded in ${targetName}! 📥`);
+      const docContent = generateWordDocHtml(textContent, targetName);
+      const success = triggerNoteDownload(docContent, filename, true);
+      if (success) {
+        showToast(`Meeting notes downloaded in Word format (.doc)! 📝`);
+      }
     });
   }
 

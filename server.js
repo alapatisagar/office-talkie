@@ -131,7 +131,8 @@ app.all('/api/download-notes', (req, res) => {
   const bom = '\uFEFF';
   const fileBuffer = Buffer.from(bom + content, 'utf8');
 
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  const isDoc = filename.endsWith('.doc');
+  res.setHeader('Content-Type', isDoc ? 'application/msword; charset=utf-8' : 'text/plain; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
   res.setHeader('Content-Length', fileBuffer.length);
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

@@ -10,11 +10,11 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=38').catch(err => console.warn('SW reg failed:', err));
+        navigator.serviceWorker.register('/sw.js?v=39').catch(err => console.warn('SW reg failed:', err));
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -406,9 +406,12 @@
   <!-- Meeting Notes & Multilingual Voice Transcription Modal -->
   <div class="modal-backdrop hidden" id="modalMeetingNotes">
     <div class="modal-card modal-notes-card">
-      <div class="modal-header">
-        <h2>📝 Meeting Notes & Voice Transcription</h2>
-        <p>Live AI speech-to-text transcript with instant accurate translation to English, Telugu, or Hindi note format.</p>
+      <div class="modal-header modal-header-with-close">
+        <div class="modal-header-titles">
+          <h2>📝 Meeting Notes & Voice Transcription</h2>
+          <p>Live AI speech-to-text transcript with instant accurate translation to English, Telugu, or Hindi note format.</p>
+        </div>
+        <button type="button" class="btn-modal-close-icon" id="btnCloseMeetingNotesHeader" title="Close Notes (Esc)" aria-label="Close">✕</button>
       </div>
 
       <!-- Controls Bar -->
@@ -436,6 +439,7 @@
           <label for="selectNotesFormat">📋 Note Format</label>
           <select id="selectNotesFormat">
             <option value="structured" selected>📋 Structured Minutes (Notes)</option>
+            <option value="doc">📝 Executive Word Doc (.doc)</option>
             <option value="raw">📄 Chronological Transcript</option>
           </select>
         </div>
@@ -515,8 +519,9 @@
         </div>
         <div class="notes-modal-right-actions">
           <button type="button" class="btn-action btn-share-phone" id="btnSharePhoneNotes" title="Save directly to phone Notes / Files">📲 Save / Share to Phone</button>
-          <a class="btn-primary" id="btnDownloadNotes" download="OfficeTalk_Meeting_Notes.txt" href="#" target="_blank" title="Download note file to your device" style="display:inline-flex; align-items:center; text-decoration:none;">📥 Download Note (.txt)</a>
-          <button type="button" class="btn-action" id="btnCloseMeetingNotes">Close</button>
+          <button type="button" class="btn-primary" id="btnDownloadNotes" title="Download note file to your device (.txt)">📥 Download Note (.txt)</button>
+          <button type="button" class="btn-action" id="btnDownloadDocNotes" title="Download Word / Document note format (.doc)">📝 Word (.doc)</button>
+          <button type="button" class="btn-action btn-close-modal" id="btnCloseMeetingNotes">✕ Close</button>
         </div>
       </div>
     </div>
@@ -590,7 +595,7 @@
   <div id="printableMeetingReport" class="printable-report" style="display:none;"></div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=38"></script>
-  <script src="app.js?v=38"></script>
+  <script src="audio-fx.js?v=39"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>
