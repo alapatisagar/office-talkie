@@ -2793,7 +2793,518 @@ body.theme-midnight {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   OFFICETALK v38 - HIGH-END SUITE STYLING
+   ========================================================================== */
 
+/* 1. Header High-End Controls */
+.btn-instant-replay {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(96, 165, 250, 0.35) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
+.btn-instant-replay:hover {
+  background: rgba(59, 130, 246, 0.3) !important;
+  border-color: #60a5fa !important;
+  transform: translateY(-1px);
+}
 
+.btn-instant-replay.playing {
+  background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
+  color: #ffffff !important;
+  animation: pulse-glow-blue 1s infinite alternate;
+}
 
+@keyframes pulse-glow-blue {
+  0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+  100% { box-shadow: 0 0 16px rgba(99, 102, 241, 0.9); }
+}
+
+.btn-priority-intercom {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-priority-intercom:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: #f87171 !important;
+}
+
+.btn-priority-intercom.active {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  animation: pulse-intercom 0.8s infinite alternate;
+}
+
+@keyframes pulse-intercom {
+  0% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.6); }
+  100% { box-shadow: 0 0 20px rgba(239, 68, 68, 1); }
+}
+
+.select-skin-dropdown {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+}
+
+.select-skin-dropdown:focus {
+  border-color: var(--accent-blue);
+}
+
+/* 2. Priority Emergency Intercom Banner */
+.priority-intercom-banner {
+  background: linear-gradient(90deg, #b91c1c 0%, #dc2626 50%, #991b1b 100%);
+  color: #ffffff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.5);
+  border-bottom: 2px solid #f87171;
+  z-index: 100;
+  animation: banner-flash 1s infinite alternate;
+}
+
+@keyframes banner-flash {
+  0% { background-color: #b91c1c; }
+  100% { background-color: #7f1d1d; }
+}
+
+.intercom-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.intercom-beacon-icon {
+  font-size: 20px;
+  animation: beacon-wiggle 0.5s infinite alternate;
+}
+
+@keyframes beacon-wiggle {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.25) rotate(5deg); }
+}
+
+.btn-dismiss-intercom {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-dismiss-intercom:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* 3. Radio Chassis Skins */
+
+/* Skin: Tactical Military Walkie-Talkie */
+body.skin-tactical {
+  --bg-dark: #141a15;
+  --bg-card: #1f2720;
+  --bg-sidebar: #0f1410;
+  --bg-hover: #29352c;
+  --accent-blue: #4ade80;
+  --accent-green: #22c55e;
+  --accent-gold: #eab308;
+  --border-color: rgba(74, 222, 128, 0.18);
+  font-family: 'Share Tech Mono', 'Plus Jakarta Sans', monospace, sans-serif;
+  background-image: 
+    radial-gradient(rgba(34, 197, 94, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, #111712 0%, #171f19 100%);
+  background-size: 16px 16px, 100% 100%;
+}
+
+body.skin-tactical .app-header {
+  background: rgba(20, 26, 21, 0.95);
+  border-bottom: 2px solid #22c55e;
+  box-shadow: inset 0 -2px 10px rgba(34, 197, 94, 0.2);
+}
+
+body.skin-tactical .participant-card {
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-left: 4px solid #22c55e;
+  border-radius: 4px;
+  background: #1b231c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+body.skin-tactical .ptt-big-button {
+  border: 3px solid #4ade80 !important;
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.4) !important;
+}
+
+/* Skin: Cyberpunk Neon HUD */
+body.skin-cyberpunk {
+  --bg-dark: #0a0614;
+  --bg-card: #140d28;
+  --bg-sidebar: #06040d;
+  --bg-hover: #251648;
+  --accent-blue: #06b6d4;
+  --accent-green: #10b981;
+  --accent-red: #f43f5e;
+  --accent-gold: #f59e0b;
+  --border-color: rgba(236, 72, 153, 0.25);
+  background: linear-gradient(135deg, #090314 0%, #15092a 50%, #06030e 100%);
+}
+
+body.skin-cyberpunk .app-header {
+  background: rgba(10, 6, 20, 0.9);
+  border-bottom: 2px solid #ec4899;
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+}
+
+body.skin-cyberpunk .participant-card {
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  border-radius: 8px;
+  background: rgba(20, 13, 40, 0.8);
+  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.15);
+}
+
+body.skin-cyberpunk .participant-card:hover {
+  border-color: #ec4899;
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+}
+
+body.skin-cyberpunk .ptt-big-button {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6) !important;
+  border: 2px solid #06b6d4 !important;
+  box-shadow: 0 0 30px rgba(236, 72, 153, 0.6) !important;
+}
+
+/* Skin: Executive Glassmorphism (Default modern) */
+body.skin-glass {
+  /* Inherits base glass styling */
+}
+
+/* 4. Per-Transcript-Card Replay Button */
+.btn-transcript-replay {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-transcript-replay:hover {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: #60a5fa;
+}
+
+.btn-transcript-replay.playing {
+  background: #3b82f6;
+  color: #ffffff;
+  animation: pulse-glow-blue 0.8s infinite alternate;
+}
+
+/* 5. AI Executive Insights Panel Styling */
+.ai-insights-panel {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.ai-insights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.badge-vibe {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-vibe.neutral {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.btn-xs {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-xs:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.ai-insights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .ai-insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-block {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.ai-block-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.ai-decisions-list {
+  list-style: disc;
+  margin-left: 18px;
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+.ai-decisions-list li {
+  margin-bottom: 4px;
+}
+
+.ai-action-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.action-item-row input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--accent-green);
+  width: 14px;
+  height: 14px;
+}
+
+.btn-print-pdf {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important;
+}
+
+.btn-print-pdf:hover {
+  background: #334155 !important;
+  filter: brightness(1.1);
+}
+
+/* 6. Professional Executive PDF & Print Styling */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Telugu", "Noto Sans Devanagari", sans-serif !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide regular UI elements when printing */
+  .app-header,
+  .main-container,
+  .app-footer,
+  .modal-backdrop,
+  .sidebar,
+  .toast,
+  .priority-intercom-banner {
+    display: none !important;
+  }
+
+  /* Show dedicated printable report */
+  #printableMeetingReport {
+    display: block !important;
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 24px 30px !important;
+  }
+
+  .print-header {
+    border-bottom: 3px solid #0f172a;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .print-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .print-subtitle {
+    font-size: 12px;
+    color: #475569;
+    margin-top: 4px;
+  }
+
+  .print-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    background: #f1f5f9;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd5e1;
+  }
+
+  .print-meta-item strong {
+    color: #1e293b;
+  }
+
+  .print-section {
+    margin-bottom: 20px;
+  }
+
+  .print-section-title {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    color: #1e293b;
+  }
+
+  .print-decisions-list {
+    margin-left: 20px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .print-action-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .print-action-table th,
+  .print-action-table td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 10px;
+    text-align: left;
+  }
+
+  .print-action-table th {
+    background: #e2e8f0;
+    font-weight: 700;
+  }
+
+  .print-transcript-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .print-transcript-table th,
+  .print-transcript-table td {
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    vertical-align: top;
+  }
+
+  .print-transcript-table th {
+    background: #f8fafc;
+    font-weight: 700;
+  }
+
+  .print-sign-off {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    padding-top: 20px;
+    border-top: 1px solid #cbd5e1;
+    font-size: 12px;
+  }
+
+  .print-sign-line {
+    border-top: 1px solid #0f172a;
+    width: 180px;
+    margin-top: 35px;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: 600;
+  }
+}

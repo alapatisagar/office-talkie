@@ -10,11 +10,11 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=35').catch(err => console.warn('SW reg failed:', err));
+        navigator.serviceWorker.register('/sw.js?v=38').catch(err => console.warn('SW reg failed:', err));
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=37">
+  <link rel="stylesheet" href="style.css?v=38">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -69,12 +69,21 @@
         <option value="Do Not Disturb ⛔">Do Not Disturb ⛔</option>
       </select>
 
-      <!-- Meeting Tools: Raise Hand, Screen Share, Record, Live Captions, Notes -->
+      <!-- Meeting Tools: Raise Hand, Screen Share, Record, Live Captions, Notes, Replay, Intercom -->
       <button class="icon-btn btn-raise-hand" id="btnRaiseHand" title="Raise Hand to Speak">✋ Hand</button>
       <button class="icon-btn btn-screen-share" id="btnShareScreen" title="Share Screen">🖥️ Screen</button>
       <button class="icon-btn btn-record" id="btnRecordMeeting" title="Record Meeting Audio">⏺️ Record</button>
       <button class="icon-btn btn-captions active" id="btnToggleCaptions" title="Live Voice Transcription & Closed Captions">💬 CC: ON</button>
       <button class="icon-btn btn-notes" id="btnMeetingNotes" title="Meeting Notes & Multilingual Transcription">📝 Notes <span class="badge-unread hidden" id="notesCountBadge">0</span></button>
+      <button class="icon-btn btn-replay" id="btnInstantReplay" title="⏪ Instant Replay Last Transmission Audio">⏪ Replay</button>
+      <button class="icon-btn btn-intercom hidden" id="btnPriorityIntercom" title="🚨 Broadcast All-Hands Emergency Intercom">🚨 Intercom</button>
+
+      <!-- Walkie-Talkie Radio Chassis Theme Skin Selector -->
+      <select id="selectRadioSkin" class="status-select skin-select" title="Switch Walkie-Talkie Chassis Skin">
+        <option value="skin-glass">💎 Glassmorphism</option>
+        <option value="skin-tactical">📻 Tactical Military</option>
+        <option value="skin-cyberpunk">⚡ Cyberpunk Neon</option>
+      </select>
 
       <button class="icon-btn" id="btnAudioSettings" title="Audio Settings">⚙️ Settings</button>
       <button class="icon-btn" id="btnToggleSoundFX" title="Toggle Sound">🔊 Sound: ON</button>
@@ -85,6 +94,14 @@
       </div>
     </div>
   </header>
+
+  <!-- Emergency Priority Intercom Broadcast Alert Banner -->
+  <div class="priority-intercom-banner hidden" id="priorityIntercomBanner">
+    <div class="intercom-banner-inner">
+      <span class="intercom-siren">🚨</span>
+      <span id="priorityIntercomText">PRIORITY ALL-HANDS BROADCAST FROM ADMIN • ALL CHANNELS ACTIVE</span>
+    </div>
+  </div>
 
   <!-- App Main Body -->
   <div class="app-body">
@@ -97,7 +114,8 @@
         </div>
         <div class="admin-panel-actions">
           <button class="btn-admin-action" id="btnAdminBroadcast">📢 Broadcast to All</button>
-          <button class="btn-admin-action" id="btnAdminSiren">🚨 Priority Siren</button>
+          <button class="btn-admin-action btn-admin-intercom" id="btnAdminIntercomTrigger">🚨 Priority Intercom</button>
+          <button class="btn-admin-action" id="btnAdminSiren">🚨 Siren Alarm</button>
           <button class="btn-admin-action" id="btnAdminRecordSession">⏺️ Record Session</button>
           <button class="btn-admin-action btn-admin-danger" id="btnAdminMuteAll">🔇 Mute All Mics</button>
           <button class="btn-admin-action" id="btnAdminUnmuteAll">🔊 Unmute All Mics</button>
@@ -445,6 +463,35 @@
         <div class="transcript-list" id="transcriptList"></div>
       </div>
 
+      <!-- AI Executive Insights & Interactive Action Checklist -->
+      <div class="ai-insights-panel" id="aiInsightsPanel">
+        <div class="ai-insights-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-weight:700; font-size:12px;">🤖 AI Executive Minutes & Action Items</span>
+            <span class="badge-vibe" id="aiVibeBadge">🎯 Productive (88%)</span>
+          </div>
+          <button type="button" class="btn-xs" id="btnGenerateAiSummary">✨ Generate AI Insights</button>
+        </div>
+        
+        <div class="ai-insights-grid">
+          <!-- Decisions Block -->
+          <div class="ai-block">
+            <span class="ai-block-title">⭐ Key Decisions Made</span>
+            <ul class="ai-decisions-list" id="aiDecisionsList">
+              <li>Session initialized & communication targets aligned.</li>
+            </ul>
+          </div>
+          
+          <!-- Interactive Action Checklist -->
+          <div class="ai-block">
+            <span class="ai-block-title">✅ Action Items Checklist</span>
+            <div class="ai-action-items-list" id="aiActionItemsList">
+              <label class="action-item-row"><input type="checkbox"> <span>Review minutes and confirm milestone targets</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Live Formatted Note Preview Box -->
       <div class="notes-preview-container">
         <div class="notes-preview-header">
@@ -464,6 +511,7 @@
         <div class="notes-modal-left-actions">
           <button type="button" class="btn-action" id="btnClearTranscript" title="Clear All Transcript Entries">🗑️ Clear</button>
           <button type="button" class="btn-action" id="btnCopyNotes" title="Copy Notes to Clipboard">📋 Copy Notes</button>
+          <button type="button" class="btn-action btn-print-pdf" id="btnPrintMeetingReport" title="Print or Save as PDF with Executive Branding">🖨️ Export PDF / Print</button>
         </div>
         <div class="notes-modal-right-actions">
           <button type="button" class="btn-action btn-share-phone" id="btnSharePhoneNotes" title="Save directly to phone Notes / Files">📲 Save / Share to Phone</button>
@@ -538,8 +586,11 @@
     </div>
   </div>
 
+  <!-- Hidden container for Executive Printable / PDF Meeting Report -->
+  <div id="printableMeetingReport" class="printable-report" style="display:none;"></div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=35"></script>
-  <script src="app.js?v=37"></script>
+  <script src="audio-fx.js?v=38"></script>
+  <script src="app.js?v=38"></script>
 </body>
 </html>

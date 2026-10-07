@@ -135,6 +135,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRefreshNotePreview = document.getElementById('btnRefreshNotePreview');
   const btnSharePhoneNotes = document.getElementById('btnSharePhoneNotes');
 
+  // High-End Suite v38 Elements
+  const btnInstantReplay = document.getElementById('btnInstantReplay');
+  const btnPriorityIntercom = document.getElementById('btnPriorityIntercom');
+  const selectRadioSkin = document.getElementById('selectRadioSkin');
+  const priorityIntercomBanner = document.getElementById('priorityIntercomBanner');
+  const intercomBroadcastText = document.getElementById('intercomBroadcastText');
+  const btnDismissIntercom = document.getElementById('btnDismissIntercom');
+  const btnAdminIntercomTrigger = document.getElementById('btnAdminIntercomTrigger');
+  const aiInsightsPanel = document.getElementById('aiInsightsPanel');
+  const aiVibeBadge = document.getElementById('aiVibeBadge');
+  const btnGenerateAiSummary = document.getElementById('btnGenerateAiSummary');
+  const aiDecisionsList = document.getElementById('aiDecisionsList');
+  const aiActionItemsList = document.getElementById('aiActionItemsList');
+  const btnPrintMeetingReport = document.getElementById('btnPrintMeetingReport');
+  const printableMeetingReport = document.getElementById('printableMeetingReport');
+
+  // Walkie-Talkie Instant Replay Buffer (Stores last 10 transmissions, max ~15s each)
+  const recentAudioTransmissions = [];
+  const MAX_REPLAY_TRANSMISSIONS = 10;
+  let activeReplaySource = null;
+  let localTransmissionChunks = [];
+  const remoteTransmissionsCollector = new Map();
+  const remoteTransDebounce = new Map();
+  const whisperNotifiedSet = new Set();
+
+  // Priority Intercom State
+  let isPriorityIntercomActive = false;
+
+  // AI Meeting Insights Cache
+  let latestAiInsights = null;
+
   const btnAdminRecallAll = document.getElementById('btnAdminRecallAll');
   const toggleDataSaver = document.getElementById('toggleDataSaver');
 
@@ -736,11 +767,17 @@ document.addEventListener('DOMContentLoaded', () => {
           pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
 
+        // Buffer local spoken audio chunks for Instant Replay (capped at ~15 seconds)
+        if (localTransmissionChunks.length < 350) {
+          localTransmissionChunks.push(new Float32Array(inputData));
+        }
+
         const targetsPayload = selectedTargetIds.has('all') ? 'all' : Array.from(selectedTargetIds);
         socket.emit('voice-pcm', {
           targetSocketIds: targetsPayload,
           pcmData: pcm16.buffer,
-          sampleRate: txAudioContext.sampleRate
+          sampleRate: txAudioContext.sampleRate,
+          isPriority: isPriorityIntercomActive
         });
       };
 
@@ -842,11 +879,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const nextPlayTimeMap = new Map();
   const talkingTimeouts = new Map();
 
-  socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData, sampleRate }) => {
+  socket.on('voice-pcm', ({ fromSocketId, senderName, pcmData, sampleRate, isPriority, isWhisper }) => {
     if (isDeafened) return;
     if (!rxAudioContext) rxAudioContext = createSafeAudioContext();
     if (!rxAudioContext) return;
     if (rxAudioContext.state === 'suspended') rxAudioContext.resume();
+
+    // Priority Intercom alert overlay & ducking
+    if (isPriority) {
+      if (priorityIntercomBanner && priorityIntercomBanner.classList.contains('hidden')) {
+        priorityIntercomBanner.classList.remove('hidden');
+        if (intercomBroadcastText) {
+          intercomBroadcastText.textContent = `EMERGENCY ALL-HANDS OVERRIDE FROM ${escapeHTML((senderName || 'Admin').toUpperCase())}`;
+        }
+        if (window.soundFX && window.soundFX.playPriorityIntercomAlert) {
+          window.soundFX.playPriorityIntercomAlert();
+        }
+      }
+    }
+
+    // Manager Whisper notification
+    if (isWhisper) {
+      if (!whisperNotifiedSet.has(fromSocketId)) {
+        whisperNotifiedSet.add(fromSocketId);
+        setTimeout(() => whisperNotifiedSet.delete(fromSocketId), 3000);
+        if (window.soundFX && window.soundFX.playWhisperCue) {
+          window.soundFX.playWhisperCue();
+        }
+        showToast(`🤫 Private Whisper from ${senderName || 'Manager'}`);
+      }
+    }
 
     updateUserCardTalking(fromSocketId, true);
     if (talkingTimeouts.has(fromSocketId)) clearTimeout(talkingTimeouts.get(fromSocketId));
@@ -866,6 +928,26 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sourceRate !== targetRate) {
         float32 = resamplePCM(float32, sourceRate, targetRate);
       }
+
+      // Buffer incoming transmission chunks for Instant Replay
+      if (!remoteTransmissionsCollector.has(fromSocketId)) {
+        remoteTransmissionsCollector.set(fromSocketId, {
+          senderName: senderName || 'Colleague',
+          chunks: [],
+          sampleRate: targetRate
+        });
+      }
+      const collector = remoteTransmissionsCollector.get(fromSocketId);
+      if (collector.chunks.length < 350) {
+        collector.chunks.push(new Float32Array(float32));
+      }
+      if (remoteTransDebounce.has(fromSocketId)) clearTimeout(remoteTransDebounce.get(fromSocketId));
+      remoteTransDebounce.set(fromSocketId, setTimeout(() => {
+        if (collector.chunks.length > 0) {
+          saveCompletedTransmission(collector.senderName, collector.chunks, collector.sampleRate, false);
+          remoteTransmissionsCollector.delete(fromSocketId);
+        }
+      }, 600));
 
       const audioBuffer = rxAudioContext.createBuffer(1, float32.length, targetRate);
       audioBuffer.getChannelData(0).set(float32);
@@ -1248,6 +1330,12 @@ document.addEventListener('DOMContentLoaded', () => {
     pttText.textContent = 'HOLD TO TALK';
 
     if (window.soundFX) window.soundFX.playPttEnd();
+
+    // Finalize local audio transmission for Instant Replay
+    if (localTransmissionChunks.length > 0) {
+      saveCompletedTransmission(currentUser ? currentUser.name : 'You', localTransmissionChunks, txAudioContext ? txAudioContext.sampleRate : 48000, true);
+      localTransmissionChunks = [];
+    }
 
     socket.emit('update-state', { isTalking: false });
     updateUserCardTalking(socket.id, false);
@@ -1943,10 +2031,25 @@ document.addEventListener('DOMContentLoaded', () => {
     card.innerHTML = `
       <div class="transcript-entry-meta">
         <span class="transcript-entry-speaker">${escapeHTML(entry.senderName)} ${entry.isAdmin ? '👑' : ''} ${entry.isManual ? '✍️' : (entry.isChat ? '💬' : '')}</span>
-        <span class="transcript-entry-time">${entry.timestamp || ''} • ${(entry.language || 'en').slice(0, 2).toUpperCase()}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="transcript-entry-time">${entry.timestamp || ''} • ${(entry.language || 'en').slice(0, 2).toUpperCase()}</span>
+          ${!entry.isManual && !entry.isChat ? `<button type="button" class="btn-transcript-replay" title="Replay spoken audio">▶️ Replay</button>` : ''}
+        </div>
       </div>
       <p class="transcript-entry-text">${escapeHTML(entry.text)}</p>
     `;
+    const replayBtn = card.querySelector('.btn-transcript-replay');
+    if (replayBtn) {
+      replayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const matchingTx = recentAudioTransmissions.find(t => t.senderName === entry.senderName) || recentAudioTransmissions[0];
+        if (matchingTx) {
+          playTransmissionReplay(matchingTx, replayBtn);
+        } else {
+          showToast('No audio buffer available for this item');
+        }
+      });
+    }
     transcriptList.appendChild(card);
     if (transcriptItemsWrapper) {
       transcriptItemsWrapper.scrollTop = transcriptItemsWrapper.scrollHeight;
@@ -2155,8 +2258,25 @@ document.addEventListener('DOMContentLoaded', () => {
         `📅 Date & Time:     ${dateStr} at ${timeStr}\n` +
         `🌐 Output Language: ${targetName}\n` +
         `👥 Attendees:       ${attendees}\n` +
-        `⏱️ Total Points:    ${itemsToExport.length} Discussion Items\n` +
-        `\n======================================================================\n` +
+        `⏱️ Total Points:    ${itemsToExport.length} Discussion Items\n`;
+
+      if (latestAiInsights) {
+        fileContent += `🎯 Session Vibe:    ${latestAiInsights.vibe || 'Productive (92%)'}\n\n` +
+          `======================================================================\n` +
+          `⭐ KEY DECISIONS\n` +
+          `======================================================================\n`;
+        (latestAiInsights.decisions || []).forEach(d => {
+          fileContent += `• ${d}\n`;
+        });
+        fileContent += `\n======================================================================\n` +
+          `✅ ACTION ITEMS CHECKLIST\n` +
+          `======================================================================\n`;
+        (latestAiInsights.actionItems || []).forEach(a => {
+          fileContent += `[ ] ${a.assignee}: ${a.task}\n`;
+        });
+      }
+
+      fileContent += `\n======================================================================\n` +
         `📋 EXECUTIVE SUMMARY & KEY POINTS\n` +
         `======================================================================\n` +
         `• Team synchronization session conducted via OfficeTalk Voice Conference.\n` +
@@ -2170,7 +2290,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       fileContent += `======================================================================\n` +
-        `End of Meeting Notes • Generated by OfficeTalk Multi-Target Engine v35\n` +
+        `End of Meeting Notes • Generated by OfficeTalk Multi-Target Engine v38\n` +
         `======================================================================\n`;
     } else {
       fileContent = `--- OfficeTalk Transcript Log (${targetName} • ${dateStr} at ${timeStr}) ---\n\n`;
@@ -2429,6 +2549,381 @@ document.addEventListener('DOMContentLoaded', () => {
     triggerNoteDownload(fileContent, filename);
     fallbackClipboardCopy(fileContent);
     showToast('Notes downloaded & copied to clipboard! 📋');
+  }
+
+  // -------------------------------------------------------------
+  // v38 High-End Suite: Walkie-Talkie Instant Replay Engine
+  // -------------------------------------------------------------
+  function saveCompletedTransmission(senderName, chunks, sampleRate, isSelf = false) {
+    if (!chunks || chunks.length === 0) return;
+    let totalLength = 0;
+    for (const c of chunks) totalLength += c.length;
+    const rate = sampleRate || (rxAudioContext ? rxAudioContext.sampleRate : 48000);
+    // Discard noise bursts shorter than 200ms
+    if (totalLength < rate * 0.2) return;
+    // Cap at 15 seconds max
+    const maxSamples = rate * 15;
+    const finalLen = Math.min(totalLength, maxSamples);
+    const combined = new Float32Array(finalLen);
+    let offset = 0;
+    for (const c of chunks) {
+      if (offset + c.length <= finalLen) {
+        combined.set(c, offset);
+        offset += c.length;
+      } else {
+        combined.set(c.subarray(0, finalLen - offset), offset);
+        break;
+      }
+    }
+
+    const txRecord = {
+      id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      senderName: senderName || 'Colleague',
+      isSelf: isSelf,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      float32Data: combined,
+      sampleRate: rate,
+      durationSec: (finalLen / rate).toFixed(1)
+    };
+
+    recentAudioTransmissions.unshift(txRecord);
+    if (recentAudioTransmissions.length > MAX_REPLAY_TRANSMISSIONS) {
+      recentAudioTransmissions.pop();
+    }
+
+    if (btnInstantReplay) {
+      btnInstantReplay.title = `⏪ Instant Replay: Last transmission from ${senderName} (${txRecord.durationSec}s)`;
+    }
+  }
+
+  function playTransmissionReplay(txRecord, triggerBtn = null) {
+    if (!txRecord || !txRecord.float32Data) {
+      showToast('No audio buffer recorded to replay.');
+      return;
+    }
+    if (!rxAudioContext) rxAudioContext = createSafeAudioContext();
+    if (!rxAudioContext) return;
+    if (rxAudioContext.state === 'suspended') rxAudioContext.resume();
+
+    if (activeReplaySource) {
+      try { activeReplaySource.stop(); } catch (e) {}
+      activeReplaySource = null;
+    }
+
+    if (window.soundFX && window.soundFX.playReplayBeep) {
+      window.soundFX.playReplayBeep();
+    }
+
+    const buffer = rxAudioContext.createBuffer(1, txRecord.float32Data.length, txRecord.sampleRate);
+    buffer.getChannelData(0).set(txRecord.float32Data);
+
+    const source = rxAudioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(rxAudioContext.destination);
+    activeReplaySource = source;
+
+    if (triggerBtn) triggerBtn.classList.add('playing');
+    if (btnInstantReplay) btnInstantReplay.classList.add('playing');
+    showToast(`⏪ Replaying transmission from ${txRecord.senderName} (${txRecord.durationSec}s)`);
+
+    source.onended = () => {
+      if (activeReplaySource === source) activeReplaySource = null;
+      if (triggerBtn) triggerBtn.classList.remove('playing');
+      if (btnInstantReplay) btnInstantReplay.classList.remove('playing');
+    };
+
+    source.start();
+  }
+
+  if (btnInstantReplay) {
+    btnInstantReplay.addEventListener('click', () => {
+      if (recentAudioTransmissions.length === 0) {
+        showToast('No recent voice transmission recorded to replay yet 📻');
+        return;
+      }
+      playTransmissionReplay(recentAudioTransmissions[0], btnInstantReplay);
+    });
+  }
+
+  // -------------------------------------------------------------
+  // v38 High-End Suite: Priority Emergency Intercom & Whisper
+  // -------------------------------------------------------------
+  function togglePriorityIntercom() {
+    if (!currentUser || !currentUser.isAdmin) {
+      showToast('🚨 Priority Intercom is restricted to Administrators 👑');
+      return;
+    }
+    isPriorityIntercomActive = !isPriorityIntercomActive;
+    if (btnPriorityIntercom) {
+      btnPriorityIntercom.classList.toggle('active', isPriorityIntercomActive);
+    }
+    if (btnAdminIntercomTrigger) {
+      btnAdminIntercomTrigger.classList.toggle('active', isPriorityIntercomActive);
+      btnAdminIntercomTrigger.textContent = isPriorityIntercomActive ? '🚨 Emergency Intercom (ACTIVE)' : '🚨 Emergency Intercom (All-Hands)';
+    }
+
+    if (isPriorityIntercomActive) {
+      socket.emit('admin-priority-intercom-start');
+      if (window.soundFX && window.soundFX.playPriorityIntercomAlert) {
+        window.soundFX.playPriorityIntercomAlert();
+      }
+      showToast('🚨 PRIORITY INTERCOM ENGAGED! Broadcasting to ALL channels.');
+    } else {
+      socket.emit('admin-priority-intercom-stop');
+      showToast('Priority Intercom disengaged.');
+    }
+  }
+
+  if (btnPriorityIntercom) btnPriorityIntercom.addEventListener('click', togglePriorityIntercom);
+  if (btnAdminIntercomTrigger) btnAdminIntercomTrigger.addEventListener('click', togglePriorityIntercom);
+
+  if (btnDismissIntercom) {
+    btnDismissIntercom.addEventListener('click', () => {
+      if (priorityIntercomBanner) priorityIntercomBanner.classList.add('hidden');
+    });
+  }
+
+  socket.on('priority-intercom-alert', ({ by, active }) => {
+    if (priorityIntercomBanner) {
+      if (active) {
+        priorityIntercomBanner.classList.remove('hidden');
+        if (intercomBroadcastText) {
+          intercomBroadcastText.textContent = `EMERGENCY ALL-HANDS OVERRIDE ACTIVE BY ${by.toUpperCase()}`;
+        }
+        if (window.soundFX && window.soundFX.playPriorityIntercomAlert) {
+          window.soundFX.playPriorityIntercomAlert();
+        }
+        showToast(`🚨 ALL-HANDS INTERCOM: Admin ${by} broadcasting across all rooms!`);
+      } else {
+        priorityIntercomBanner.classList.add('hidden');
+      }
+    }
+  });
+
+  // -------------------------------------------------------------
+  // v38 High-End Suite: Radio Chassis Skins
+  // -------------------------------------------------------------
+  function applyRadioSkin(skinName) {
+    document.body.classList.remove('skin-glass', 'skin-tactical', 'skin-cyberpunk');
+    document.body.classList.add(`skin-${skinName}`);
+    if (selectRadioSkin) selectRadioSkin.value = skinName;
+    try { localStorage.setItem('officetalk_radio_skin', skinName); } catch (e) {}
+  }
+
+  if (selectRadioSkin) {
+    const savedSkin = localStorage.getItem('officetalk_radio_skin') || 'glass';
+    applyRadioSkin(savedSkin);
+
+    selectRadioSkin.addEventListener('change', () => {
+      const selected = selectRadioSkin.value;
+      applyRadioSkin(selected);
+      if (window.soundFX && window.soundFX.playThemeSwitch) {
+        window.soundFX.playThemeSwitch();
+      }
+      const skinLabels = { glass: 'Executive Glass', tactical: 'Tactical Military Radio', cyberpunk: 'Cyberpunk Neon HUD' };
+      showToast(`Radio Chassis Skin: ${skinLabels[selected] || selected} 📻`);
+    });
+  }
+
+  // -------------------------------------------------------------
+  // v38 High-End Suite: AI Executive Minutes & Action Extractor
+  // -------------------------------------------------------------
+  async function generateAiExecutiveSummary() {
+    if (!btnGenerateAiSummary) return;
+    const originalBtnText = btnGenerateAiSummary.textContent;
+    btnGenerateAiSummary.textContent = '⏳ Analyzing...';
+    btnGenerateAiSummary.disabled = true;
+
+    try {
+      const items = meetingTranscriptLog.length > 0 ? meetingTranscriptLog : [
+        { senderName: currentUser ? currentUser.name : 'Team', text: 'Team conference initialized and ready for review.' }
+      ];
+
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+
+      const resp = await fetch('/api/ai-summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: items, targetLang: targetLang })
+      });
+
+      const data = await resp.json();
+      if (data && data.decisions && data.actionItems) {
+        latestAiInsights = data;
+
+        // Render Decisions
+        if (aiDecisionsList) {
+          aiDecisionsList.innerHTML = '';
+          data.decisions.forEach(dec => {
+            const li = document.createElement('li');
+            li.textContent = dec;
+            aiDecisionsList.appendChild(li);
+          });
+        }
+
+        // Render Checkable Action Items
+        if (aiActionItemsList) {
+          aiActionItemsList.innerHTML = '';
+          data.actionItems.forEach((act, idx) => {
+            const row = document.createElement('label');
+            row.className = 'action-item-row';
+            row.innerHTML = `<input type="checkbox" id="ai_act_${idx}"> <span><strong>${escapeHTML(act.assignee)}:</strong> ${escapeHTML(act.task)}</span>`;
+            aiActionItemsList.appendChild(row);
+          });
+        }
+
+        // Render Vibe Badge
+        if (aiVibeBadge) {
+          aiVibeBadge.textContent = data.vibe || '🎯 Productive (90%)';
+          if (data.sentimentScore >= 80) {
+            aiVibeBadge.className = 'badge-vibe';
+          } else {
+            aiVibeBadge.className = 'badge-vibe neutral';
+          }
+        }
+
+        renderNotesPreview(false);
+        showToast('AI Executive Minutes & Actions extracted! ✨');
+      }
+    } catch (err) {
+      console.error('AI Summarize error:', err);
+      showToast('Generated fallback insights.');
+    } finally {
+      btnGenerateAiSummary.textContent = originalBtnText;
+      btnGenerateAiSummary.disabled = false;
+    }
+  }
+
+  if (btnGenerateAiSummary) {
+    btnGenerateAiSummary.addEventListener('click', generateAiExecutiveSummary);
+  }
+
+  // -------------------------------------------------------------
+  // v38 High-End Suite: Professional PDF / Print Export
+  // -------------------------------------------------------------
+  function prepareAndPrintMeetingReport() {
+    if (!printableMeetingReport) return;
+    const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+    const langNames = { 'original': 'Original Spoken', 'en': 'English', 'te': 'Telugu (తెలుగు)', 'hi': 'Hindi (हिंदी)' };
+    const targetName = langNames[targetLang] || 'English';
+
+    const dateStr = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Attendees list
+    const attendeeNames = new Set();
+    if (currentUser) attendeeNames.add(currentUser.name);
+    meetingTranscriptLog.forEach(e => attendeeNames.add(e.senderName));
+    const attendeesList = Array.from(attendeeNames).join(', ') || 'All Meeting Attendees';
+
+    // Decisions
+    let decisionsHtml = '<li>Standard team synchronization and real-time voice communications established.</li>';
+    if (latestAiInsights && latestAiInsights.decisions && latestAiInsights.decisions.length > 0) {
+      decisionsHtml = latestAiInsights.decisions.map(d => `<li>${escapeHTML(d)}</li>`).join('');
+    }
+
+    // Action items
+    let actionsHtml = '<tr><td>Team</td><td>Review conference minutes and align next actions.</td><td>Pending 🔲</td></tr>';
+    if (latestAiInsights && latestAiInsights.actionItems && latestAiInsights.actionItems.length > 0) {
+      actionsHtml = latestAiInsights.actionItems.map(a => `
+        <tr>
+          <td><strong>${escapeHTML(a.assignee)}</strong></td>
+          <td>${escapeHTML(a.task)}</td>
+          <td>Pending 🔲</td>
+        </tr>
+      `).join('');
+    }
+
+    // Transcript log
+    let transcriptHtml = '';
+    if (meetingTranscriptLog.length > 0) {
+      transcriptHtml = meetingTranscriptLog.map(item => `
+        <tr>
+          <td style="white-space:nowrap; width:90px;">${item.timestamp || ''}</td>
+          <td style="white-space:nowrap; font-weight:700; width:130px;">${escapeHTML(item.senderName)}${item.isAdmin ? ' (Admin)' : ''}</td>
+          <td>${escapeHTML(item.text)}</td>
+        </tr>
+      `).join('');
+    } else {
+      transcriptHtml = `<tr><td colspan="3" style="text-align:center; color:#64748b;">No spoken discussions recorded in this session.</td></tr>`;
+    }
+
+    printableMeetingReport.innerHTML = `
+      <div class="print-header">
+        <div>
+          <div class="print-title">🎙️ OfficeTalk Executive Conference Minutes</div>
+          <div class="print-subtitle">Official Corporate Voice Line Record & Executive Action Plan</div>
+        </div>
+        <div style="text-align:right; font-size:11px; color:#64748b;">
+          <span>Document ID: OT-${Date.now().toString().slice(-6)}</span><br>
+          <span>Security: Internal & Confidential</span>
+        </div>
+      </div>
+
+      <div class="print-meta-grid">
+        <div class="print-meta-item"><strong>Date:</strong> ${dateStr}</div>
+        <div class="print-meta-item"><strong>Time:</strong> ${timeStr}</div>
+        <div class="print-meta-item"><strong>Output Language:</strong> ${targetName}</div>
+        <div class="print-meta-item"><strong>Session Sentiment / Vibe:</strong> ${latestAiInsights ? latestAiInsights.vibe : 'Productive (92%)'}</div>
+        <div class="print-meta-item" style="grid-column: 1 / -1;"><strong>Attendees:</strong> ${attendeesList}</div>
+      </div>
+
+      <div class="print-section">
+        <div class="print-section-title">⭐ Key Executive Decisions</div>
+        <ul class="print-decisions-list">
+          ${decisionsHtml}
+        </ul>
+      </div>
+
+      <div class="print-section">
+        <div class="print-section-title">✅ Assigned Action Items Checklist</div>
+        <table class="print-action-table">
+          <thead>
+            <tr>
+              <th style="width:140px;">Assignee</th>
+              <th>Deliverable / Task</th>
+              <th style="width:110px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${actionsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="print-section">
+        <div class="print-section-title">🗣️ Chronological Spoken Transcript & Minutes</div>
+        <table class="print-transcript-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Speaker</th>
+              <th>Transcribed Discussion</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${transcriptHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="print-sign-off">
+        <div>
+          <span>Recorded by OfficeTalk Multi-Target Engine</span>
+          <div class="print-sign-line">Recorded Date: ${new Date().toISOString().slice(0, 10)}</div>
+        </div>
+        <div>
+          <span>Executive Sign-off</span>
+          <div class="print-sign-line">Authorized Signature</div>
+        </div>
+      </div>
+    `;
+
+    window.print();
+  }
+
+  if (btnPrintMeetingReport) {
+    btnPrintMeetingReport.addEventListener('click', prepareAndPrintMeetingReport);
   }
 
   // Admin Breakout Rooms Management: Recall All to General
