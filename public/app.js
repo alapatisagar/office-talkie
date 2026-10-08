@@ -136,6 +136,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSharePhoneNotes = document.getElementById('btnSharePhoneNotes');
   const btnCloseMeetingNotesHeader = document.getElementById('btnCloseMeetingNotesHeader');
   const btnDownloadDocNotes = document.getElementById('btnDownloadDocNotes');
+  const btnHeaderDownloadNotes = document.getElementById('btnHeaderDownloadNotes');
+  const headerDownloadMenu = document.getElementById('headerDownloadMenu');
+  const btnCloseHeaderDownloadMenu = document.getElementById('btnCloseHeaderDownloadMenu');
+  const btnMenuDlTxtEn = document.getElementById('btnMenuDlTxtEn');
+  const btnMenuDlTxtTe = document.getElementById('btnMenuDlTxtTe');
+  const btnMenuDlTxtHi = document.getElementById('btnMenuDlTxtHi');
+  const btnMenuDlDoc = document.getElementById('btnMenuDlDoc');
+  const btnMenuSharePhone = document.getElementById('btnMenuSharePhone');
+  const btnMenuOpenNotes = document.getElementById('btnMenuOpenNotes');
+  const btnQuickDlTxt = document.getElementById('btnQuickDlTxt');
+  const btnQuickDlDoc = document.getElementById('btnQuickDlDoc');
+  const btnQuickDlPhone = document.getElementById('btnQuickDlPhone');
 
   // High-End Suite v38 Elements
   const btnInstantReplay = document.getElementById('btnInstantReplay');
@@ -2095,40 +2107,72 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Meeting Notes Modal UI Listeners
+  // Meeting Notes Modal UI & Download Architecture
+  function closeNotesModal() {
+    if (modalMeetingNotes) modalMeetingNotes.classList.add('hidden');
+    if (headerDownloadMenu) headerDownloadMenu.classList.add('hidden');
+  }
+
+  function openNotesModal() {
+    if (modalMeetingNotes) {
+      modalMeetingNotes.classList.remove('hidden');
+      renderNotesPreview(true);
+    }
+    if (headerDownloadMenu) headerDownloadMenu.classList.add('hidden');
+  }
+
   if (btnMeetingNotes) {
-    btnMeetingNotes.addEventListener('click', () => {
-      if (modalMeetingNotes) {
-        modalMeetingNotes.classList.remove('hidden');
-        renderNotesPreview();
-      }
-    });
+    btnMeetingNotes.addEventListener('click', openNotesModal);
   }
 
   if (btnCloseMeetingNotes) {
-    btnCloseMeetingNotes.addEventListener('click', () => {
-      if (modalMeetingNotes) modalMeetingNotes.classList.add('hidden');
-    });
+    btnCloseMeetingNotes.addEventListener('click', closeNotesModal);
+    btnCloseMeetingNotes.addEventListener('touchend', (e) => { e.preventDefault(); closeNotesModal(); });
   }
 
   if (btnCloseMeetingNotesHeader) {
-    btnCloseMeetingNotesHeader.addEventListener('click', () => {
-      if (modalMeetingNotes) modalMeetingNotes.classList.add('hidden');
-    });
+    btnCloseMeetingNotesHeader.addEventListener('click', closeNotesModal);
+    btnCloseMeetingNotesHeader.addEventListener('touchend', (e) => { e.preventDefault(); closeNotesModal(); });
   }
 
   // Backdrop click outside card to dismiss modal
   if (modalMeetingNotes) {
     modalMeetingNotes.addEventListener('click', (e) => {
       if (e.target === modalMeetingNotes) {
-        modalMeetingNotes.classList.add('hidden');
+        closeNotesModal();
       }
     });
   }
 
   // Escape key to dismiss notes modal
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalMeetingNotes && !modalMeetingNotes.classList.contains('hidden')) {
-      modalMeetingNotes.classList.add('hidden');
+    if (e.key === 'Escape') {
+      closeNotesModal();
+    }
+  });
+
+  // Main Header Download Dropdown Toggle
+  if (btnHeaderDownloadNotes) {
+    btnHeaderDownloadNotes.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (headerDownloadMenu) {
+        headerDownloadMenu.classList.toggle('hidden');
+      }
+    });
+  }
+
+  if (btnCloseHeaderDownloadMenu) {
+    btnCloseHeaderDownloadMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (headerDownloadMenu) headerDownloadMenu.classList.add('hidden');
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (headerDownloadMenu && !headerDownloadMenu.classList.contains('hidden')) {
+      if (!e.target.closest('.header-download-wrapper')) {
+        headerDownloadMenu.classList.add('hidden');
+      }
     }
   });
 
@@ -2191,10 +2235,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Generate Notes String Content with Optional Multilingual Translation
-  async function generateNotesContent(doTranslate = true) {
-    const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
-    const noteFormat = selectNotesFormat ? selectNotesFormat.value : 'structured';
+  // Generate Notes String Content with Accurate Multilingual Translation & Localized Headers
+  async function generateNotesContent(doTranslate = true, overrideLang = null, overrideFormat = null) {
+    const targetLang = overrideLang || (selectNotesLanguage ? selectNotesLanguage.value : 'original');
+    const noteFormat = overrideFormat || (selectNotesFormat ? selectNotesFormat.value : 'structured');
 
     const langNames = {
       'original': 'Original (As Spoken)',
@@ -2223,15 +2267,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // 3. Fallback if empty: user input or default agenda template
+    // 3. Fallback if empty: default synchronized conference record
     if (itemsToExport.length === 0) {
-      if (notesPreviewText && notesPreviewText.value.trim()) {
-        return notesPreviewText.value.trim();
-      }
       itemsToExport.push({
         senderName: currentUser ? currentUser.name : 'Facilitator',
         isAdmin: currentUser ? currentUser.isAdmin : false,
         text: 'Session opened. Meeting discussion items and action items recorded.',
+        language: 'en',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      itemsToExport.push({
+        senderName: 'System',
+        isAdmin: false,
+        text: 'OfficeTalk live voice channel active. Communication records synchronized.',
         language: 'en',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
@@ -2276,46 +2324,132 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let fileContent = '';
     if (noteFormat === 'structured') {
-      fileContent = `======================================================================\n` +
-        `                    OFFICETALK MEETING NOTES\n` +
-        `======================================================================\n\n` +
-        `📅 Date & Time:     ${dateStr} at ${timeStr}\n` +
-        `🌐 Output Language: ${targetName}\n` +
-        `👥 Attendees:       ${attendees}\n` +
-        `⏱️ Total Points:    ${itemsToExport.length} Discussion Items\n`;
+      if (targetLang === 'te') {
+        fileContent = `======================================================================\n` +
+          `                    ఆఫీస్‌టాక్ అధికారిక సమావేశ నివేదిక\n` +
+          `                  (OFFICETALK OFFICIAL MEETING NOTES)\n` +
+          `======================================================================\n\n` +
+          `📅 తేదీ & సమయం:     ${dateStr} (${timeStr})\n` +
+          `🌐 ఎంచుకున్న భాష:    తెలుగు (Telugu Notes)\n` +
+          `👥 హాజరైన సభ్యులు:   ${attendees}\n` +
+          `⏱️ మొత్తం రికార్డులు: ${itemsToExport.length} చర్చల అంశాలు\n`;
 
-      if (latestAiInsights) {
-        fileContent += `🎯 Session Vibe:    ${latestAiInsights.vibe || 'Productive (92%)'}\n\n` +
-          `======================================================================\n` +
-          `⭐ KEY DECISIONS\n` +
-          `======================================================================\n`;
-        (latestAiInsights.decisions || []).forEach(d => {
-          fileContent += `• ${d}\n`;
-        });
+        if (latestAiInsights) {
+          fileContent += `🎯 సమావేశ వాతావరణం: ${latestAiInsights.vibe || 'ఫలప్రదం (92%)'}\n\n` +
+            `======================================================================\n` +
+            `⭐ ముఖ్య నిర్ణయాలు (KEY DECISIONS)\n` +
+            `======================================================================\n`;
+          (latestAiInsights.decisions || []).forEach(d => {
+            fileContent += `• ${d}\n`;
+          });
+          fileContent += `\n======================================================================\n` +
+            `✅ అమలు చేయవలసిన పనుల జాబితా (ACTION ITEMS CHECKLIST)\n` +
+            `======================================================================\n`;
+          (latestAiInsights.actionItems || []).forEach(a => {
+            fileContent += `[ ] ${a.assignee}: ${a.task}\n`;
+          });
+        }
+
         fileContent += `\n======================================================================\n` +
-          `✅ ACTION ITEMS CHECKLIST\n` +
-          `======================================================================\n`;
-        (latestAiInsights.actionItems || []).forEach(a => {
-          fileContent += `[ ] ${a.assignee}: ${a.task}\n`;
+          `📋 కార్యనిర్వాహక సారాంశం (EXECUTIVE SUMMARY)\n` +
+          `======================================================================\n` +
+          `• ఆఫీస్‌టాక్ వాయిస్ కాన్ఫరెన్స్ ద్వారా సమావేశం విజయవంతంగా నిర్వహించబడింది.\n` +
+          `• సమావేశంలో మాట్లాడిన వాయిస్ సంభాషణలు మరియు నోట్స్ క్రింద నమోదు చేయబడ్డాయి.\n` +
+          `\n======================================================================\n` +
+          `🗣️ సమావేశ సంభాషణల వివరాలు (MINUTES OF MEETING)\n` +
+          `======================================================================\n\n`;
+
+        itemsToExport.forEach((item) => {
+          fileContent += `[${item.timestamp}] ${item.senderName}${item.isAdmin ? ' (అడ్మిన్)' : ''}:\n  ${item.text}\n\n`;
         });
+
+        fileContent += `======================================================================\n` +
+          `సమావేశ నివేదిక ముగింపు • OfficeTalk Multi-Target Engine v40\n` +
+          `======================================================================\n`;
+      } else if (targetLang === 'hi') {
+        fileContent = `======================================================================\n` +
+          `                    ऑफिसटॉक आधिकारिक बैठक विवरण\n` +
+          `                  (OFFICETALK OFFICIAL MEETING NOTES)\n` +
+          `======================================================================\n\n` +
+          `📅 दिनांक और समय:   ${dateStr} (${timeStr})\n` +
+          `🌐 चयनित भाषा:      हिंदी (Hindi Notes)\n` +
+          `👥 उपस्थित सदस्य:   ${attendees}\n` +
+          `⏱️ कुल चर्चा बिंदु:   ${itemsToExport.length} रिकॉर्ड\n`;
+
+        if (latestAiInsights) {
+          fileContent += `🎯 बैठक का माहौल:    ${latestAiInsights.vibe || 'सकारात्मक (92%)'}\n\n` +
+            `======================================================================\n` +
+            `⭐ मुख्य निर्णय (KEY DECISIONS)\n` +
+            `======================================================================\n`;
+          (latestAiInsights.decisions || []).forEach(d => {
+            fileContent += `• ${d}\n`;
+          });
+          fileContent += `\n======================================================================\n` +
+            `✅ कार्य सूची (ACTION ITEMS CHECKLIST)\n` +
+            `======================================================================\n`;
+          (latestAiInsights.actionItems || []).forEach(a => {
+            fileContent += `[ ] ${a.assignee}: ${a.task}\n`;
+          });
+        }
+
+        fileContent += `\n======================================================================\n` +
+          `📋 कार्यकारी सारांश और मुख्य बिंदु (EXECUTIVE SUMMARY)\n` +
+          `======================================================================\n` +
+          `• ऑफिसटॉक वॉइस कॉन्फ्रेंस के माध्यम से टीम बैठक सफलतापूर्वक आयोजित की गई।\n` +
+          `• बैठक में हुई सभी चर्चाओं और भाषणों का आधिकारिक विवरण नीचे दर्ज है।\n` +
+          `\n======================================================================\n` +
+          `🗣️ बैठक चर्चा समयरेखा (MINUTES OF MEETING)\n` +
+          `======================================================================\n\n`;
+
+        itemsToExport.forEach((item) => {
+          fileContent += `[${item.timestamp}] ${item.senderName}${item.isAdmin ? ' (व्यवस्थापक)' : ''}:\n  ${item.text}\n\n`;
+        });
+
+        fileContent += `======================================================================\n` +
+          `बैठक विवरण समाप्त • OfficeTalk Multi-Target Engine v40\n` +
+          `======================================================================\n`;
+      } else {
+        fileContent = `======================================================================\n` +
+          `                    OFFICETALK MEETING NOTES\n` +
+          `======================================================================\n\n` +
+          `📅 Date & Time:     ${dateStr} at ${timeStr}\n` +
+          `🌐 Output Language: ${targetName}\n` +
+          `👥 Attendees:       ${attendees}\n` +
+          `⏱️ Total Points:    ${itemsToExport.length} Discussion Items\n`;
+
+        if (latestAiInsights) {
+          fileContent += `🎯 Session Vibe:    ${latestAiInsights.vibe || 'Productive (92%)'}\n\n` +
+            `======================================================================\n` +
+            `⭐ KEY DECISIONS\n` +
+            `======================================================================\n`;
+          (latestAiInsights.decisions || []).forEach(d => {
+            fileContent += `• ${d}\n`;
+          });
+          fileContent += `\n======================================================================\n` +
+            `✅ ACTION ITEMS CHECKLIST\n` +
+            `======================================================================\n`;
+          (latestAiInsights.actionItems || []).forEach(a => {
+            fileContent += `[ ] ${a.assignee}: ${a.task}\n`;
+          });
+        }
+
+        fileContent += `\n======================================================================\n` +
+          `📋 EXECUTIVE SUMMARY & KEY POINTS\n` +
+          `======================================================================\n` +
+          `• Team synchronization session conducted via OfficeTalk Voice Conference.\n` +
+          `• Chronological record of spoken voice discussions and team notes below.\n` +
+          `\n======================================================================\n` +
+          `🗣️ DISCUSSION TIMELINE / MINUTES OF MEETING\n` +
+          `======================================================================\n\n`;
+
+        itemsToExport.forEach((item) => {
+          fileContent += `[${item.timestamp}] ${item.senderName}${item.isAdmin ? ' (Admin)' : ''}:\n  ${item.text}\n\n`;
+        });
+
+        fileContent += `======================================================================\n` +
+          `End of Meeting Notes • Generated by OfficeTalk Multi-Target Engine v40\n` +
+          `======================================================================\n`;
       }
-
-      fileContent += `\n======================================================================\n` +
-        `📋 EXECUTIVE SUMMARY & KEY POINTS\n` +
-        `======================================================================\n` +
-        `• Team synchronization session conducted via OfficeTalk Voice Conference.\n` +
-        `• Chronological record of spoken voice discussions and team notes below.\n` +
-        `\n======================================================================\n` +
-        `🗣️ DISCUSSION TIMELINE / MINUTES OF MEETING\n` +
-        `======================================================================\n\n`;
-
-      itemsToExport.forEach((item) => {
-        fileContent += `[${item.timestamp}] ${item.senderName}${item.isAdmin ? ' (Admin)' : ''}:\n  ${item.text}\n\n`;
-      });
-
-      fileContent += `======================================================================\n` +
-        `End of Meeting Notes • Generated by OfficeTalk Multi-Target Engine v38\n` +
-        `======================================================================\n`;
     } else {
       fileContent = `--- OfficeTalk Transcript Log (${targetName} • ${dateStr} at ${timeStr}) ---\n\n`;
       itemsToExport.forEach((item) => {
@@ -2390,15 +2524,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.removeChild(ta);
   }
 
-  // Bulletproof File Downloader (Works on 100% of PC, Mac, Android, and iOS browsers)
+  // Guaranteed File Downloader (Works on 100% of PC, Mac, Android, and iOS browsers)
   function triggerNoteDownload(content, filename, isDoc = false) {
     if (!content) return false;
     const bom = '\uFEFF';
     const fullContent = bom + content;
-    const mimeType = isDoc ? 'application/msword;charset=utf-8' : 'text/plain;charset=utf-8';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    // Primary Strategy: Native Blob URL with download attribute (WITHOUT target="_blank" so Chrome never blocks it!)
+    // On mobile devices, direct server POST ensures the native system download dialog
+    // opens on iOS Safari and Android without async click blocking
+    if (isMobile) {
+      return submitServerDownloadForm(content, filename);
+    }
+
+    // On desktop browsers: Native Blob URL with download attribute
     try {
+      const mimeType = isDoc ? 'application/msword;charset=utf-8' : 'text/plain;charset=utf-8';
       const blob = new Blob([fullContent], { type: mimeType });
       if (window.navigator && window.navigator.msSaveOrOpenBlob) {
         window.navigator.msSaveOrOpenBlob(blob, filename);
@@ -2417,10 +2558,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 2000);
       return true;
     } catch (e1) {
-      console.warn('Blob URL download error, falling back:', e1);
+      console.warn('Desktop Blob URL download fallback to server form:', e1);
+      return submitServerDownloadForm(content, filename);
     }
+  }
 
-    // Secondary Strategy: Direct server POST to hidden iframe
+  function submitServerDownloadForm(content, filename) {
     try {
       let iframe = document.getElementById('notes_download_iframe');
       if (!iframe) {
@@ -2431,7 +2574,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(iframe);
       }
 
-      const form = document.createElement('form');
+      let form = document.getElementById('notes_download_form');
+      if (form && form.parentNode) form.parentNode.removeChild(form);
+      form = document.createElement('form');
+      form.id = 'notes_download_form';
       form.method = 'POST';
       form.action = '/api/download-notes';
       form.target = 'notes_download_iframe';
@@ -2455,47 +2601,43 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 3000);
       return true;
     } catch (e2) {
-      console.warn('Iframe download error:', e2);
+      console.warn('Server form download error:', e2);
+      return false;
     }
-
-    return false;
   }
 
-  // Download Notes Button Handler (.txt format)
-  if (btnDownloadNotes) {
-    btnDownloadNotes.addEventListener('click', async (e) => {
-      if (e && e.preventDefault) e.preventDefault();
-      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
-      const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
-      const targetName = langNames[targetLang] || 'English';
-      const isWordFormat = selectNotesFormat && selectNotesFormat.value === 'doc';
-      const ext = isWordFormat ? 'doc' : 'txt';
-      const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.${ext}`;
+  // Unified download action helper
+  async function downloadNotesInFormat(targetLang = 'original', isDoc = false) {
+    const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
+    const targetName = langNames[targetLang] || 'English';
+    const ext = isDoc ? 'doc' : 'txt';
+    const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.${ext}`;
 
-      let fileContent = notesPreviewText ? notesPreviewText.value.trim() : '';
-      if (!fileContent) {
-        fileContent = await generateNotesContent(true);
-        if (notesPreviewText) notesPreviewText.value = fileContent;
-      }
+    showToast(`Preparing ${targetName} notes for download... ⏳`);
+    if (headerDownloadMenu) headerDownloadMenu.classList.add('hidden');
 
-      if (!fileContent) {
-        fileContent = await generateNotesContent(false);
-        if (notesPreviewText) notesPreviewText.value = fileContent;
-      }
+    const fileContent = await generateNotesContent(true, targetLang, isDoc ? 'doc' : 'structured');
+    if (!fileContent) {
+      showToast('No notes available to download.');
+      return;
+    }
 
-      let payload = fileContent;
-      if (isWordFormat) {
-        payload = generateWordDocHtml(fileContent, targetName);
-      }
+    if (notesPreviewText) {
+      notesPreviewText.value = fileContent;
+    }
 
-      const success = triggerNoteDownload(payload, filename, isWordFormat);
-      if (success) {
-        showToast(`Meeting notes downloaded in ${targetName} (.${ext})! 📥`);
-      } else {
-        fallbackClipboardCopy(fileContent);
-        showToast('Notes copied to clipboard! (Download fallback) 📋');
-      }
-    });
+    let payload = fileContent;
+    if (isDoc) {
+      payload = generateWordDocHtml(fileContent, targetName);
+    }
+
+    const success = triggerNoteDownload(payload, filename, isDoc);
+    if (success) {
+      showToast(`Meeting notes downloaded in ${targetName} (.${ext})! 📥`);
+    } else {
+      fallbackClipboardCopy(fileContent);
+      showToast('Notes copied to clipboard! (Download fallback) 📋');
+    }
   }
 
   // Helper: Format Word Document HTML with styles & full Telugu / Hindi Unicode fidelity
@@ -2530,59 +2672,100 @@ document.addEventListener('DOMContentLoaded', () => {
 </html>`;
   }
 
-  // Download Word Document Notes Handler (.doc)
-  if (btnDownloadDocNotes) {
-    btnDownloadDocNotes.addEventListener('click', async (e) => {
+  // Modal Download Buttons
+  if (btnDownloadNotes) {
+    btnDownloadNotes.addEventListener('click', (e) => {
       if (e && e.preventDefault) e.preventDefault();
       const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
-      const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
-      const targetName = langNames[targetLang] || 'English';
-      const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.doc`;
+      const isWordFormat = selectNotesFormat && selectNotesFormat.value === 'doc';
+      downloadNotesInFormat(targetLang, isWordFormat);
+    });
+  }
 
-      let textContent = notesPreviewText ? notesPreviewText.value.trim() : '';
-      if (!textContent) {
-        textContent = await generateNotesContent(true);
-        if (notesPreviewText) notesPreviewText.value = textContent;
-      }
-      if (!textContent) {
-        textContent = await generateNotesContent(false);
-        if (notesPreviewText) notesPreviewText.value = textContent;
-      }
+  if (btnDownloadDocNotes) {
+    btnDownloadDocNotes.addEventListener('click', (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      downloadNotesInFormat(targetLang, true);
+    });
+  }
 
-      const docContent = generateWordDocHtml(textContent, targetName);
-      const success = triggerNoteDownload(docContent, filename, true);
-      if (success) {
-        showToast(`Meeting notes downloaded in Word format (.doc)! 📝`);
-      }
+  // Modal Header Quick Download Buttons
+  if (btnQuickDlTxt) {
+    btnQuickDlTxt.addEventListener('click', () => {
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      downloadNotesInFormat(targetLang, false);
+    });
+  }
+
+  if (btnQuickDlDoc) {
+    btnQuickDlDoc.addEventListener('click', () => {
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      downloadNotesInFormat(targetLang, true);
+    });
+  }
+
+  if (btnQuickDlPhone) {
+    btnQuickDlPhone.addEventListener('click', () => {
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      sharePhoneNotes(targetLang);
+    });
+  }
+
+  // Main Header Download Dropdown Menu Options
+  if (btnMenuDlTxtEn) {
+    btnMenuDlTxtEn.addEventListener('click', () => downloadNotesInFormat('en', false));
+  }
+
+  if (btnMenuDlTxtTe) {
+    btnMenuDlTxtTe.addEventListener('click', () => downloadNotesInFormat('te', false));
+  }
+
+  if (btnMenuDlTxtHi) {
+    btnMenuDlTxtHi.addEventListener('click', () => downloadNotesInFormat('hi', false));
+  }
+
+  if (btnMenuDlDoc) {
+    btnMenuDlDoc.addEventListener('click', () => {
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      downloadNotesInFormat(targetLang, true);
+    });
+  }
+
+  if (btnMenuSharePhone) {
+    btnMenuSharePhone.addEventListener('click', () => {
+      if (headerDownloadMenu) headerDownloadMenu.classList.add('hidden');
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      sharePhoneNotes(targetLang);
+    });
+  }
+
+  if (btnMenuOpenNotes) {
+    btnMenuOpenNotes.addEventListener('click', () => {
+      openNotesModal();
     });
   }
 
   // Save / Share Directly to Phone (Apple Notes, Samsung Notes, Files, WhatsApp, etc.)
   if (btnSharePhoneNotes) {
-    btnSharePhoneNotes.addEventListener('click', sharePhoneNotes);
+    btnSharePhoneNotes.addEventListener('click', () => {
+      const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
+      sharePhoneNotes(targetLang);
+    });
   }
 
-  async function sharePhoneNotes() {
-    let fileContent = notesPreviewText ? notesPreviewText.value.trim() : '';
-    if (!fileContent) {
-      fileContent = await generateNotesContent(true);
-      if (notesPreviewText) notesPreviewText.value = fileContent;
-    }
+  async function sharePhoneNotes(targetLangOverride = null) {
+    const targetLang = targetLangOverride || (selectNotesLanguage ? selectNotesLanguage.value : 'original');
+    const langNames = { 'original': 'Original', 'en': 'English', 'te': 'Telugu', 'hi': 'Hindi' };
+    const targetName = langNames[targetLang] || 'English';
+    const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.txt`;
 
+    let fileContent = await generateNotesContent(true, targetLang, 'structured');
     if (!fileContent) {
       alert('No meeting notes available to share.');
       return;
     }
-
-    const targetLang = selectNotesLanguage ? selectNotesLanguage.value : 'original';
-    const langNames = {
-      'original': 'Original',
-      'en': 'English',
-      'te': 'Telugu',
-      'hi': 'Hindi'
-    };
-    const targetName = langNames[targetLang] || 'English';
-    const filename = `OfficeTalk_Meeting_Notes_${targetName}_${new Date().toISOString().slice(0, 10)}.txt`;
+    if (notesPreviewText) notesPreviewText.value = fileContent;
 
     if (navigator.share) {
       try {

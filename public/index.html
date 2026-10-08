@@ -10,11 +10,11 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=39').catch(err => console.warn('SW reg failed:', err));
+        navigator.serviceWorker.register('/sw.js?v=40').catch(err => console.warn('SW reg failed:', err));
       });
     }
   </script>
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style.css?v=40">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -75,6 +75,24 @@
       <button class="icon-btn btn-record" id="btnRecordMeeting" title="Record Meeting Audio">⏺️ Record</button>
       <button class="icon-btn btn-captions active" id="btnToggleCaptions" title="Live Voice Transcription & Closed Captions">💬 CC: ON</button>
       <button class="icon-btn btn-notes" id="btnMeetingNotes" title="Meeting Notes & Multilingual Transcription">📝 Notes <span class="badge-unread hidden" id="notesCountBadge">0</span></button>
+      <div class="header-download-wrapper">
+        <button class="icon-btn btn-header-download" id="btnHeaderDownloadNotes" title="Download Meeting Notes & Multilingual Transcriptions">📥 Download Notes ▾</button>
+        <div class="header-download-menu hidden" id="headerDownloadMenu">
+          <div class="menu-header">
+            <span>📥 Download Meeting Notes</span>
+            <button type="button" class="btn-menu-close" id="btnCloseHeaderDownloadMenu" title="Close menu">✕</button>
+          </div>
+          <div class="menu-options">
+            <button type="button" class="menu-item-btn" id="btnMenuDlTxtEn" data-action="dl-txt-en">🇬🇧 English Notes (.txt)</button>
+            <button type="button" class="menu-item-btn" id="btnMenuDlTxtTe" data-action="dl-txt-te">🇮🇳 Telugu Notes (తెలుగు .txt)</button>
+            <button type="button" class="menu-item-btn" id="btnMenuDlTxtHi" data-action="dl-txt-hi">🇮🇳 Hindi Notes (हिंदी .txt)</button>
+            <button type="button" class="menu-item-btn" id="btnMenuDlDoc" data-action="dl-doc">📝 Word Document (.doc)</button>
+            <button type="button" class="menu-item-btn btn-menu-phone" id="btnMenuSharePhone" data-action="share-phone">📲 Save to Phone (Notes App)</button>
+            <div class="menu-divider"></div>
+            <button type="button" class="menu-item-btn menu-item-notes" id="btnMenuOpenNotes" data-action="open-notes">📝 View & Edit Notes Preview</button>
+          </div>
+        </div>
+      </div>
       <button class="icon-btn btn-replay" id="btnInstantReplay" title="⏪ Instant Replay Last Transmission Audio">⏪ Replay</button>
       <button class="icon-btn btn-intercom hidden" id="btnPriorityIntercom" title="🚨 Broadcast All-Hands Emergency Intercom">🚨 Intercom</button>
 
@@ -411,8 +429,14 @@
           <h2>📝 Meeting Notes & Voice Transcription</h2>
           <p>Live AI speech-to-text transcript with instant accurate translation to English, Telugu, or Hindi note format.</p>
         </div>
-        <button type="button" class="btn-modal-close-icon" id="btnCloseMeetingNotesHeader" title="Close Notes (Esc)" aria-label="Close">✕</button>
+        <div class="modal-header-actions">
+          <button type="button" class="btn-xs btn-quick-dl" id="btnQuickDlTxt" title="Quick Download Plain Text Note (.txt)">📥 Download .txt</button>
+          <button type="button" class="btn-xs btn-quick-dl" id="btnQuickDlDoc" title="Quick Download Word Document (.doc)">📝 Word .doc</button>
+          <button type="button" class="btn-xs btn-quick-dl btn-quick-phone" id="btnQuickDlPhone" title="Save / Share directly to Phone Notes">📲 Phone</button>
+          <button type="button" class="btn-modal-close-prominent" id="btnCloseMeetingNotesHeader" title="Close Notes (Esc)" aria-label="Close">✕ Close</button>
+        </div>
       </div>
+      <div class="notes-modal-body">
 
       <!-- Controls Bar -->
       <div class="notes-controls-bar">
@@ -510,6 +534,7 @@
         <span id="translationStatusText">Translating transcript accurately to chosen language...</span>
       </div>
 
+      </div>
       <!-- Modal Action Buttons -->
       <div class="modal-buttons notes-modal-actions">
         <div class="notes-modal-left-actions">
@@ -521,7 +546,7 @@
           <button type="button" class="btn-action btn-share-phone" id="btnSharePhoneNotes" title="Save directly to phone Notes / Files">📲 Save / Share to Phone</button>
           <button type="button" class="btn-primary" id="btnDownloadNotes" title="Download note file to your device (.txt)">📥 Download Note (.txt)</button>
           <button type="button" class="btn-action" id="btnDownloadDocNotes" title="Download Word / Document note format (.doc)">📝 Word (.doc)</button>
-          <button type="button" class="btn-action btn-close-modal" id="btnCloseMeetingNotes">✕ Close</button>
+          <button type="button" class="btn-action btn-close-modal btn-modal-close-prominent" id="btnCloseMeetingNotes">✕ Close Notes</button>
         </div>
       </div>
     </div>
@@ -595,7 +620,7 @@
   <div id="printableMeetingReport" class="printable-report" style="display:none;"></div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="audio-fx.js?v=39"></script>
-  <script src="app.js?v=39"></script>
+  <script src="audio-fx.js?v=40"></script>
+  <script src="app.js?v=40"></script>
 </body>
 </html>

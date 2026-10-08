@@ -1,11 +1,11 @@
-// OfficeTalk Service Worker v39 - High-Performance PWA Caching
-const CACHE_NAME = 'officetalk-v39';
+// OfficeTalk Service Worker v40 - High-Performance PWA Caching
+const CACHE_NAME = 'officetalk-v40';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/style.css?v=39',
-  '/app.js?v=39',
-  '/audio-fx.js?v=39',
+  '/style.css?v=40',
+  '/app.js?v=40',
+  '/audio-fx.js?v=40',
   '/manifest.json'
 ];
 
@@ -32,6 +32,12 @@ self.addEventListener('activate', (evt) => {
 });
 
 self.addEventListener('fetch', (evt) => {
+  const url = new URL(evt.request.url);
+  // Do not intercept or cache dynamic backend APIs or WebSocket handshakes
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) {
+    return;
+  }
+
   // Navigation requests: Network first with Cache fallback
   if (evt.request.mode === 'navigate') {
     evt.respondWith(
